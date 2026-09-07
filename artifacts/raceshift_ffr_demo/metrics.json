@@ -1,6 +1,32 @@
 {
   "model": "RaceShiftFFR",
+  "raceshift_version": "0.4.0",
   "training_policy": "forward-forward-local-updates-no-global-backprop",
+  "global_backprop": false,
+  "config_file": "ffr_demo.json",
+  "hyperparameters": {
+    "layer_nodes": [
+      128,
+      96,
+      64,
+      48
+    ],
+    "ordinal_groups": [
+      8,
+      8,
+      8,
+      8
+    ],
+    "epochs_per_layer": 6,
+    "batch_size": 256,
+    "learning_rate": 0.0015,
+    "weight_decay": 1e-05,
+    "temperature": 0.6,
+    "target_sigma_groups": 1.1,
+    "ridge_alpha": 2.0,
+    "seed": 42,
+    "clip_update_norm": 5.0
+  },
   "architecture": [
     {
       "layer": 1,
@@ -28,28 +54,41 @@
     }
   ],
   "validation": {
-    "mae_s": 0.1609320193529129,
-    "rmse_s": 0.216460981574639,
-    "median_ae_s": 0.11973190307617188,
-    "p90_ae_s": 0.38201433420181274,
-    "signed_bias_s": 0.0011565831955522299,
+    "mae_s": 0.16093160620433125,
+    "rmse_s": 0.21646050514127158,
+    "median_ae_s": 0.11972893104469762,
+    "p90_ae_s": 0.3820094257532431,
+    "signed_bias_s": 0.0011566400308028757,
+    "rows": 324,
     "interval80_coverage": 0.7993827160493827,
-    "rows": 324
+    "interval80_width_s": 0.5352622258626385
   },
   "test": {
-    "mae_s": 0.1759808361530304,
-    "rmse_s": 0.22812746778224627,
-    "median_ae_s": 0.1292877197265625,
-    "p90_ae_s": 0.3682631850242615,
-    "signed_bias_s": 0.0012217862531542778,
+    "mae_s": 0.17598071456722228,
+    "rmse_s": 0.22812732159875185,
+    "median_ae_s": 0.12928449159950617,
+    "p90_ae_s": 0.36825754487533824,
+    "signed_bias_s": 0.0012218799296784834,
+    "rows": 324,
     "interval80_coverage": 0.7654320987654321,
-    "rows": 324
+    "interval80_width_s": 0.535262227334358
   },
   "split": {
     "train_end": 2023,
     "validation": 2024,
     "test": 2025
   },
+  "rows": {
+    "train": 648,
+    "validation": 324,
+    "test": 324
+  },
   "feature_count_raw": 103,
-  "input_nodes_after_encoding": 172
+  "feature_contract_version": "full_context_v1",
+  "history_laps": 5,
+  "input_nodes_after_encoding": 172,
+  "data_source": "synthetic_fixture",
+  "is_synthetic": true,
+  "input_file": "synthetic_fixture.csv",
+  "created_utc": "2026-09-07T21:20:59+00:00"
 }

@@ -155,7 +155,8 @@ def _event_order(df: pd.DataFrame) -> pd.Series:
         )
     # Input collectors write events in chronological order. The categorical event name
     # is never sorted alphabetically to manufacture a false chronology.
-    event_codes = pd.factorize(list(zip(df["season"], df["event"])), sort=False)[0]
+    event_key = df["season"].astype(str) + "|" + df["event"].astype(str)
+    event_codes = pd.factorize(event_key, sort=False)[0]
     return pd.to_datetime(df["season"].astype(str) + "-01-01") + pd.to_timedelta(event_codes, unit="D")
 
 

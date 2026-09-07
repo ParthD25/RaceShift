@@ -1,28 +1,35 @@
 #!/usr/bin/env python
+"""Train the RaceShift multi-layer Forward-Forward regressor with local layer updates only."""
 from __future__ import annotations
 
 import argparse
 import json
+import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 import joblib
 import numpy as np
 import pandas as pd
-from sklearn.compose import ColumnTransformer
-from sklearn.impute import SimpleImputer
-from sklearn.metrics import mean_absolute_error, mean_squared_error
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
-from raceshift.data.splits import season_forward_split
-from raceshift.features.full_context import (
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+
+from raceshift import __version__  # noqa: E402
+from raceshift.data.provenance import infer_data_source, is_synthetic_source  # noqa: E402
+from raceshift.data.splits import season_forward_split  # noqa: E402
+from raceshift.features.full_context import (  # noqa: E402
     RAW_TARGET_COLUMN,
     TARGET_COLUMN,
     assert_no_target_leakage,
     build_full_context_table,
     feature_contract,
 )
-from raceshift.models.forward_forward_regressor import FFRConfig, ForwardForwardRegressor
+from raceshift.features.preprocessing import make_preprocessor  # noqa: E402
+from raceshift.models.forward_forward_regressor import FFRConfig, ForwardForwardRegressor  # noqa: E402
+from raceshift.train.metrics import interval_metrics, regression_metrics  # noqa: E402
+
+CONFIG_METADATA_KEYS = ("history_laps", "model", "training_policy", "notes")
 
 
 def load_table(path: Path) -> pd.DataFrame:
@@ -31,60 +38,51 @@ def load_table(path: Path) -> pd.DataFrame:
     return pd.read_csv(path)
 
 
-def make_preprocessor(numeric: list[str], categorical: list[str]) -> ColumnTransformer:
-    numeric_pipe = Pipeline([
-        ("impute", SimpleImputer(strategy="median", add_indicator=True)),
-        ("scale", StandardScaler()),
-    ])
-    categorical_pipe = Pipeline([
-        ("impute", SimpleImputer(strategy="most_frequent")),
-        ("onehot", OneHotEncoder(handle_unknown="ignore", sparse_output=False, min_frequency=2)),
-    ])
-    return ColumnTransformer([
-        ("num", numeric_pipe, numeric),
-        ("cat", categorical_pipe, categorical),
-    ], remainder="drop", sparse_threshold=0.0)
+def load_config(path: Path) -> tuple[FFRConfig, int]:
+    cfg_json = json.loads(path.read_text())
+    history = int(cfg_json.get("history_laps", 5))
+    params = {k: v for k, v in cfg_json.items() if k not in CONFIG_METADATA_KEYS}
+    unknown = sorted(set(params) - set(FFRConfig.__dataclass_fields__))
+    if unknown:
+        raise ValueError(f"Unknown FFR config keys in {path.name}: {unknown}")
+    params["layer_nodes"] = tuple(params["layer_nodes"])
+    params["ordinal_groups"] = tuple(params["ordinal_groups"])
+    return FFRConfig(**params), history
 
 
-def evaluate(model: ForwardForwardRegressor, x: np.ndarray, frame: pd.DataFrame) -> dict[str, float]:
-    residual_pred = model.predict(x)
-    baseline = frame["rolling_median_5"].to_numpy(dtype=np.float32)
-    actual = frame[RAW_TARGET_COLUMN].to_numpy(dtype=np.float32)
-    predicted = baseline + residual_pred
-    absolute = np.abs(actual - predicted)
+def predict_frame(model: ForwardForwardRegressor, x: np.ndarray, frame: pd.DataFrame) -> pd.DataFrame:
+    baseline = frame["rolling_median_5"].to_numpy(dtype=np.float64)
     uncertainty = model.predict_with_uncertainty(x)
-    lower = baseline + uncertainty["lower_80"]
-    upper = baseline + uncertainty["upper_80"]
-    return {
-        "mae_s": float(mean_absolute_error(actual, predicted)),
-        "rmse_s": float(mean_squared_error(actual, predicted) ** 0.5),
-        "median_ae_s": float(np.median(absolute)),
-        "p90_ae_s": float(np.quantile(absolute, 0.90)),
-        "signed_bias_s": float(np.mean(predicted - actual)),
-        "interval80_coverage": float(np.mean((actual >= lower) & (actual <= upper))),
-        "rows": int(len(frame)),
-    }
+    out = frame[[c for c in ["season", "event", "session", "driver", "lap_number"] if c in frame.columns]].copy()
+    out["actual_next_lap_s"] = frame[RAW_TARGET_COLUMN].to_numpy(dtype=np.float64)
+    out["predicted_next_lap_s"] = baseline + uncertainty["prediction"].astype(np.float64)
+    out["lower_80_s"] = baseline + uncertainty["lower_80"].astype(np.float64)
+    out["upper_80_s"] = baseline + uncertainty["upper_80"].astype(np.float64)
+    out["layer_disagreement_s"] = uncertainty["layer_disagreement"].astype(np.float64)
+    out["rolling5_baseline_s"] = baseline
+    return out
+
+
+def evaluate(predictions: pd.DataFrame) -> dict[str, float | int]:
+    metrics = regression_metrics(predictions["actual_next_lap_s"], predictions["predicted_next_lap_s"])
+    metrics.update(interval_metrics(predictions["actual_next_lap_s"], predictions["lower_80_s"], predictions["upper_80_s"]))
+    return metrics
 
 
 def main() -> None:
     p = argparse.ArgumentParser(description="Train the RaceShift multi-layer Forward-Forward regressor.")
     p.add_argument("--input", required=True, help="CSV or Parquet lap table")
-    p.add_argument("--config", default="configs/ffr_production.json")
-    p.add_argument("--output", default="artifacts/raceshift_ffr")
+    p.add_argument("--config", default=str(ROOT / "configs" / "ffr_production.json"))
+    p.add_argument("--output", default=str(ROOT / "artifacts" / "raceshift_ffr"))
     p.add_argument("--train-end", type=int, default=2023)
     p.add_argument("--val-year", type=int, default=2024)
     p.add_argument("--test-year", type=int, default=2025)
+    p.add_argument("--data-source", help="Provenance label stored in metrics.json. Inferred when omitted.")
     args = p.parse_args()
 
     raw = load_table(Path(args.input))
-    cfg_json = json.loads(Path(args.config).read_text())
-    history = int(cfg_json.pop("history_laps", 5))
-    cfg_json.pop("model", None)
-    cfg_json.pop("training_policy", None)
-    cfg_json.pop("notes", None)
-    cfg_json["layer_nodes"] = tuple(cfg_json["layer_nodes"])
-    cfg_json["ordinal_groups"] = tuple(cfg_json["ordinal_groups"])
-    cfg = FFRConfig(**cfg_json)
+    data_source = args.data_source or infer_data_source(raw)
+    cfg, history = load_config(Path(args.config))
 
     table = build_full_context_table(raw, history=history)
     train, val, test = season_forward_split(table, args.train_end, args.val_year, args.test_year)
@@ -109,18 +107,35 @@ def main() -> None:
     model.save(out)
     joblib.dump(prep, out / "preprocessor.joblib")
 
+    val_predictions = predict_frame(model, x_val, val)
+    test_predictions = predict_frame(model, x_test, test)
+    test_predictions.to_csv(out / "test_predictions.csv", index=False)
+
     metrics = {
         "model": "RaceShiftFFR",
+        "raceshift_version": __version__,
         "training_policy": "forward-forward-local-updates-no-global-backprop",
+        "global_backprop": False,
+        "config_file": Path(args.config).name,
+        "hyperparameters": json.loads(json.dumps(cfg.__dict__)),
         "architecture": model.architecture_summary(),
-        "validation": evaluate(model, x_val, val),
-        "test": evaluate(model, x_test, test),
+        "validation": evaluate(val_predictions),
+        "test": evaluate(test_predictions),
         "split": {"train_end": args.train_end, "validation": args.val_year, "test": args.test_year},
+        "rows": {"train": int(len(train)), "validation": int(len(val)), "test": int(len(test))},
         "feature_count_raw": len(features),
+        "feature_contract_version": "full_context_v1",
+        "history_laps": history,
         "input_nodes_after_encoding": int(x_train.shape[1]),
+        "data_source": data_source,
+        "is_synthetic": is_synthetic_source(data_source),
+        "input_file": Path(args.input).name,
+        "created_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
     (out / "metrics.json").write_text(json.dumps(metrics, indent=2))
-    (out / "feature_contract.json").write_text(json.dumps({"history": history, "numeric": numeric, "categorical": categorical}, indent=2))
+    (out / "feature_contract.json").write_text(
+        json.dumps({"history": history, "numeric": numeric, "categorical": categorical}, indent=2)
+    )
     print(json.dumps(metrics, indent=2))
 
 

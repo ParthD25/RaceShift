@@ -26,7 +26,7 @@
   },
   "target_center": 0.06711744517087936,
   "target_scale": 0.5987596604228019,
-  "interval_q80": 0.26763105392456055,
+  "interval_q80": 0.2676311135292053,
   "architecture": [
     {
       "layer": 1,

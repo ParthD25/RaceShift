@@ -87,7 +87,7 @@ def build_fixture(seasons=(2022, 2023, 2024, 2025), events_per_season=3, drivers
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("--output", default="data/raw/synthetic_fixture.csv")
+    p.add_argument("--output", default="data/imports/synthetic_fixture.csv")
     args = p.parse_args()
     path = Path(args.output)
     path.parent.mkdir(parents=True, exist_ok=True)

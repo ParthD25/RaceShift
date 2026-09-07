@@ -4,26 +4,14 @@
     "val_year": 2024,
     "test_year": 2025
   },
-  "data": {
-    "history_laps": 5,
-    "batch_size": 256
+  "history_laps": 5,
+  "ridge_alpha": 2.0,
+  "hist_gradient_boosting": {
+    "max_iter": 350,
+    "learning_rate": 0.05,
+    "max_leaf_nodes": 31,
+    "l2_regularization": 0.1,
+    "random_state": 7
   },
-  "model": {
-    "d_model": 128,
-    "n_heads": 4,
-    "n_layers": 3,
-    "dropout": 0.15,
-    "max_history": 16
-  },
-  "training": {
-    "epochs": 50,
-    "learning_rate": 0.0003,
-    "weight_decay": 0.01,
-    "grad_clip": 1.0,
-    "accumulation_steps": 1,
-    "use_amp": true,
-    "optimizer": "adamw",
-    "warmup_steps": 0,
-    "patience": 8
-  }
+  "notes": "Required baselines from the master spec: previous lap, rolling-five median, ridge regression and tree boosting. They share the full-context feature table and train-only preprocessing with RaceShift FFR so the comparison is fair."
 }

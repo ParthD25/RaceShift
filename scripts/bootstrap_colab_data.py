@@ -22,7 +22,7 @@ def main():
         years=[2024]; events=["Monza"]
     else:
         years=[2022,2023,2024,2025]; events=["Bahrain","Silverstone","Monza"]
-    run([sys.executable,"scripts/fetch_fastf1_seasons.py","--years",*map(str,years),"--events",*events,"--session","R"])
+    run([sys.executable,"scripts/fetch_fastf1_seasons.py","--years",",".join(map(str,years)),"--events",*events,"--session","R"])
     run([sys.executable,"scripts/build_lap_dataset.py"])
     if args.mode=="research":
         # Large datasets are opt-in and remain outside git.
