@@ -1,0 +1,18 @@
+{
+  "name": "FFR-S",
+  "model": "RaceShiftFFR",
+  "training_policy": "forward-forward-local-updates-no-global-backprop",
+  "history_laps": 5,
+  "layer_nodes": [256, 128],
+  "ordinal_groups": [8, 16],
+  "epochs_per_layer": 80,
+  "batch_size": 512,
+  "learning_rate": 0.0008,
+  "weight_decay": 0.00001,
+  "temperature": 0.55,
+  "target_sigma_groups": 1.1,
+  "ridge_alpha": 2.0,
+  "seed": 42,
+  "clip_update_norm": 5.0,
+  "notes": "Two-layer Forward-Forward ladder. Depth ablation baseline for FFR-M and FFR-L."
+}

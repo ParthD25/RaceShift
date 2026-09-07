@@ -1,6 +1,6 @@
 {
   "model_type": "RaceShiftFFR",
-  "input_dim": 172,
+  "input_dim": 175,
   "config": {
     "layer_nodes": [
       128,
@@ -26,11 +26,11 @@
   },
   "target_center": 0.06711744517087936,
   "target_scale": 0.5987596604228019,
-  "interval_q80": 0.2676311135292053,
+  "interval_q80": 0.24622471630573273,
   "architecture": [
     {
       "layer": 1,
-      "input_nodes": 172,
+      "input_nodes": 175,
       "hidden_nodes": 128,
       "ordinal_groups": 8
     },

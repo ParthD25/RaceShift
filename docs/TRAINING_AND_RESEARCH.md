@@ -1,5 +1,18 @@
 # Training and Research Standard
 
+## Research question
+
+> Can Forward-Forward regression, trained with local layer-wise updates and no global
+> backpropagation, approach the next-lap forecasting accuracy of conventional baselines
+> while reducing training-memory requirements?
+
+Forward-Forward is not assumed to be better than backpropagation. The FFR literature reports
+recovering most but not all of backprop accuracy on regression benchmarks with lower peak
+training memory, and the broader Forward-Forward literature acknowledges a gap to
+state-of-the-art backprop on standard benchmarks. RaceShift tests the trade-off, so every run
+records accuracy **and** resources: training wall time, peak RSS, traced peak memory,
+inference latency and artifact size.
+
 ## Primary architecture
 
 RaceShift FFR is a deep Forward-Forward regression model.
@@ -106,33 +119,43 @@ Recommended:
 
 Do not use a random row split as the headline result.
 
-## Known gaps (tracked for Milestone 2)
+## Experiment protocol
 
-- Lag features (`*_lag1..4`) and rolling statistics are computed on the pit/deleted-lap filtered
-  sequence and are not adjacency-checked the way the target is. Across a pit stop `lap_time_s_lag1`
-  can therefore be the lap before the pit lap. This is backward-looking and not leakage, but it is a
-  quality issue on real data where pit laps are frequent.
-- Historical priors are a per-group Python loop called ten times per table build; expect this to
-  dominate feature-building time on multi-season data.
-- `scripts/eval_chronos2_zeroshot.py` expects the light table from `scripts/build_lap_dataset.py` and
-  an optional `chronos` install; it has not been run on real data yet.
+`scripts/run_experiments.py` runs the baselines and any list of FFR configs on the same table
+and split, as separate processes so peak memory is measured per run, and writes
+`reports/<name>/summary.{json,md}`.
 
-## Required ablations
+```bash
+python scripts/run_experiments.py --input data/processed/f1_laps.parquet --name f1_2025h2 \
+  --train-end 2024 --val-year 2025 --test-year 2025 --split-round 12 \
+  --ffr configs/ffr_small.json configs/ffr_production.json configs/ffr_colab_large.json \
+      configs/ffr_m_groups_coarse.json configs/ffr_m_groups_fine.json \
+  --ablate historical_numeric temporal_numeric static_categorical
+```
 
-- 1 lap vs 3 laps vs 5 laps context
-- no historical priors vs historical priors
-- weather removed
-- tyre features removed
-- driver/team categorical state removed
-- 2 vs 3 vs 4 vs 5 Forward-Forward layers
-- node-width ladder comparison
-- ordinal group count comparison
-- local optimizer/learning-rate comparison
+Depth ladder: FFR-S (256 → 128), FFR-M (512 → 384 → 256 → 192), FFR-L (1024 → 768 → 512 →
+384 → 256). Group ladders: 4/8/16/32, 8/16/32/64, 16/32/64/64. Feature ablations drop one
+taxonomy group at a time. Splits: season-forward, season-round (early/late holdout season),
+circuit holdout (`--holdout-event`), and the 2026 domain-shift holdout once 2026 rounds are
+collected.
 
-## Research references
+## Data hygiene decisions that changed the results
 
-- Geoffrey Hinton, *The Forward-Forward Algorithm: Some Preliminary Investigations*, arXiv:2212.13345
-- *FFR: Forward-Forward Learning for Regression* (2026 preprint), used as inspiration for ordinal/coarse-to-fine regression design
-- Self-Contrastive Forward-Forward work, used as a reference for sequential/local representation learning
+- Pit-in, pit-out, safety-car, VSC, red-flag, deleted and inaccurate laps are never
+  training rows or targets, and every lag or rolling statistic is scoped to the current run
+  of consecutive valid laps (`docs/FEATURE_CONTRACT.md`).
+- Lap-time-scale features are relative to the current rolling pace; the first real run with
+  absolute features had ridge extrapolating to −9 s residuals on unseen seasons.
+- Features observed in under 5% of training rows are dropped; weather-matched priors were
+  producing standardized shifts of 8+ between train and test after imputation.
+- The training residual target is winsorized to ±6 s; the raw target ranges from −54 s to
+  +18 s on real races and least-squares fits were dominated by the tails.
 
-RaceShift must describe itself as FFR-inspired unless and until the implementation is formally reproduced against the exact paper protocol.
+## Known gaps
+
+- Race-control messages are not yet used to flag laps affected by incidents that are not
+  encoded in the track status string.
+- Historical priors are medians over earlier events; a nearest-neighbour similarity
+  retrieval over normalised conditions is the planned replacement.
+- `scripts/eval_chronos2_zeroshot.py` expects the light table from `scripts/build_lap_dataset.py`
+  and an optional `chronos` install; it has not been run on real data yet.

@@ -131,7 +131,52 @@ class RaceShiftArtifact:
             raise ValueError("Model produced a non-finite forecast for this row")
 
         completed = int(len(history))
+
+        def _num(col: str):
+            if col not in row.columns:
+                return None
+            value = row[col].iloc[0]
+            try:
+                value = float(value)
+            except (TypeError, ValueError):
+                return None
+            return value if np.isfinite(value) else None
+
+        def _text(col: str):
+            if col not in row.columns:
+                return None
+            value = row[col].iloc[0]
+            return None if value is None or (isinstance(value, float) and np.isnan(value)) else str(value)
+
+        context = {
+            "compound": _text("compound"),
+            "tyre_life": _num("tyre_life"),
+            "stint": _num("stint"),
+            "position": _num("position"),
+            "laps_in_segment": _num("laps_in_segment"),
+            "track_temp_c": _num("track_temp_c"),
+            "air_temp_c": _num("air_temp_c"),
+            "humidity_pct": _num("humidity_pct"),
+            "wind_speed_ms": _num("wind_speed_ms"),
+            "wind_direction_deg": _num("wind_direction_deg"),
+            "rainfall": _text("rainfall"),
+            "gap_ahead_s": _num("gap_ahead_s"),
+            "gap_behind_s": _num("gap_behind_s"),
+            "team": _text("team"),
+            "circuit": _text("circuit"),
+        }
+        historical_context = {
+            "driver_circuit_pace_s": _num("hist_driver_circuit_pace"),
+            "team_circuit_pace_s": _num("hist_team_circuit_pace"),
+            "compound_circuit_pace_s": _num("hist_compound_circuit_pace"),
+            "driver_circuit_compound_pace_s": _num("hist_driver_circuit_compound_pace"),
+            "matched_weather_compound_pace_s": _num("hist_weather_compound_pace"),
+            "driver_matched_weather_pace_s": _num("hist_driver_weather_pace"),
+            "note": "Medians of earlier events only. None means no earlier event matched.",
+        }
         return {
+            "context": context,
+            "historical_context": historical_context,
             "season": int(key["season"]),
             "event": str(key["event"]),
             "session": str(key["session"]),

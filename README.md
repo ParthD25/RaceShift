@@ -22,7 +22,7 @@ repository makes **no Formula 1 accuracy claims**. Every number the UI shows is 
   gradient-boosted trees
 - FastF1 and OpenF1 collectors, Hugging Face / IMSA source registry, Colab notebook
 - Synthetic demo dataset and demo artifact so the app runs before any download
-- 26 Python tests covering leakage rules, splits, the no-backprop policy, artifact forecasting and the API
+- 39 Python tests covering leakage and feature availability, pit/safety-car lap adjacency, splits, the no-backprop policy, artifact forecasting and the API
 
 ## Quick start
 
@@ -46,7 +46,7 @@ on `data/imports/synthetic_fixture.csv`.
 Verify the install:
 
 ```bash
-npm run test:py     # pytest, 26 tests
+npm run test:py     # pytest, 39 tests
 npm run build       # TypeScript check + Vite build
 ```
 

@@ -82,10 +82,25 @@ test_predictions.csv   (written by train_ffr.py, not required at load time)
 
 `metrics.json` carries `data_source` and `is_synthetic`, which the UI uses to badge results.
 
+## Run the experiment matrix
+
+```bash
+python scripts/fetch_fastf1_seasons.py --years 2022-2025 --session R --events Bahrain Silverstone Monza
+python scripts/build_lap_dataset.py --input data/raw/fastf1 --output data/processed/next_lap.parquet   # light table
+python - <<'PY'
+import glob, pandas as pd
+pd.concat([pd.read_parquet(f) for f in sorted(glob.glob('data/raw/fastf1/*.parquet'))]).to_parquet('data/processed/f1_laps.parquet', index=False)
+PY
+python scripts/run_experiments.py --input data/processed/f1_laps.parquet --name f1_2025 \
+  --train-end 2023 --val-year 2024 --test-year 2025 --ffr configs/ffr_small.json configs/ffr_production.json
+```
+
+Results land in `reports/f1_2025/summary.md` and every run's `metrics.json` is listed by the API.
+
 ## Verify the install
 
 ```bash
-npm run test:py        # 26 Python tests: leakage, splits, no-backprop policy, artifact, API
+npm run test:py        # 39 Python tests: leakage, availability, adjacency, splits, no-backprop policy, artifact, API
 npm run build          # TypeScript check + Vite production build
 ```
 

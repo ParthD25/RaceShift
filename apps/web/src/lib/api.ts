@@ -83,7 +83,37 @@ export type ImportSummary = {
 
 export type ForecastRequest = { file: string; driver?: string | null; artifact?: string | null };
 
+export type ForecastContext = {
+  compound: string | null;
+  tyre_life: number | null;
+  stint: number | null;
+  position: number | null;
+  laps_in_segment: number | null;
+  track_temp_c: number | null;
+  air_temp_c: number | null;
+  humidity_pct: number | null;
+  wind_speed_ms: number | null;
+  wind_direction_deg: number | null;
+  rainfall: string | null;
+  gap_ahead_s: number | null;
+  gap_behind_s: number | null;
+  team: string | null;
+  circuit: string | null;
+};
+
+export type HistoricalContext = {
+  driver_circuit_pace_s: number | null;
+  team_circuit_pace_s: number | null;
+  compound_circuit_pace_s: number | null;
+  driver_circuit_compound_pace_s: number | null;
+  matched_weather_compound_pace_s: number | null;
+  driver_matched_weather_pace_s: number | null;
+  note: string;
+};
+
 export type ForecastResult = {
+  context: ForecastContext;
+  historical_context: HistoricalContext;
   season: number;
   event: string;
   session: string;
@@ -105,6 +135,13 @@ export type ForecastResult = {
   file: string;
 };
 
+export type RunResources = {
+  training?: { wall_seconds?: number; peak_rss_mb?: number; peak_traced_mb?: number };
+  inference_batch_ms_per_row?: number;
+  inference_single_row_ms?: number;
+  artifact_bytes?: number;
+};
+
 export type ExperimentRun = {
   run: string;
   model: string;
@@ -113,6 +150,7 @@ export type ExperimentRun = {
   architecture?: ArchitectureLayer[] | null;
   validation: Metrics | null;
   test: Metrics | null;
+  resources?: RunResources | null;
   artifact: string;
   data_source: string;
   is_synthetic: boolean;

@@ -33,6 +33,7 @@ PROCESSED = DATA / "processed"
 DEFAULT_ARTIFACT_ID = "raceshift_ffr_demo"
 ALLOWED_SUFFIXES = {".csv", ".parquet"}
 MAX_IMPORT_BYTES = 200 * 1024 * 1024
+MAX_IMPORT_ROWS = 2_000_000
 UI_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173"]
 _SAFE_NAME = re.compile(r"[^A-Za-z0-9._-]+")
 
@@ -308,6 +309,10 @@ async def import_file(file: UploadFile = File(...), overwrite: bool = Query(Fals
                     raise HTTPException(413, f"Import exceeds {MAX_IMPORT_BYTES // (1024 * 1024)} MB limit")
                 handle.write(chunk)
         frame = _load_table(tmp, suffix=target.suffix)
+        if len(frame) > MAX_IMPORT_ROWS:
+            raise HTTPException(413, f"Import has {len(frame)} rows; the limit is {MAX_IMPORT_ROWS}")
+        if frame.empty or len(frame.columns) < 2:
+            raise HTTPException(400, "Upload parsed to an empty or single-column table")
     except HTTPException:
         tmp.unlink(missing_ok=True)
         raise
@@ -355,7 +360,7 @@ def experiments() -> dict[str, Any]:
         }
         if isinstance(metrics.get("models"), dict):
             for name, result in metrics["models"].items():
-                runs.append({"run": f"{path.name}/{name}", "model": name, "method": "baseline", "training_policy": metrics.get("training_policy"), "validation": result.get("validation"), "test": result.get("test"), **common})
+                runs.append({"run": f"{path.name}/{name}", "model": name, "method": "baseline", "training_policy": metrics.get("training_policy"), "validation": result.get("validation"), "test": result.get("test"), "resources": result.get("resources"), **common})
         else:
-            runs.append({"run": path.name, "model": metrics.get("model", path.name), "method": "forward-forward" if "forward-forward" in str(metrics.get("training_policy", "")) else metrics.get("training_policy"), "training_policy": metrics.get("training_policy"), "architecture": metrics.get("architecture"), "validation": metrics.get("validation"), "test": metrics.get("test"), **common})
+            runs.append({"run": path.name, "model": metrics.get("name", metrics.get("model", path.name)), "method": "forward-forward" if "forward-forward" in str(metrics.get("training_policy", "")) else metrics.get("training_policy"), "training_policy": metrics.get("training_policy"), "architecture": metrics.get("architecture"), "validation": metrics.get("validation"), "test": metrics.get("test"), "resources": metrics.get("resources"), **common})
     return {"experiments": runs}

@@ -28,8 +28,9 @@ def export_session(year: int, event: str | int, session_name: str, output_dir: s
     out = pd.DataFrame({
         "season": year,
         "series": "F1",
+        "round_number": int(session.event.RoundNumber) if hasattr(session.event, "RoundNumber") else None,
         "event": session.event.EventName,
-        "circuit": session.event.EventName,
+        "circuit": str(session.event.get("Location", session.event.EventName)) if hasattr(session.event, "get") else session.event.EventName,
         "event_date": str(session.event.EventDate.date()) if hasattr(session.event.EventDate, "date") else str(session.event.EventDate),
         "session": session_name,
         "driver": laps["Driver"].astype(str),
