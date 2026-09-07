@@ -67,6 +67,15 @@ This reduces circuit-scale differences while preserving a prediction measured in
 
 Frozen open models are benchmarks only. Standard LoRA/QLoRA fine-tuning is excluded from the primary project because it would reintroduce global backpropagation.
 
+`scripts/train_baselines.py` takes the same raw lap table as `scripts/train_ffr.py`, builds the same
+full-context feature table, applies the same chronological split and the same train-only
+preprocessing (`raceshift.features.preprocessing.make_preprocessor`). Ridge and gradient boosting
+predict the same residual target. Its `metrics.json` is listed by `GET /api/experiments` next to FFR
+runs, so the comparison is always visible.
+
+On the synthetic fixture the tree baseline beats the demo FFR artifact. That is reported as-is: the
+fixture is a pipeline check, and the real question is answered only on unseen Formula 1 seasons.
+
 ## Evaluation
 
 Headline metric: MAE in seconds.
@@ -96,6 +105,17 @@ Recommended:
 ```
 
 Do not use a random row split as the headline result.
+
+## Known gaps (tracked for Milestone 2)
+
+- Lag features (`*_lag1..4`) and rolling statistics are computed on the pit/deleted-lap filtered
+  sequence and are not adjacency-checked the way the target is. Across a pit stop `lap_time_s_lag1`
+  can therefore be the lap before the pit lap. This is backward-looking and not leakage, but it is a
+  quality issue on real data where pit laps are frequent.
+- Historical priors are a per-group Python loop called ten times per table build; expect this to
+  dominate feature-building time on multi-season data.
+- `scripts/eval_chronos2_zeroshot.py` expects the light table from `scripts/build_lap_dataset.py` and
+  an optional `chronos` install; it has not been run on real data yet.
 
 ## Required ablations
 

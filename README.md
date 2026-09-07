@@ -1,124 +1,125 @@
-# RaceShift v0.4
+# RaceShift
 
-RaceShift is a local-first motorsport ML project that predicts a driver's **next lap** from information available through the current completed lap. The primary trainable model is a deep, multi-layer Forward-Forward regressor with local layer updates and **no global backpropagation**.
+Local-first Formula 1 **next-lap forecasting**. RaceShift predicts a driver's lap N+1 from
+information legitimately known at the end of lap N: tyres, stint, weather, wind, traffic, sectors,
+recent pace, telemetry summaries and prior-race context. The primary trainable model is a deep,
+multi-layer **Forward-Forward regressor** with local layer updates and **no global backpropagation**.
+
+**Status: foundation scaffold (v0.4).** The local product, training pipeline, baselines and tests
+work end to end on a synthetic fixture. Real Formula 1 training has not been run yet, so this
+repository makes **no Formula 1 accuracy claims**. Every number the UI shows is labelled
+*Fixture visual*, *Synthetic model* or *Real artifact*.
 
 ## What is included
 
-- React + Vite local UI
-- FastAPI localhost API
-- full F1 feature contract: driver, constructor, circuit, tyres, stint, weather, wind, traffic, sectors, recent pace and historical matched-condition pace
-- four-layer production Forward-Forward architecture: `512 -> 384 -> 256 -> 192` hidden nodes
-- larger Colab research ladder: `1024 -> 768 -> 512 -> 384 -> 256`
-- 8/16/32/64 ordinal goodness groups for the production model
-- manual local Adam updates, no `Tensor.backward()` or `autograd.grad()`
-- closed-form ridge readout
-- 80% residual-calibrated prediction interval plus layer disagreement
-- FastF1 and OpenF1 collectors
-- Hugging Face / Kaggle / endurance source registry
-- synthetic local demo dataset and demo model artifact
-- Colab notebook for real training
-- tests for leakage, deep architecture and no-backprop policy
+- React + Vite workspace UI wired to a localhost FastAPI backend
+- Leakage-safe full-context feature engineering (driver, constructor, circuit, tyres, stint,
+  weather, wind as sin/cos, traffic, sectors, five-lap flattened history, prior-event matched-condition pace)
+- Chronological season-forward splits; the headline metric is always a future season
+- RaceShift FFR: local Forward-Forward layers with ordinal goodness groups, explicit local Adam,
+  closed-form ridge readout, 80% validation-calibrated interval plus layer disagreement
+- Required baselines on the same table and split: previous lap, rolling-five median, ridge,
+  gradient-boosted trees
+- FastF1 and OpenF1 collectors, Hugging Face / IMSA source registry, Colab notebook
+- Synthetic demo dataset and demo artifact so the app runs before any download
+- 26 Python tests covering leakage rules, splits, the no-backprop policy, artifact forecasting and the API
 
 ## Quick start
 
-### 1. Install Python
-
-Use Python 3.11 or newer.
+Python 3.11+ and Node.js 20+.
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate        # macOS/Linux
-# .venv\\Scripts\\activate     # Windows PowerShell
+source .venv/bin/activate          # Windows: .venv\Scripts\Activate.ps1
 pip install -e ".[local]"
-```
-
-### 2. Install Node dependencies
-
-Install Node.js 20+ and npm, then from the project root:
-
-```bash
 npm install
-```
-
-The project uses an npm workspace, so this installs the root dev tooling and the React app dependencies.
-
-### 3. Start RaceShift
-
-```bash
 npm run dev
 ```
 
-This launches:
+- UI: <http://127.0.0.1:5173>
+- API: <http://127.0.0.1:8000/api/health>
 
-- UI: `http://127.0.0.1:5173`
-- local API: `http://127.0.0.1:8000`
-- API health: `http://127.0.0.1:8000/api/health`
+Open **Forecast**, keep `synthetic_fixture.csv` and `raceshift_ffr_demo` selected, and press
+**Run forecast**. The result is badged *Synthetic model* because the packaged artifact was trained
+on `data/imports/synthetic_fixture.csv`.
 
-The included synthetic dataset and demo artifact let the app run before you train on real F1 data.
+Verify the install:
+
+```bash
+npm run test:py     # pytest, 26 tests
+npm run build       # TypeScript check + Vite build
+```
 
 ## Connect your own data
 
-Place a `.csv` or `.parquet` file in:
-
-```text
-data/imports/
-```
-
-The canonical schema and feature requirements are documented in `docs/FEATURE_CONTRACT.md`.
-
-The local API only resolves filenames inside `data/imports/`. It does not expose arbitrary filesystem paths.
+Drop a `.csv` or `.parquet` lap table into `data/imports/` or upload it on the **Datasets** page.
+Required columns: `season, event, session, driver, lap_number, lap_time_s`; the full schema is in
+`docs/FEATURE_CONTRACT.md`. The API resolves filenames strictly inside `data/imports/`.
 
 ## Train the real model
 
-For real training, use Google Colab and the notebook:
+Use Google Colab and `notebooks/RaceShift_FFR_Colab.ipynb`. It clones this repository, keeps data
+and artifacts in Google Drive, runs the synthetic smoke test, collects 2022-2025 races at Bahrain,
+Silverstone and Monza, runs the baselines first, then trains the production ladder:
 
 ```text
-notebooks/RaceShift_FFR_Colab.ipynb
+input -> 512 -> 384 -> 256 -> 192 hidden nodes, 8/16/32/64 ordinal groups
+train <= 2023, validate 2024, test 2025
 ```
 
-The recommended first real split is:
-
-```text
-train:       2019-2023
-validation:  2024
-test:        2025
-```
-
-Then reserve 2026 for domain-shift evaluation when enough data is available.
-
-The production training command is:
+The same commands work locally:
 
 ```bash
-python scripts/train_ffr.py \
-  --input data/processed/f1_laps.parquet \
-  --config configs/ffr_production.json \
-  --output artifacts/raceshift_ffr \
-  --train-end 2023 \
-  --val-year 2024 \
-  --test-year 2025
+python scripts/train_baselines.py --input data/processed/f1_laps.parquet --output artifacts/baselines_2025test
+python scripts/train_ffr.py --input data/processed/f1_laps.parquet --config configs/ffr_production.json \
+  --output artifacts/raceshift_ffr_2025test --train-end 2023 --val-year 2024 --test-year 2025
 ```
 
-## Important model rule
+Copy a finished artifact folder into `artifacts/` and the UI lists it as *Real artifact*.
 
-RaceShift FFR does not perform end-to-end backpropagation. Each layer learns independently from its own local ordinal-goodness objective. The implementation computes the local derivative explicitly and updates only that layer's parameters.
+The packaged demo (`artifacts/raceshift_ffr_demo`) uses the small `configs/ffr_demo.json` ladder
+(172 encoded inputs -> 128 -> 96 -> 64 -> 48, 8 groups per layer) so the app runs instantly.
 
-Forward-Forward is a research direction, not a proven universal replacement for backpropagation. RaceShift must be judged against simple and strong baselines on unseen future seasons.
+## Model rule
+
+RaceShift FFR performs no end-to-end backpropagation. Each layer learns from its own local
+ordinal-goodness objective; the implementation computes that derivative explicitly and updates only
+that layer. A test fails if `.backward(` or `autograd.grad(` appears in the model source.
+
+Forward-Forward is a research direction, not a proven replacement for backpropagation. On the
+synthetic fixture the tree baseline beats the demo FFR artifact, and that is reported as-is. The
+real question is answered only on unseen Formula 1 seasons.
+
+## Local API
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/api/health`, `/api/runtime`, `/api/setup` | Liveness, runtime versions and offline-local mode, setup checklist |
+| GET | `/api/models`, `/api/datasets`, `/api/experiments` | Artifacts and baselines, local imports and sources, every `metrics.json` |
+| GET | `/api/imports/{file}/summary` | Rows, seasons, drivers and latest session of one import |
+| POST | `/api/import` | Upload a CSV/Parquet lap table into `data/imports/` |
+| POST | `/api/forecast/latest` | `{file, driver?, artifact?}` -> next-lap forecast with 80% interval |
+
+Details in `apps/api/README.md`.
 
 ## Project map
 
 ```text
-apps/web/                  React/Vite UI
+apps/web/                  React/Vite UI (pages read the local API; fixture visuals are badged)
 apps/api/                  local FastAPI backend
-src/raceshift/data/        source adapters and split rules
-src/raceshift/features/    leakage-safe full-context feature engineering
-src/raceshift/models/      Forward-Forward model + artifact runtime
-scripts/                   collection, training and demo utilities
-configs/                   production and Colab FFR architectures
+src/raceshift/data/        schema, provenance, chronological splits, FastF1/OpenF1 adapters
+src/raceshift/features/    leakage-safe full-context features and shared preprocessing
+src/raceshift/models/      Forward-Forward regressor and artifact runtime
+src/raceshift/train/       shared regression and interval metrics
+src/raceshift/foundation/  walk-forward examples for frozen time-series foundation models
+scripts/                   collection, training, baselines and demo utilities
+configs/                   demo, production and Colab FFR ladders; baseline settings
 notebooks/                 Colab training workflow
-data/imports/              user-connected local datasets
-artifacts/                 trained models and metrics
-docs/                      setup, feature, research and source documentation
-tests/                     leakage and training-policy tests
+data/imports/              user-connected local datasets (synthetic fixture included)
+artifacts/                 trained models and metrics (only the synthetic demo is committed)
+design/                    concept renders (not screenshots; see design/README.md)
+docs/                      setup, feature contract, research, sources, security
+tests/                     leakage, split, policy, artifact and API tests
 ```
 
 ## Read next
