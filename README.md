@@ -1,94 +1,121 @@
 # RaceShift
 
-Local-first Formula 1 **next-lap forecasting**. RaceShift predicts a driver's lap N+1 from
-information legitimately known at the end of lap N: tyres, stint, weather, wind, traffic, sectors,
-recent pace, telemetry summaries and prior-race context. The primary trainable model is a deep,
-multi-layer **Forward-Forward regressor** with local layer updates and **no global backpropagation**.
+**Forward-only motorsport pace forecasting.** RaceShift predicts a Formula 1 driver's next lap
+from what is known at the end of the current lap:
 
-**Status: foundation scaffold (v0.4).** The local product, training pipeline, baselines and tests
-work end to end on a synthetic fixture. Real Formula 1 training has not been run yet, so this
-repository makes **no Formula 1 accuracy claims**. Every number the UI shows is labelled
-*Fixture visual*, *Synthetic model* or *Real artifact*.
+- driver, constructor and circuit identity
+- tyre compound, age and stint
+- race context: position, gaps, consecutive clean laps
+- weather: track and air temperature, humidity, pressure, rain, wind as sine/cosine
+- recent pace: rolling medians, sector shares, four lagged laps (scoped to clean racing laps)
+- historical matched conditions from earlier events only
 
-## What is included
+**Research question**
 
-- React + Vite workspace UI wired to a localhost FastAPI backend
-- Leakage-safe full-context feature engineering (driver, constructor, circuit, tyres, stint,
-  weather, wind as sin/cos, traffic, sectors, five-lap flattened history, prior-event matched-condition pace)
-- Chronological season-forward splits; the headline metric is always a future season
-- RaceShift FFR: local Forward-Forward layers with ordinal goodness groups, explicit local Adam,
-  closed-form ridge readout, 80% validation-calibrated interval plus layer disagreement
-- Required baselines on the same table and split: previous lap, rolling-five median, ridge,
-  gradient-boosted trees
-- FastF1 and OpenF1 collectors, Hugging Face / IMSA source registry, Colab notebook
-- Synthetic demo dataset and demo artifact so the app runs before any download
-- 39 Python tests covering leakage and feature availability, pit/safety-car lap adjacency, splits, the no-backprop policy, artifact forecasting and the API
+> Can Forward-Forward regression, trained layer by layer with no global backpropagation,
+> approach conventional forecasting accuracy while reducing training-memory requirements?
 
-## Quick start
+RaceShift does not assume the answer. Every run reports accuracy, calibration, training time,
+peak memory, inference latency and artifact size next to naive, linear and tree baselines.
+
+![RaceShift forecast page](docs/images/forecast.png)
+
+## Run it
 
 Python 3.11+ and Node.js 20+.
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate          # Windows: .venv\Scripts\Activate.ps1
+python -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\Activate.ps1
 pip install -e ".[local]"
 npm install
 npm run dev
 ```
 
-- UI: <http://127.0.0.1:5173>
-- API: <http://127.0.0.1:8000/api/health>
-
-Open **Forecast**, keep `synthetic_fixture.csv` and `raceshift_ffr_demo` selected, and press
-**Run forecast**. The result is badged *Synthetic model* because the packaged artifact was trained
-on `data/imports/synthetic_fixture.csv`.
-
-Verify the install:
+UI at <http://127.0.0.1:5173>, API at <http://127.0.0.1:8000/api/health>. Open **Forecast**,
+pick a dataset and an artifact, press **Run forecast**. The packaged demo artifact is trained on
+a synthetic fixture and is badged *Synthetic model*; real artifacts are badged *Real artifact*.
 
 ```bash
-npm run test:py     # pytest, 39 tests
+npm run test:py     # 39 tests: leakage, feature availability, lap adjacency, splits, no-backprop policy, artifact, API
 npm run build       # TypeScript check + Vite build
 ```
 
-## Connect your own data
+## Results
 
-Drop a `.csv` or `.parquet` lap table into `data/imports/` or upload it on the **Datasets** page.
-Required columns: `season, event, session, driver, lap_number, lap_time_s`; the full schema is in
-`docs/FEATURE_CONTRACT.md`. The API resolves filenames strictly inside `data/imports/`.
+<!-- RESULTS:BEGIN -->
+Real Formula 1 results are being generated; see `reports/` for every measured table.
+<!-- RESULTS:END -->
 
-## Train the real model
+Every number above is reproducible from `scripts/run_experiments.py` on FastF1 data. Synthetic
+fixture numbers are never reported as Formula 1 results.
 
-Use Google Colab and `notebooks/RaceShift_FFR_Colab.ipynb`. It clones this repository, keeps data
-and artifacts in Google Drive, runs the synthetic smoke test, collects 2022-2025 races at Bahrain,
-Silverstone and Monza, runs the baselines first, then trains the production ladder:
+## Architecture
 
 ```text
-input -> 512 -> 384 -> 256 -> 192 hidden nodes, 8/16/32/64 ordinal groups
-train <= 2023, validate 2024, test 2025
+FastF1 / OpenF1 / local CSV
+        │
+        ▼
+lap-state flags ──► valid racing laps ──► segments of consecutive clean laps
+        │
+        ▼
+leakage-safe features: dynamic state · temporal pace (relative) · historical priors (earlier events)
+        │
+        ▼
+chronological split (season-forward, season-round, circuit holdout, 2026 domain shift)
+        │
+        ├─► baselines: previous lap · rolling-5 median · ridge · gradient-boosted trees
+        │
+        └─► RaceShift FFR: local Forward-Forward layers ─► ridge readout ─► forecast + 80% interval
+                │
+                ▼
+        artifact (weights, preprocessor, contract, metrics) ─► FastAPI (localhost) ─► React UI
 ```
 
-The same commands work locally:
+**RaceShift FFR.** Each layer is trained on its own ordinal-goodness objective with an
+explicit local Adam update. Hidden units are partitioned into ordered target groups (8 → 16 →
+32 → 64 for FFR-M); layer *k* trains on the frozen, normalised output of layer *k−1*. A
+closed-form ridge readout over all layers' goodness vectors and local predictions produces
+the residual forecast; the 80% interval is calibrated on validation residuals and widened
+by cross-layer disagreement. No `Tensor.backward()`, no `autograd.grad()`, and a test fails if
+either appears in the model source.
+
+## Methodology
+
+- **Target.** Residual of lap N+1 against the rolling five-lap median at lap N; forecast =
+  baseline + residual. Training winsorizes the residual to ±6 s; evaluation never does.
+- **Valid laps.** Pit-in, pit-out, safety-car, VSC, red-flag, deleted and inaccurate laps are
+  never rows or targets, and every lag or rolling statistic is scoped to the current run of
+  consecutive clean laps, so a pit stop resets the temporal context.
+- **Relative pace features.** Lap-time-scale inputs are relative to the current rolling pace
+  so they transfer across circuits; the one absolute anchor is the rolling median itself.
+- **Historical priors.** Medians of per-event medians from strictly earlier events (driver ×
+  circuit, team × circuit, compound × circuit, matched weather bins, …), relative to current pace.
+- **Leakage tests.** A perturbation test changes everything after a cutoff lap and asserts no
+  feature at or before it moves; another asserts priors ignore the current event.
+- **Splits.** Season-forward (train ≤ 2024, test 2025), season-round (early/late 2025),
+  circuit holdout, and train ≤ 2025 → 2026 domain shift.
+- **Baselines first.** Previous lap, rolling-five median, ridge, gradient-boosted trees on the
+  same table, split, sparse-feature filter and clipped target.
+- **Resources.** Training wall time, peak RSS, traced peak, single-row latency, artifact bytes.
+
+Details: `docs/FEATURE_CONTRACT.md`, `docs/TRAINING_AND_RESEARCH.md`, `RACESHIFT_MASTER_SPEC.md`.
+
+## Train on real data
+
+Locally:
 
 ```bash
-python scripts/train_baselines.py --input data/processed/f1_laps.parquet --output artifacts/baselines_2025test
-python scripts/train_ffr.py --input data/processed/f1_laps.parquet --config configs/ffr_production.json \
-  --output artifacts/raceshift_ffr_2025test --train-end 2023 --val-year 2024 --test-year 2025
+python scripts/fetch_fastf1_seasons.py --years 2022-2025 --session R \
+  --events Bahrain Jeddah Suzuka Monaco Silverstone Spa Monza "Marina Bay" Austin "Mexico City" "São Paulo" "Yas Island"
+python -c "import glob,pandas as pd; pd.concat([pd.read_parquet(f) for f in sorted(glob.glob('data/raw/fastf1/*.parquet'))]).to_parquet('data/processed/f1_laps.parquet', index=False)"
+python scripts/run_experiments.py --input data/processed/f1_laps.parquet --name f1_2025h2 \
+  --train-end 2024 --val-year 2025 --test-year 2025 --split-round 12 \
+  --ffr configs/ffr_small.json configs/ffr_production.json configs/ffr_colab_large.json
 ```
 
-Copy a finished artifact folder into `artifacts/` and the UI lists it as *Real artifact*.
-
-The packaged demo (`artifacts/raceshift_ffr_demo`) uses the small `configs/ffr_demo.json` ladder
-(172 encoded inputs -> 128 -> 96 -> 64 -> 48, 8 groups per layer) so the app runs instantly.
-
-## Model rule
-
-RaceShift FFR performs no end-to-end backpropagation. Each layer learns from its own local
-ordinal-goodness objective; the implementation computes that derivative explicitly and updates only
-that layer. A test fails if `.backward(` or `autograd.grad(` appears in the model source.
-
-Forward-Forward is a research direction, not a proven replacement for backpropagation. On the
-synthetic fixture the tree baseline beats the demo FFR artifact, and that is reported as-is. The
-real question is answered only on unseen Formula 1 seasons.
+Or in Google Colab with `notebooks/RaceShift_FFR_Colab.ipynb`, which clones this repository,
+keeps data and artifacts in Drive, and runs the same matrix. Copy any finished artifact folder
+into `artifacts/` and the UI lists it.
 
 ## Local API
 
@@ -97,36 +124,34 @@ real question is answered only on unseen Formula 1 seasons.
 | GET | `/api/health`, `/api/runtime`, `/api/setup` | Liveness, runtime versions and offline-local mode, setup checklist |
 | GET | `/api/models`, `/api/datasets`, `/api/experiments` | Artifacts and baselines, local imports and sources, every `metrics.json` |
 | GET | `/api/imports/{file}/summary` | Rows, seasons, drivers and latest session of one import |
-| POST | `/api/import` | Upload a CSV/Parquet lap table into `data/imports/` |
-| POST | `/api/forecast/latest` | `{file, driver?, artifact?}` -> next-lap forecast with 80% interval |
+| POST | `/api/import` | Upload a CSV/Parquet lap table (200 MB, 2M rows) into `data/imports/` |
+| POST | `/api/forecast/latest` | `{file, driver?, artifact?}` → next lap, 80% interval, input and historical context |
 
-Details in `apps/api/README.md`.
+Localhost only, no credentials, path-restricted file access. See `apps/api/README.md` and
+`docs/SECURITY.md`.
 
 ## Project map
 
 ```text
-apps/web/                  React/Vite UI (pages read the local API; fixture visuals are badged)
+apps/web/                  React/Vite UI (live API data; fixture visuals are badged)
 apps/api/                  local FastAPI backend
-src/raceshift/data/        schema, provenance, chronological splits, FastF1/OpenF1 adapters
-src/raceshift/features/    leakage-safe full-context features and shared preprocessing
+src/raceshift/data/        schema, provenance, splits, FastF1/OpenF1 adapters
+src/raceshift/features/    lap-state flags, segments, leakage-safe features, selection
 src/raceshift/models/      Forward-Forward regressor and artifact runtime
-src/raceshift/train/       shared regression and interval metrics
+src/raceshift/train/       metrics and resource measurement
 src/raceshift/foundation/  walk-forward examples for frozen time-series foundation models
-scripts/                   collection, training, baselines and demo utilities
-configs/                   demo, production and Colab FFR ladders; baseline settings
-notebooks/                 Colab training workflow
-data/imports/              user-connected local datasets (synthetic fixture included)
-artifacts/                 trained models and metrics (only the synthetic demo is committed)
-design/                    concept renders (not screenshots; see design/README.md)
-docs/                      setup, feature contract, research, sources, security
-tests/                     leakage, split, policy, artifact and API tests
+scripts/                   collection, training, baselines, experiment runner
+configs/                   FFR-S/M/L, group-ladder ablations, baseline settings
+reports/                   measured experiment tables (committed)
+notebooks/                 Colab workflow
+data/imports/              local datasets (synthetic fixture included)
+artifacts/                 model artifacts (synthetic demo committed; real runs listed when present)
+docs/                      feature contract, research standard, sources, security
+tests/                     39 tests
 ```
 
-## Read next
+## Status
 
-1. `RACESHIFT_MASTER_SPEC.md`
-2. `docs/LOCAL_SETUP.md`
-3. `docs/FEATURE_CONTRACT.md`
-4. `docs/TRAINING_AND_RESEARCH.md`
-5. `docs/DATA_AND_MODEL_FINDINGS.md`
-6. `docs/SECURITY.md`
+Foundation and real-data pipeline complete; Forward-Forward is evaluated against baselines on
+real races with chronological splits. Not yet done: wet-weather analysis in isolation,
+similarity-retrieval priors, endurance-series adapters, corner-telemetry Forward-Forward.

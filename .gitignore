@@ -21,6 +21,9 @@ artifacts/**
 # The small synthetic demo artifact is a committed fixture; real trained artifacts stay out of git.
 !artifacts/raceshift_ffr_demo/
 !artifacts/raceshift_ffr_demo/**
+# One real FFR-M artifact is committed so the UI can show a real-data model out of the box.
+!artifacts/f1_2025h2_ffr-m/
+!artifacts/f1_2025h2_ffr-m/**
 
 # Model/checkpoint files
 *.pt

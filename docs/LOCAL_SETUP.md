@@ -54,7 +54,8 @@ curl -s "http://127.0.0.1:8000/api/forecast?file=my_2025_race_laps.parquet&drive
 ```
 
 The forecast uses the chronologically latest session in the file. Omit `driver` to use the driver
-with the most completed laps in that session.
+with the most completed laps in that session. The response carries the lap's input context
+(tyre, weather, gaps) and the historical priors from earlier events that fed the model.
 
 ## Real model artifact
 
