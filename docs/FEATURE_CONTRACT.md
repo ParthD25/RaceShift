@@ -41,11 +41,25 @@ is computed **inside the current segment only**, so "previous lap" can never sil
 
 ```text
 series  event  circuit  session  driver  team  driver_team  manufacturer  car_class
-compound  tyre_manufacturer
+compound  tyre_manufacturer  data_tier
 ```
 
 Drivers and constructors are never ordinal integers. `driver_team` is the interaction that
-survives driver moves between constructors.
+survives driver moves between constructors. A missing category (no compound recorded for a
+legacy-tier lap) is encoded as its own `missing` level, never as the most frequent value.
+
+## Data tiers
+
+| `data_tier` | Seasons | Present | Absent |
+| --- | --- | --- | --- |
+| `fastf1_timing` | 2018 → | sectors, compound, tyre life, stint, track status, pit markers, weather, accuracy flag | — |
+| `legacy_timing` | 2000-2017 (Ergast lap data exists from 1996) | lap time, position, constructor, pit stops from 2011 | sectors, tyres, track status, weather |
+
+Legacy laps have no track status, so their validity is a heuristic implemented in
+`raceshift.data.jolpica_loader`: the opening lap, recorded pit-in and pit-out laps, and any
+lap slower than 1.12 × the driver's median lap of that race are marked inaccurate and never
+become rows or targets. Driver codes, constructor names and circuit locations are mapped onto
+the FastF1 spelling where the two eras overlap so historical priors link across tiers.
 
 ### Dynamic race state (numeric, known at the end of lap N)
 

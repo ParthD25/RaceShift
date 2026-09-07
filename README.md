@@ -36,7 +36,7 @@ pick a dataset and an artifact, press **Run forecast**. The packaged demo artifa
 a synthetic fixture and is badged *Synthetic model*; real artifacts are badged *Real artifact*.
 
 ```bash
-npm run test:py     # 41 tests: leakage, feature availability, lap adjacency, splits, no-backprop policy, artifact, API
+npm run test:py     # 43 tests: leakage, feature availability, lap adjacency, splits, no-backprop policy, artifact, API
 npm run build       # TypeScript check + Vite build
 ```
 
@@ -52,7 +52,7 @@ fixture numbers are never reported as Formula 1 results.
 ## Architecture
 
 ```text
-FastF1 / OpenF1 / local CSV
+FastF1 (2018→) · Jolpica/Ergast (2000-2017) · local CSV
         │
         ▼
 lap-state flags ──► valid racing laps ──► segments of consecutive clean laps
@@ -92,30 +92,38 @@ either appears in the model source.
   circuit, team × circuit, compound × circuit, matched weather bins, …), relative to current pace.
 - **Leakage tests.** A perturbation test changes everything after a cutoff lap and asserts no
   feature at or before it moves; another asserts priors ignore the current event.
-- **Splits.** Season-forward (train ≤ 2024, test 2025), season-round (early/late 2025),
-  circuit holdout, and train ≤ 2025 → 2026 domain shift.
+- **Splits.** Season-round (train 2018-2024, validation early 2025, test late 2025), circuit
+  holdout, train ≤ 2024 → 2026 domain shift without retraining, and a 2000-2024 legacy
+  training extension on the same test rows.
 - **Baselines first.** Previous lap, rolling-five median, ridge, gradient-boosted trees on the
   same table, split, sparse-feature filter and clipped target.
 - **Resources.** Training wall time, peak RSS, traced peak, single-row latency, artifact bytes.
 
 Details: `docs/FEATURE_CONTRACT.md`, `docs/TRAINING_AND_RESEARCH.md`, `RACESHIFT_MASTER_SPEC.md`.
 
-## Train on real data
+## Data: every team, every round, two tiers
 
-Locally:
+| Tier | Seasons | Source | What a lap carries |
+| --- | --- | --- | --- |
+| `fastf1_timing` | 2018 → today | FastF1 live-timing archive | lap and sector times, tyre compound/age/stint, position, track status, pit markers, weather |
+| `legacy_timing` | 2000 → 2017 | Jolpica (Ergast schema) | lap time, position, constructor, pit stops from 2011; no sectors, tyres, track status or weather |
+
+Timing data older than 2018 exists only in the Ergast schema, so the legacy tier is
+deliberately thinner: missing columns stay missing, lap validity uses a documented heuristic
+(opening lap, recorded pit laps and any lap slower than 1.12 × the driver's race median are
+excluded), and every row is tagged with its tier so the model and the reports can tell them
+apart. Headline results use the FastF1 tier; the legacy tier is evaluated as a training-set
+extension on the same 2025 test split.
 
 ```bash
-python scripts/fetch_fastf1_seasons.py --years 2022-2025 --session R \
-  --events Bahrain Jeddah Suzuka Monaco Silverstone Spa Monza "Marina Bay" Austin "Mexico City" "São Paulo" "Yas Island"
-python -c "import glob,pandas as pd; pd.concat([pd.read_parquet(f) for f in sorted(glob.glob('data/raw/fastf1/*.parquet'))]).to_parquet('data/processed/f1_laps.parquet', index=False)"
-python scripts/run_experiments.py --input data/processed/f1_laps.parquet --name f1_2025h2 \
-  --train-end 2024 --val-year 2025 --test-year 2025 --split-round 12 \
-  --ffr configs/ffr_small.json configs/ffr_production.json configs/ffr_colab_large.json
+scripts/full_pipeline.sh fastf1 build-fastf1 experiments        # 2018→today, every round, main matrix + holdouts
+scripts/full_pipeline.sh legacy build-all legacy-experiments    # 2000→2017 extension on the same test split
 ```
 
-Or in Google Colab with `notebooks/RaceShift_FFR_Colab.ipynb`, which clones this repository,
-keeps data and artifacts in Drive, and runs the same matrix. Copy any finished artifact folder
-into `artifacts/` and the UI lists it.
+Both collectors are resumable and stay under the public API budgets (FastF1 and Jolpica each
+allow about 500 requests per hour), so a full collection takes several hours unattended. The
+Colab notebook `notebooks/RaceShift_FFR_Colab.ipynb` runs the same pipeline with data in
+Drive. Copy any finished artifact folder into `artifacts/` and the UI lists it.
 
 ## Local API
 
@@ -135,19 +143,19 @@ Localhost only, no credentials, path-restricted file access. See `apps/api/READM
 ```text
 apps/web/                  React/Vite UI (live API data; fixture visuals are badged)
 apps/api/                  local FastAPI backend
-src/raceshift/data/        schema, provenance, splits, FastF1/OpenF1 adapters
+src/raceshift/data/        schema, provenance, splits, FastF1 / Jolpica-Ergast / OpenF1 adapters
 src/raceshift/features/    lap-state flags, segments, leakage-safe features, selection
 src/raceshift/models/      Forward-Forward regressor and artifact runtime
 src/raceshift/train/       metrics and resource measurement
 src/raceshift/foundation/  walk-forward examples for frozen time-series foundation models
-scripts/                   collection, training, baselines, experiment runner
+scripts/                   collectors (FastF1, Jolpica), training, baselines, experiment runner, full_pipeline.sh
 configs/                   FFR-S/M/L, group-ladder ablations, baseline settings
 reports/                   measured experiment tables (committed)
 notebooks/                 Colab workflow
 data/imports/              local datasets (synthetic fixture included)
 artifacts/                 model artifacts (synthetic demo committed; real runs listed when present)
 docs/                      feature contract, research standard, sources, security
-tests/                     41 tests
+tests/                     43 tests
 ```
 
 ## Status

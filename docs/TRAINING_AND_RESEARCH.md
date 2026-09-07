@@ -108,16 +108,19 @@ Break down by circuit, driver, team, compound, tyre age, weather regime, traffic
 
 ## Chronological validation
 
-Recommended:
+Headline protocol (FastF1 tier, every round, every team):
 
 ```text
-2019-2023 train
-2024 validation
-2025 test
-2026 future domain-shift holdout
+2018-2024              train
+2025 rounds 1-12       validation (interval calibration, config selection)
+2025 rounds 13-24      test
+2026                   domain-shift evaluation with the 2024-trained model, no retraining
 ```
 
-Do not use a random row split as the headline result.
+Extension experiment: the same validation and test rows, with training extended back to
+2000 using the legacy Ergast tier (lap times and positions only). This asks whether eighteen
+extra seasons of low-detail history help or hurt, and is reported next to the headline
+table, never merged into it. Do not use a random row split as the headline result.
 
 ## Experiment protocol
 
@@ -132,6 +135,10 @@ python scripts/run_experiments.py --input data/processed/f1_laps.parquet --name 
       configs/ffr_m_groups_coarse.json configs/ffr_m_groups_fine.json \
   --ablate historical_numeric temporal_numeric static_categorical
 ```
+
+`scripts/full_pipeline.sh` chains collection, table building, the matrix above, the Monza
+circuit holdout, the 2026 domain-shift run and the legacy extension, and is resumable at
+every stage.
 
 Depth ladder: FFR-S (256 → 128), FFR-M (512 → 384 → 256 → 192), FFR-L (1024 → 768 → 512 →
 384 → 256). Group ladders: 4/8/16/32, 8/16/32/64, 16/32/64/64. Feature ablations drop one

@@ -16,8 +16,10 @@ def make_preprocessor(numeric: list[str], categorical: list[str]) -> ColumnTrans
         ("impute", SimpleImputer(strategy="median", add_indicator=True)),
         ("scale", StandardScaler()),
     ])
+    # A missing category is information (no compound recorded for a legacy-tier lap), so it
+    # becomes its own one-hot column instead of borrowing the most frequent training value.
     categorical_pipe = Pipeline([
-        ("impute", SimpleImputer(strategy="most_frequent")),
+        ("impute", SimpleImputer(strategy="constant", fill_value="missing")),
         ("onehot", OneHotEncoder(handle_unknown="ignore", sparse_output=False, min_frequency=2)),
     ])
     return ColumnTransformer([

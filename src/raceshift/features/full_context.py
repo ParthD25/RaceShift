@@ -33,6 +33,7 @@ STATIC_CATEGORICAL = [
     "car_class",
     "compound",
     "tyre_manufacturer",
+    "data_tier",  # fastf1_timing (2018+) vs legacy_timing (Ergast 1996-2017, no sectors/tyres/weather)
 ]
 
 # Dynamic race state known at the end of lap N.
@@ -160,8 +161,17 @@ def _ensure_columns(df: pd.DataFrame) -> pd.DataFrame:
         "car_class": None,
         "compound": None,
         "tyre_manufacturer": "Pirelli",
+        "data_tier": "fastf1_timing",
         "track_status": "1",
         "fresh_tyre": np.nan,
+        "tyre_life": np.nan,
+        "stint": np.nan,
+        "position": np.nan,
+        "air_temp_c": np.nan,
+        "track_temp_c": np.nan,
+        "humidity_pct": np.nan,
+        "pressure_mbar": np.nan,
+        "wind_speed_ms": np.nan,
         "rainfall": False,
         "wind_direction_deg": np.nan,
         "gap_ahead_s": np.nan,
@@ -185,6 +195,8 @@ def _ensure_columns(df: pd.DataFrame) -> pd.DataFrame:
     for col, value in defaults.items():
         if col not in out:
             out[col] = value
+    # Files exported before the tier column existed are FastF1 timing by construction.
+    out["data_tier"] = out["data_tier"].fillna("fastf1_timing")
     return out
 
 
@@ -250,11 +262,21 @@ def _prior_event_expanding_median(df: pd.DataFrame, group_cols: list[str], value
     """
     event_cols = ["season", "event"]
     order_cols = [c for c in ["event_date", "round_number"] if c in df.columns]
+    key_cols = group_cols + event_cols
+    # Group keys are stringified with an explicit missing marker so an all-missing category
+    # (no compound on a legacy-tier lap) groups and merges consistently across dtypes.
+    keyed = pd.DataFrame(index=df.index)
+    for c in key_cols:
+        col = df[c]
+        keyed[c] = col.astype(object).where(col.notna(), "__missing__").astype(str)
+    keyed[value_col] = df[value_col]
+    for c in order_cols:
+        keyed[c] = df[c]
     agg = {value_col: "median"}
     for c in order_cols:
         agg[c] = "first"
     event_summary = (
-        df.groupby(group_cols + event_cols, dropna=False, sort=False)
+        keyed.groupby(key_cols, sort=False)
         .agg(agg)
         .rename(columns={value_col: "event_median"})
         .reset_index()
@@ -262,13 +284,13 @@ def _prior_event_expanding_median(df: pd.DataFrame, group_cols: list[str], value
     event_summary["_event_order"] = _event_order(event_summary)
     event_summary = event_summary.sort_values(group_cols + ["_event_order"], kind="stable")
     event_summary["prior"] = (
-        event_summary.groupby(group_cols, dropna=False, sort=False)["event_median"]
+        event_summary.groupby(group_cols, sort=False)["event_median"]
         .transform(lambda s: s.shift(1).expanding().median())
     )
-    lookup = event_summary[group_cols + event_cols + ["prior"]]
-    key_frame = df[group_cols + event_cols].copy()
+    lookup = event_summary[key_cols + ["prior"]]
+    key_frame = keyed[key_cols].copy()
     key_frame["_row"] = np.arange(len(df))
-    merged = key_frame.merge(lookup, on=group_cols + event_cols, how="left", sort=False).sort_values("_row")
+    merged = key_frame.merge(lookup, on=key_cols, how="left", sort=False).sort_values("_row")
     return merged["prior"].to_numpy()
 
 

@@ -7,6 +7,14 @@ Primary reproducible F1 Python source for lap timing, tyre state, session data, 
 
 Repository: https://github.com/theOehrly/Fast-F1
 
+### Jolpica (Ergast schema)
+Community successor to the Ergast API. Per-lap times and positions from 1996, pit stops from
+2011, results and constructors for every season. No sectors, tyres, track status or weather,
+which is why RaceShift tags these rows `legacy_timing` and evaluates them only as a training-set
+extension. Public budget about 500 requests per hour; `limit` is capped at 100 rows.
+
+Documentation: https://api.jolpi.ca/ergast/
+
 ### OpenF1
 Useful for historical API access, recent timing, car data, stints, weather, position, intervals and race control.
 

@@ -51,6 +51,7 @@ def export_session(year: int, event: str | int, session_name: str, output_dir: s
         "pit_out": laps.get("PitOutTime").notna(),
         "is_accurate": laps.get("IsAccurate", True),
         "deleted": laps.get("Deleted", False),
+        "data_tier": "fastf1_timing",
     })
 
     # FastF1 exposes weather as separate samples. For phase 1 we merge each lap with

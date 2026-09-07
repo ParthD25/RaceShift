@@ -105,7 +105,8 @@
     "manufacturer",
     "car_class",
     "compound",
-    "tyre_manufacturer"
+    "tyre_manufacturer",
+    "data_tier"
   ],
   "dropped_groups": [],
   "dropped_sparse": []
