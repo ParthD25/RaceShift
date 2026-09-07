@@ -1,0 +1,55 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+.env
+.env.*
+!.env.example
+.ipynb_checkpoints/
+
+# Never commit raw motorsport datasets or caches.
+data/raw/**
+data/cache/**
+data/processed/**
+!data/raw/.gitkeep
+!data/cache/.gitkeep
+!data/processed/.gitkeep
+
+artifacts/**
+!artifacts/.gitkeep
+# The small synthetic demo artifact is a committed fixture; real trained artifacts stay out of git.
+!artifacts/raceshift_ffr_demo/
+!artifacts/raceshift_ffr_demo/**
+
+# Model/checkpoint files
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.safetensors
+
+# Local notebook / IDE state
+.vscode/
+.idea/
+.DS_Store
+
+# Web build artifacts and package caches
+node_modules/
+dist/
+.vite/
+coverage/
+
+# ML experiment/runtime caches
+wandb/
+mlruns/
+lightning_logs/
+.huggingface/
+*.bin
+*.gguf
+
+# Secrets and cloud credentials
+*.pem
+*.key
+service-account*.json
+credentials*.json

@@ -1,0 +1,2 @@
+import { Panel } from '../components/Panel';
+export default function SimplePage({title,description}:{title:string;description:string}){return <div className="page-stack"><div className="page-heading"><div><h1>{title}</h1><p>{description}</p></div></div><Panel title="Workspace"><div className="empty-workspace"><div className="empty-ring"/><h2>{title} workspace</h2><p>This surface is wired into the RaceShift shell and reserved for the next validated workflow, not placeholder product claims.</p></div></Panel></div>}

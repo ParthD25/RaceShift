@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=75", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "raceshift"
+version = "0.4.0"
+description = "Local-first motorsport next-lap forecasting with multi-layer Forward-Forward regression"
+requires-python = ">=3.11"
+dependencies = [
+  "pandas>=2.2",
+  "numpy>=2.0",
+  "pyarrow>=18.0",
+  "scikit-learn>=1.6",
+  "joblib>=1.4",
+  "fastapi>=0.116",
+  "uvicorn[standard]>=0.35",
+  "requests>=2.32"
+]
+
+[project.optional-dependencies]
+local = ["fastf1>=3.6", "huggingface_hub>=0.34", "pytest>=8.0", "httpx>=0.27", "python-multipart>=0.0.9"]
+research = ["fastf1>=3.6", "huggingface_hub>=0.34", "datasets>=4.0", "pytest>=8.0", "httpx>=0.27", "python-multipart>=0.0.9"]
+
+[tool.setuptools.packages.find]
+where = ["src"]

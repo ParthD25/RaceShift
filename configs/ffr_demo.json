@@ -1,0 +1,17 @@
+{
+  "model": "RaceShiftFFR",
+  "training_policy": "forward-forward-local-updates-no-global-backprop",
+  "history_laps": 5,
+  "layer_nodes": [128, 96, 64, 48],
+  "ordinal_groups": [8, 8, 8, 8],
+  "epochs_per_layer": 6,
+  "batch_size": 256,
+  "learning_rate": 0.0015,
+  "weight_decay": 0.00001,
+  "temperature": 0.6,
+  "target_sigma_groups": 1.1,
+  "ridge_alpha": 2.0,
+  "seed": 42,
+  "clip_update_norm": 5.0,
+  "notes": "Small packaged demo artifact. Real training should use ffr_production.json or the Colab ablation configs."
+}
