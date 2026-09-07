@@ -1,0 +1,55 @@
+{
+  "model": "RaceShiftFFR",
+  "training_policy": "forward-forward-local-updates-no-global-backprop",
+  "architecture": [
+    {
+      "layer": 1,
+      "input_nodes": 172,
+      "hidden_nodes": 128,
+      "ordinal_groups": 8
+    },
+    {
+      "layer": 2,
+      "input_nodes": 128,
+      "hidden_nodes": 96,
+      "ordinal_groups": 8
+    },
+    {
+      "layer": 3,
+      "input_nodes": 96,
+      "hidden_nodes": 64,
+      "ordinal_groups": 8
+    },
+    {
+      "layer": 4,
+      "input_nodes": 64,
+      "hidden_nodes": 48,
+      "ordinal_groups": 8
+    }
+  ],
+  "validation": {
+    "mae_s": 0.1609320193529129,
+    "rmse_s": 0.216460981574639,
+    "median_ae_s": 0.11973190307617188,
+    "p90_ae_s": 0.38201433420181274,
+    "signed_bias_s": 0.0011565831955522299,
+    "interval80_coverage": 0.7993827160493827,
+    "rows": 324
+  },
+  "test": {
+    "mae_s": 0.1759808361530304,
+    "rmse_s": 0.22812746778224627,
+    "median_ae_s": 0.1292877197265625,
+    "p90_ae_s": 0.3682631850242615,
+    "signed_bias_s": 0.0012217862531542778,
+    "interval80_coverage": 0.7654320987654321,
+    "rows": 324
+  },
+  "split": {
+    "train_end": 2023,
+    "validation": 2024,
+    "test": 2025
+  },
+  "feature_count_raw": 103,
+  "input_nodes_after_encoding": 172
+}

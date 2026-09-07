@@ -1,0 +1,17 @@
+{
+  "name": "raceshift",
+  "private": true,
+  "version": "0.4.0",
+  "workspaces": ["apps/web"],
+  "scripts": {
+    "dev": "concurrently -k -n API,WEB -c cyan,red \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "python -m uvicorn apps.api.main:app --reload --host 127.0.0.1 --port 8000",
+    "dev:web": "npm --workspace apps/web run dev -- --host 127.0.0.1",
+    "build": "npm --workspace apps/web run build",
+    "test:py": "PYTHONPATH=src:. pytest -q",
+    "demo:data": "PYTHONPATH=src:. python scripts/make_synthetic_fixture.py --output data/imports/synthetic_fixture.csv"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.0"
+  }
+}

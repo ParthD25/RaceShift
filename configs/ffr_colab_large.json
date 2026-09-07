@@ -1,0 +1,17 @@
+{
+  "model": "RaceShiftFFR",
+  "training_policy": "forward-forward-local-updates-no-global-backprop",
+  "history_laps": 5,
+  "layer_nodes": [1024, 768, 512, 384, 256],
+  "ordinal_groups": [8, 16, 32, 64, 64],
+  "epochs_per_layer": 120,
+  "batch_size": 1024,
+  "learning_rate": 0.0006,
+  "weight_decay": 0.00001,
+  "temperature": 0.5,
+  "target_sigma_groups": 1.0,
+  "ridge_alpha": 3.0,
+  "seed": 42,
+  "clip_update_norm": 5.0,
+  "notes": "Research-scale Colab ladder. Reduce node counts if RAM/GPU memory is constrained."
+}

@@ -1,0 +1,4 @@
+import { Database, DownloadCloud } from 'lucide-react';
+import { Panel } from '../components/Panel';
+import { datasets } from '../data/mock';
+export default function Datasets(){return <div className="page-stack"><div className="page-heading"><div><h1>Datasets</h1><p>Provenance, licensing, ingestion state and storage health.</p></div><button className="primary-btn"><DownloadCloud size={16}/> Sync configured sources</button></div><Panel title="Source registry" icon={<Database size={17}/>}><div className="wide-table dataset-table"><div className="wide-head"><span>Source</span><span>Coverage</span><span>Content</span><span>Size / mode</span><span>Status</span><span>License</span></div>{datasets.map(d=><div className="wide-row" key={d.name}><span><strong>{d.name}</strong></span><span>{d.span}</span><span>{d.type}</span><span>{d.rows}</span><span className="ready"><i/>{d.status}</span><span>{d.license}</span></div>)}</div></Panel></div>}

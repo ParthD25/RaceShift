@@ -1,0 +1,4 @@
+import { FlaskConical } from 'lucide-react';
+import { Panel } from '../components/Panel';
+import { experiments } from '../data/mock';
+export default function Experiments(){return <div className="page-stack"><div className="page-heading"><div><h1>Experiments</h1><p>Compare foundation models, from-scratch baselines and ablations.</p></div><button className="primary-btn">New experiment</button></div><Panel title="Experiment registry" icon={<FlaskConical size={17}/>}><div className="wide-table"><div className="wide-head"><span>Experiment</span><span>Base model</span><span>Method</span><span>Dataset</span><span>Split</span><span>MAE</span><span>RMSE</span><span>Coverage</span></div>{experiments.map(e=><div className="wide-row" key={e.name}><span><strong>{e.name}</strong></span><span>{e.base}</span><span>{e.method}</span><span>{e.data}</span><span>{e.split}</span><span>{e.mae}</span><span>{e.rmse}</span><span>{e.coverage}</span></div>)}</div></Panel></div>}
