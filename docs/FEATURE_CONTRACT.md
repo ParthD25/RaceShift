@@ -83,7 +83,9 @@ hist_driver_weather_pace_rel          hist_team_weather_pace_rel
 ```
 
 Each prior is the median of per-event medians over **strictly earlier events** (ordered by
-event date, then round number). It enters the model relative to the current rolling pace,
+event date, then round number). A dataset without an `event_date` or `round_number` column
+is rejected by default: the order in which events appear in a file is never trusted as
+chronology. It enters the model relative to the current rolling pace,
 so it reads as "historically this driver is 0.3 s quicker here than the current run
 suggests" and transfers across circuits. The absolute priors are kept on the table and
 exposed by the API as `historical_context`.

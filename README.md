@@ -36,7 +36,7 @@ pick a dataset and an artifact, press **Run forecast**. The packaged demo artifa
 a synthetic fixture and is badged *Synthetic model*; real artifacts are badged *Real artifact*.
 
 ```bash
-npm run test:py     # 39 tests: leakage, feature availability, lap adjacency, splits, no-backprop policy, artifact, API
+npm run test:py     # 41 tests: leakage, feature availability, lap adjacency, splits, no-backprop policy, artifact, API
 npm run build       # TypeScript check + Vite build
 ```
 
@@ -124,7 +124,7 @@ into `artifacts/` and the UI lists it.
 | GET | `/api/health`, `/api/runtime`, `/api/setup` | Liveness, runtime versions and offline-local mode, setup checklist |
 | GET | `/api/models`, `/api/datasets`, `/api/experiments` | Artifacts and baselines, local imports and sources, every `metrics.json` |
 | GET | `/api/imports/{file}/summary` | Rows, seasons, drivers and latest session of one import |
-| POST | `/api/import` | Upload a CSV/Parquet lap table (200 MB, 2M rows) into `data/imports/` |
+| POST | `/api/import` | Upload a CSV/Parquet lap table (200 MB, 2M rows, 250 columns) into `data/imports/` |
 | POST | `/api/forecast/latest` | `{file, driver?, artifact?}` → next lap, 80% interval, input and historical context |
 
 Localhost only, no credentials, path-restricted file access. See `apps/api/README.md` and
@@ -147,7 +147,7 @@ notebooks/                 Colab workflow
 data/imports/              local datasets (synthetic fixture included)
 artifacts/                 model artifacts (synthetic demo committed; real runs listed when present)
 docs/                      feature contract, research standard, sources, security
-tests/                     39 tests
+tests/                     41 tests
 ```
 
 ## Status

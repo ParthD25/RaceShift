@@ -282,12 +282,20 @@ def _weather_bins(df: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
-def build_full_context_table(raw: pd.DataFrame, history: int = 5) -> pd.DataFrame:
+CHRONOLOGY_COLUMNS = ("event_date", "round_number")
+
+
+def build_full_context_table(raw: pd.DataFrame, history: int = 5, require_chronology: bool = True) -> pd.DataFrame:
     """Build the canonical leakage-safe lap-N -> lap-(N+1) forecasting table.
 
     Returned rows are valid racing laps whose *next* lap is also a valid, adjacent racing
     lap. All lagged and rolling features are restricted to the current run of consecutive
     valid laps, so a pit stop or safety-car period resets the temporal context.
+
+    Historical priors depend on the order of events. By default the table requires an
+    explicit chronology column (``event_date`` or ``round_number``) and refuses to trust the
+    order in which events happen to appear in the input. Pass ``require_chronology=False``
+    only for single-event tables or deliberate exploratory work.
     """
     if history < 1:
         raise ValueError("history must be >= 1")
@@ -297,6 +305,11 @@ def build_full_context_table(raw: pd.DataFrame, history: int = 5) -> pd.DataFram
     missing = [c for c in required if c not in df]
     if missing:
         raise ValueError(f"Missing required columns: {missing}")
+    if require_chronology and not any(c in df.columns for c in CHRONOLOGY_COLUMNS):
+        raise ValueError(
+            "Event chronology is required: add an 'event_date' or 'round_number' column. "
+            "Historical priors must not depend on the row order of the input file."
+        )
 
     for col in ["season", "lap_number", "lap_time_s", "sector1_s", "sector2_s", "sector3_s"]:
         if col in df:

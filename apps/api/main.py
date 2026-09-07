@@ -34,6 +34,7 @@ DEFAULT_ARTIFACT_ID = "raceshift_ffr_demo"
 ALLOWED_SUFFIXES = {".csv", ".parquet"}
 MAX_IMPORT_BYTES = 200 * 1024 * 1024
 MAX_IMPORT_ROWS = 2_000_000
+MAX_IMPORT_COLUMNS = 250
 UI_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173"]
 _SAFE_NAME = re.compile(r"[^A-Za-z0-9._-]+")
 
@@ -311,6 +312,8 @@ async def import_file(file: UploadFile = File(...), overwrite: bool = Query(Fals
         frame = _load_table(tmp, suffix=target.suffix)
         if len(frame) > MAX_IMPORT_ROWS:
             raise HTTPException(413, f"Import has {len(frame)} rows; the limit is {MAX_IMPORT_ROWS}")
+        if len(frame.columns) > MAX_IMPORT_COLUMNS:
+            raise HTTPException(413, f"Import has {len(frame.columns)} columns; the limit is {MAX_IMPORT_COLUMNS}")
         if frame.empty or len(frame.columns) < 2:
             raise HTTPException(400, "Upload parsed to an empty or single-column table")
     except HTTPException:
