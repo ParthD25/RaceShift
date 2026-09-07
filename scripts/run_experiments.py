@@ -131,18 +131,18 @@ def main() -> None:
     r = summary["rows"] or {}
     lines.append(f"Rows: train {r.get('train')} · validation {r.get('validation')} · test {r.get('test')}")
     lines.append("")
-    lines.append("| Model | Val MAE (s) | Test MAE (s) | Test RMSE (s) | Test p90 (s) | 80% coverage | Interval width (s) | Train time (s) | Peak RSS (MB) | Artifact (MB) |")
-    lines.append("| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |")
+    lines.append("| Model | Val MAE (s) | Test MAE (s) | Test RMSE (s) | Test p90 (s) | 80% coverage | Interval width (s) | Train time (s) | Peak RSS (MB) | Traced train peak (MB) | Artifact (MB) |")
+    lines.append("| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |")
     for row in rows:
         t = row["test"]; v = row["validation"]; res = row.get("resources", {}); tr = res.get("training", {})
         art = res.get("artifact_bytes")
         lines.append(
             f"| {row['model']} | {fmt(v.get('mae_s'))} | {fmt(t.get('mae_s'))} | {fmt(t.get('rmse_s'))} | {fmt(t.get('p90_ae_s'))} | "
             f"{fmt(t.get('interval80_coverage'), 3) if t.get('interval80_coverage') is not None else '—'} | {fmt(t.get('interval80_width_s'))} | "
-            f"{fmt(tr.get('wall_seconds'), 1)} | {fmt(tr.get('peak_rss_mb'), 0)} | {fmt(art / 1e6, 2) if art else '—'} |"
+            f"{fmt(tr.get('wall_seconds'), 1)} | {fmt(tr.get('peak_rss_mb'), 0)} | {fmt(tr.get('peak_traced_mb'), 0)} | {fmt(art / 1e6, 2) if art else '—'} |"
         )
     lines.append("")
-    lines.append("MAE, RMSE and p90 are absolute errors on the true next lap time in seconds. Coverage is the share of test laps inside the 80% interval (baselines have no interval). Peak RSS is the process high-water mark, so it includes data loading.")
+    lines.append("MAE, RMSE and p90 are absolute errors on the true next lap time in seconds. Coverage is the share of test laps inside the 80% interval (baselines have no interval). Peak RSS is the process high-water mark, so it includes data loading; the traced peak is Python-allocated memory during the fit only (tracemalloc), the closer proxy for training-memory requirements.")
     (report_dir / "summary.md").write_text("\n".join(lines) + "\n")
     print("\n".join(lines))
 
