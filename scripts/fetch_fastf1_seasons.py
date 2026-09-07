@@ -5,6 +5,8 @@ import argparse
 from pathlib import Path
 import sys
 
+import pandas as pd
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
@@ -28,7 +30,7 @@ def main():
     parser.add_argument("--years", default="2022-2025", help="Example: 2022-2025 or 2022,2024,2025")
     parser.add_argument("--session", default="R")
     parser.add_argument("--max-events", type=int, default=0, help="0 means every event in each season")
-    parser.add_argument("--events", nargs="*", help="Optional event-name substrings to keep")
+    parser.add_argument("--events", nargs="*", help="Optional substrings matched against event name, location and country (e.g. Monza, Silverstone, Bahrain)")
     parser.add_argument("--output", default=str(ROOT / "data" / "raw" / "fastf1"))
     parser.add_argument("--cache", default=str(ROOT / "data" / "cache" / "fastf1"))
     args = parser.parse_args()
@@ -41,8 +43,14 @@ def main():
         schedule = fastf1.get_event_schedule(year, include_testing=False)
         schedule = schedule[schedule["RoundNumber"] > 0]
         if args.events:
+            # Match circuit names ("Monza", "Silverstone") as well as event names and countries,
+            # because FastF1 names rounds "Italian Grand Prix", "British Grand Prix" and so on.
             needles = [e.lower() for e in args.events]
-            schedule = schedule[schedule["EventName"].astype(str).str.lower().apply(lambda x: any(n in x for n in needles))]
+            haystack = pd.Series("", index=schedule.index)
+            for column in ("EventName", "Location", "Country"):
+                if column in schedule:
+                    haystack = haystack + " " + schedule[column].astype(str).str.lower()
+            schedule = schedule[haystack.apply(lambda x: any(n in x for n in needles))]
         if args.max_events > 0:
             schedule = schedule.head(args.max_events)
 
