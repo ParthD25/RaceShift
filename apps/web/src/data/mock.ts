@@ -1,3 +1,7 @@
+// Illustrative fixture content only. Everything in this file is generated or hand-written
+// and is rendered with a "Fixture visual" badge. No value here is a model output or a
+// measured Formula 1 result. Real numbers come from the local API (see lib/api.ts).
+
 export const telemetry = Array.from({ length: 120 }, (_, i) => {
   const x = i / 119;
   const speed = 145 + 118 * Math.abs(Math.sin(x * Math.PI * 6.2)) + 35 * Math.sin(x * Math.PI * 17);
@@ -35,19 +39,4 @@ export const factors = [
   { label: 'Fuel load estimate', value: 9 },
   { label: 'Driver consistency', value: 8 },
   { label: 'Headwind', value: 7 }
-];
-
-export const experiments = [
-  { name: 'RaceShift FFR', base: 'Forward-Forward', method: 'Local layer learning', data: 'F1 2019-2025', split: '2025 Test', mae: 0, rmse: 0, coverage: 0, status: 'Awaiting real run' },
-  { name: 'Rolling-5 Median', base: 'Deterministic', method: 'Baseline', data: 'F1 2019-2025', split: '2025 Test', mae: 0, rmse: 0, coverage: 0, status: 'Awaiting real run' },
-  { name: 'Frozen TSFM', base: 'External', method: 'Zero-shot only', data: 'F1 2019-2025', split: '2025 Test', mae: 0, rmse: 0, coverage: 0, status: 'Optional' },
-  { name: 'XGBoost baseline', base: 'Tree model', method: 'Supervised', data: 'F1 2019-2025', split: '2025 Test', mae: 0.228, rmse: 0.318, coverage: 0.75, status: 'Ready' }
-];
-
-export const datasets = [
-  { name: 'FastF1 Core', span: '2018-current', type: 'Lap + telemetry', rows: 'Pending ingest', status: 'Configured', license: 'Source-specific' },
-  { name: 'OpenF1', span: '2023-current', type: 'Telemetry + timing', rows: 'API', status: 'Configured', license: 'CC BY-NC-SA' },
-  { name: 'F1 Strategy Dataset', span: '2023-2025', type: 'Strategy + telemetry', rows: '16.1 GB', status: 'Optional', license: 'Apache 2.0 wrapper' },
-  { name: 'Corner Telemetry', span: '2024-2025', type: 'Corner sequences', rows: '7.13 GB', status: 'Optional', license: 'CC BY 4.0' },
-  { name: 'IMSA Endurance', span: 'Modern seasons', type: 'Laps + weather + stints', rows: '264 MB', status: 'Planned', license: 'MIT' }
 ];

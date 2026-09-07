@@ -2,16 +2,21 @@
   "name": "raceshift",
   "private": true,
   "version": "0.4.0",
-  "workspaces": ["apps/web"],
+  "workspaces": [
+    "apps/web"
+  ],
   "scripts": {
     "dev": "concurrently -k -n API,WEB -c cyan,red \"npm:dev:api\" \"npm:dev:web\"",
-    "dev:api": "python -m uvicorn apps.api.main:app --reload --host 127.0.0.1 --port 8000",
-    "dev:web": "npm --workspace apps/web run dev -- --host 127.0.0.1",
+    "dev:api": "cross-env PYTHONPATH=src python -m uvicorn apps.api.main:app --reload --host 127.0.0.1 --port 8000",
+    "dev:web": "npm --workspace apps/web run dev",
     "build": "npm --workspace apps/web run build",
-    "test:py": "PYTHONPATH=src:. pytest -q",
-    "demo:data": "PYTHONPATH=src:. python scripts/make_synthetic_fixture.py --output data/imports/synthetic_fixture.csv"
+    "lint:web": "npm --workspace apps/web run lint",
+    "test:py": "cross-env PYTHONPATH=src pytest -q",
+    "demo:data": "cross-env PYTHONPATH=src python scripts/make_synthetic_fixture.py --output data/imports/synthetic_fixture.csv",
+    "demo:model": "cross-env PYTHONPATH=src python scripts/train_ffr.py --input data/imports/synthetic_fixture.csv --config configs/ffr_demo.json --output artifacts/raceshift_ffr_demo --train-end 2023 --val-year 2024 --test-year 2025"
   },
   "devDependencies": {
-    "concurrently": "^9.2.0"
+    "concurrently": "^9.2.0",
+    "cross-env": "^10.1.0"
   }
 }

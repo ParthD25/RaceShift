@@ -1,9 +1,12 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import {
-  Activity, BarChart3, BrainCircuit, ChevronDown, Database, FlaskConical, Gauge,
-  GitCompareArrows, Moon, Settings, SlidersHorizontal, Sparkles, Target, Waypoints
+  Activity, BrainCircuit, Database, FlaskConical, Gauge, GitCompareArrows, Settings, Sparkles, Target
 } from 'lucide-react';
 import { Logo } from './Logo';
+import { SourceBadge, sourceKindFor } from './SourceBadge';
+import { useForecast } from '../context/ForecastContext';
+import { api } from '../lib/api';
+import { useApi } from '../lib/useApi';
 
 const nav = [
   ['/', 'Overview', Gauge],
@@ -20,17 +23,20 @@ const secondary = [
   ['/settings', 'Settings', Settings]
 ] as const;
 
-function SelectBox({ label, value, wide = false }: { label: string; value: string; wide?: boolean }) {
+function ContextBox({ label, value, wide = false }: { label: string; value: string; wide?: boolean }) {
   return (
-    <button className={`context-select ${wide ? 'wide' : ''}`} type="button">
+    <div className={`context-select ${wide ? 'wide' : ''}`}>
       <span className="context-label">{label}</span>
       <span className="context-value">{value}</span>
-      <ChevronDown size={14} aria-hidden="true" />
-    </button>
+    </div>
   );
 }
 
 export function AppShell() {
+  const { result } = useForecast();
+  const health = useApi(() => api.health());
+  const online = Boolean(health.data) && !health.error;
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -54,12 +60,11 @@ export function AppShell() {
         </nav>
         <div className="sidebar-spacer" />
         <div className="dataset-mini">
-          <div className="dataset-mini-title"><Database size={16} /> Dataset status</div>
-          <div className="dataset-mini-row"><span>F1 core</span><span className="ok-dot" /></div>
-          <div className="dataset-mini-row"><span>Weather</span><span className="ok-dot" /></div>
-          <div className="dataset-mini-row"><span>Circuits</span><span className="ok-dot" /></div>
-          <div className="storage-bar"><span style={{ width: '63%' }} /></div>
-          <div className="storage-copy">Local demo fixture</div>
+          <div className="dataset-mini-title"><Database size={16} /> Local API</div>
+          <div className="dataset-mini-row"><span>127.0.0.1:8000</span><span className={online ? 'ok-dot' : 'off-dot'} /></div>
+          <div className="dataset-mini-row"><span>Demo artifact</span><span className={health.data?.demo_artifact_ready ? 'ok-dot' : 'off-dot'} /></div>
+          <div className="dataset-mini-row"><span>Live timing</span><span className="off-dot" title="Not configured. RaceShift is offline-first." /></div>
+          <div className="storage-copy">{online ? `Offline-local mode · v${health.data?.version}` : health.error ?? 'Connecting…'}</div>
         </div>
         <div className="sidebar-version">v0.4.0</div>
       </aside>
@@ -67,18 +72,17 @@ export function AppShell() {
       <div className="main-column">
         <header className="topbar">
           <div className="context-row">
-            <SelectBox label="Event" value="Monza · Italy" />
-            <SelectBox label="Session" value="Race" />
-            <SelectBox label="Driver" value="#16 Charles Leclerc" wide />
-            <button className="model-status" type="button">
-              <span className="status-dot" />
-              <span><small>Model</small><strong>RaceShift FFR · local demo</strong></span>
-              <ChevronDown size={14} />
-            </button>
+            <ContextBox label="Event" value={result ? `${result.event} · ${result.season}` : 'No forecast yet'} />
+            <ContextBox label="Session" value={result ? result.session : '—'} />
+            <ContextBox label="Driver" value={result ? result.driver : '—'} wide />
+            <div className="model-status">
+              <span className={online ? 'status-dot' : 'off-dot'} />
+              <span><small>Model</small><strong>{result ? result.artifact : 'raceshift_ffr_demo'}</strong></span>
+              {result ? <SourceBadge kind={sourceKindFor(result.is_synthetic)} text={result.is_synthetic ? 'Synthetic' : 'Real'} /> : <SourceBadge kind="synthetic" text="Synthetic demo" />}
+            </div>
           </div>
           <div className="topbar-actions">
-            <button className="icon-btn" aria-label="Theme"><Moon size={17} /></button>
-            <button className="icon-btn" aria-label="Controls"><SlidersHorizontal size={17} /></button>
+            {online ? <SourceBadge kind="local" text="Local API online" /> : <SourceBadge kind="offline" />}
           </div>
         </header>
         <main className="content"><Outlet /></main>
