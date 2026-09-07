@@ -728,6 +728,8 @@ GET  /api/datasets
 POST /api/import
 POST /api/forecast/latest
 GET  /api/experiments
+GET  /api/imports/{file}/summary
+GET  /api/forecast            (query-string alias of POST /api/forecast/latest)
 ```
 
 Security:
@@ -818,7 +820,7 @@ Implemented:
 - local model save/load
 - local forecast endpoint
 - synthetic demo artifact
-- 11 passing Python tests at v0.4 packaging
+- 26 passing Python tests (leakage, chronological split, Forward-Forward policy, artifact forecasting, local API)
 
 Not yet validated on real F1:
 
