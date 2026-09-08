@@ -146,6 +146,32 @@ taxonomy group at a time. Splits: season-forward, season-round (early/late holdo
 circuit holdout (`--holdout-event`), and the 2026 domain-shift holdout once 2026 rounds are
 collected.
 
+## Overfitting and memorisation checks
+
+A model that memorises its training laps fits them far better than unseen laps. RaceShift
+makes that visible rather than assuming it away:
+
+- Every run records **train, validation and test** metrics in `metrics.json` (FFR and every
+  baseline), so the generalisation gap (test MAE minus train MAE) is a first-class number.
+- `scripts/generalization_gap.py` rebuilds an artifact's exact table and split, scores the
+  saved weights on all three splits, refits ridge and gradient-boosted trees on the same
+  training rows, and writes `reports/<name>/generalization.md` with a per-season table.
+- Preprocessing (imputation, scaling, one-hot vocabularies) is fitted on training rows only;
+  validation and test are transformed with training statistics.
+- The FFR readout is a closed-form ridge over layer features (`ridge_alpha`), hidden layers
+  use weight decay, update-norm clipping and a small learning rate; interval calibration uses
+  validation residuals, never training residuals.
+- `train_ffr.py --wandb` logs per-layer local losses and all split metrics to Weights &
+  Biases when `wandb` is installed (`pip install -e ".[research]"`; `WANDB_MODE=offline` works
+  without an account). It is optional and never required for a run.
+
+Measured on the 2018-2024 → 2025 split (`reports/f1_2025h2/generalization.md`): every model,
+FFR and baselines alike, has a **higher** error on its training laps (about 0.50 s) than on
+validation (0.43 s) or test (0.35 s). There is no memorisation; the training seasons simply
+contain more disrupted laps (training RMSE 1.5 s vs 0.6 s on test), and the per-season table
+attributes that to specific years. If anything FFR under-fits: its train and validation errors
+are close and both trail the tree model.
+
 ## Data hygiene decisions that changed the results
 
 - Pit-in, pit-out, safety-car, VSC, red-flag, deleted and inaccurate laps are never

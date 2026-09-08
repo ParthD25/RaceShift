@@ -87,6 +87,7 @@ def main() -> None:
     for name, column in [("previous_lap", "lap_time_s"), ("rolling_median_5", "rolling_median_5")]:
         predictions[f"pred_{name}"] = test[column].to_numpy(dtype=np.float64)
         results[name] = {
+            "train": evaluate(train, train[column].to_numpy(dtype=np.float64)),
             "validation": evaluate(val, val[column].to_numpy(dtype=np.float64)),
             "test": evaluate(test, test[column].to_numpy(dtype=np.float64)),
             "resources": {"training": {"wall_seconds": 0.0, "peak_rss_mb": 0.0, "peak_traced_mb": 0.0}, "inference_batch_ms_per_row": 0.0},
@@ -104,6 +105,7 @@ def main() -> None:
         model = make_model()
         model.fit(prep.fit_transform(train[features]), y_train)
         val_pred = val["rolling_median_5"].to_numpy(dtype=np.float64) + model.predict(prep.transform(val[features]))
+        train_pred = train["rolling_median_5"].to_numpy(dtype=np.float64) + model.predict(prep.transform(train[features]))
 
         prep_full = make_preprocessor(numeric, categorical)
         model_full = make_model()
@@ -117,6 +119,7 @@ def main() -> None:
         latency = (time.perf_counter() - t0) * 1000.0 / max(1, len(test))
         predictions[f"pred_{name}"] = test_pred
         results[name] = {
+            "train": evaluate(train, train_pred),
             "validation": evaluate(val, val_pred),
             "test": evaluate(test, test_pred),
             "resources": {"training": report.as_dict(), "inference_batch_ms_per_row": round(latency, 4)},

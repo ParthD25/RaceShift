@@ -86,6 +86,23 @@ def breakdown(predictions: pd.DataFrame, by: str) -> dict[str, dict[str, float |
     return out
 
 
+def log_to_wandb(run_name: str, cfg, metrics: dict, history: list[dict]) -> None:
+    """Optional experiment tracking. Never required: import lazily and fail loudly but late."""
+    import os
+
+    import wandb  # type: ignore
+
+    run = wandb.init(project=os.environ.get("RACESHIFT_WANDB_PROJECT", "raceshift"), name=run_name,
+                     config={**metrics.get("hyperparameters", {}), "split": metrics.get("split"), "features": metrics.get("features")})
+    for row in history:
+        run.log({f"layer{row['layer']}/local_loss": row["local_loss"], "epoch": row["epoch"]})
+    summary = {f"{split}/{k}": v for split in ("train", "validation", "test") for k, v in metrics.get(split, {}).items()}
+    summary["gap/test_minus_train_mae_s"] = metrics["test"]["mae_s"] - metrics["train"]["mae_s"]
+    summary.update({f"resources/{k}": v for k, v in metrics.get("resources", {}).get("training", {}).items()})
+    run.summary.update(summary)
+    run.finish()
+
+
 def describe_split(frame: pd.DataFrame) -> dict[str, object]:
     info: dict[str, object] = {"rows": int(len(frame)), "seasons": sorted(int(s) for s in frame["season"].unique())}
     if "round_number" in frame.columns:
@@ -109,6 +126,7 @@ def main() -> None:
     p.add_argument("--data-source", help="Provenance label stored in metrics.json. Inferred when omitted.")
     p.add_argument("--target-clip", type=float, default=6.0, help="Winsorize the training residual target to +/- this many seconds (evaluation is never clipped)")
     p.add_argument("--min-feature-coverage", type=float, default=0.05, help="Drop numeric features observed in fewer than this share of training rows")
+    p.add_argument("--wandb", action="store_true", help="Log per-layer local losses and final metrics to Weights & Biases (project RACESHIFT_WANDB_PROJECT or 'raceshift'; honours WANDB_MODE=offline)")
     args = p.parse_args()
 
     raw = load_table(Path(args.input))
@@ -149,6 +167,9 @@ def main() -> None:
     t0 = time.perf_counter()
     val_predictions = predict_frame(model, x_val, val)
     test_predictions = predict_frame(model, x_test, test)
+    # Training-split error is recorded so every run exposes its generalisation gap
+    # (test minus train MAE); a model that memorises shows a large positive gap.
+    train_predictions = predict_frame(model, x_train, train)
     batch_ms_per_row = (time.perf_counter() - t0) * 1000.0 / max(1, len(x_val) + len(x_test))
     single = x_test[:1]
     t1 = time.perf_counter()
@@ -166,6 +187,7 @@ def main() -> None:
         "config_file": Path(args.config).name,
         "hyperparameters": json.loads(json.dumps(cfg.__dict__)),
         "architecture": model.architecture_summary(),
+        "train": evaluate(train_predictions),
         "validation": evaluate(val_predictions),
         "test": evaluate(test_predictions),
         "test_by_event": breakdown(test_predictions, "event"),
@@ -208,6 +230,8 @@ def main() -> None:
         "created_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
     (out / "metrics.json").write_text(json.dumps(metrics, indent=2))
+    if args.wandb:
+        log_to_wandb(run_name, cfg, metrics, model.training_history)
     (out / "feature_contract.json").write_text(
         json.dumps({"history": history, "numeric": numeric, "categorical": categorical, "dropped_groups": list(args.drop_feature_group), "dropped_sparse": sparse_dropped}, indent=2)
     )

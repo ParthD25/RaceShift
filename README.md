@@ -106,6 +106,10 @@ fixture numbers are never reported as Formula 1 results.
 - Ablations: removing the temporal pace features costs 0.02 s MAE; removing historical priors
   or driver/team/circuit identity changes nothing measurable. Recent pace carries the signal.
 - Group-ladder variants (4/8/16/32, 8/16/32/64, 16/32/64/64) are indistinguishable.
+- **No memorisation.** Every model's error on its own training laps (about 0.50 s) is higher
+  than on validation (0.43 s) and test (0.35 s); the training seasons contain more disrupted
+  laps. Train, validation and test metrics are recorded for every run, and
+  `reports/f1_2025h2/generalization.md` has the per-season table.
 - **Unseen circuit (every Italian Grand Prix held out).** Errors rise for every model and the
   ranking holds: trees 0.498 s, previous lap 0.509 s, FFR-M 0.558 s, FFR-S 0.569 s. FFR loses
   more than the tree when the circuit has never been seen. RMSE jumps to 2.5-3.1 s for every
