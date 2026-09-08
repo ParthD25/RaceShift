@@ -172,6 +172,8 @@ class RaceShiftArtifact:
             "driver_circuit_compound_pace_s": _num("hist_driver_circuit_compound_pace"),
             "matched_weather_compound_pace_s": _num("hist_weather_compound_pace"),
             "driver_matched_weather_pace_s": _num("hist_driver_weather_pace"),
+            "driver_overall_pace_s": _num("hist_driver_global_pace"),
+            "team_overall_pace_s": _num("hist_team_global_pace"),
             "note": "Medians of earlier events only. None means no earlier event matched.",
         }
         return {

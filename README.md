@@ -36,7 +36,7 @@ pick a dataset and an artifact, press **Run forecast**. The packaged demo artifa
 a synthetic fixture and is badged *Synthetic model*; real artifacts are badged *Real artifact*.
 
 ```bash
-npm run test:py     # 43 tests: leakage, feature availability, lap adjacency, splits, no-backprop policy, artifact, API
+npm run test:py     # 44 tests: leakage, feature availability, lap adjacency, splits, no-backprop policy, artifact, API
 npm run build       # TypeScript check + Vite build
 ```
 
@@ -155,7 +155,7 @@ notebooks/                 Colab workflow
 data/imports/              local datasets (synthetic fixture included)
 artifacts/                 model artifacts (synthetic demo committed; real runs listed when present)
 docs/                      feature contract, research standard, sources, security
-tests/                     43 tests
+tests/                     44 tests
 ```
 
 ## Status

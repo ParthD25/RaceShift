@@ -22,6 +22,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from raceshift import __version__
+from raceshift.data.provenance import infer_data_source
 from raceshift.data.schema import REQUIRED_FORECAST_COLUMNS
 from raceshift.models.artifact import ARTIFACT_FILES, RaceShiftArtifact, missing_artifact_files
 
@@ -166,6 +167,7 @@ def _table_summary(frame: pd.DataFrame, name: str) -> dict[str, Any]:
         "columns": [str(c) for c in frame.columns],
         "missing_required_columns": missing,
         "is_synthetic": bool("event" in frame and frame["event"].astype(str).str.startswith("Synthetic_").all()) if len(frame) else False,
+        "data_source": infer_data_source(frame),
     }
     if not missing:
         latest_scope, key = RaceShiftArtifact.latest_session(frame)

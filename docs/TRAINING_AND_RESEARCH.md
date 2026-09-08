@@ -160,6 +160,9 @@ collected.
 
 ## Known gaps
 
+- The 2018 Italian Grand Prix race is missing from the FastF1 tier: the live-timing archive
+  fails to load timing data for that session (`Failed to load timing data!`), so the
+  collector records it as a failure and every other 2018-2026 round is present.
 - Race-control messages are not yet used to flag laps affected by incidents that are not
   encoded in the track status string.
 - Historical priors are medians over earlier events; a nearest-neighbour similarity

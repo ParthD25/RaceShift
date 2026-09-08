@@ -72,6 +72,7 @@ export type ImportSummary = {
   columns: string[];
   missing_required_columns: string[];
   is_synthetic: boolean;
+  data_source?: string;
   seasons?: number[];
   events?: string[];
   drivers?: string[];
@@ -108,6 +109,8 @@ export type HistoricalContext = {
   driver_circuit_compound_pace_s: number | null;
   matched_weather_compound_pace_s: number | null;
   driver_matched_weather_pace_s: number | null;
+  driver_overall_pace_s: number | null;
+  team_overall_pace_s: number | null;
   note: string;
 };
 

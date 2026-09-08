@@ -94,7 +94,7 @@ export default function Forecast() {
               <div><span>Rows</span><strong>{summary.rows.toLocaleString()}</strong></div>
               <div><span>Seasons</span><strong>{summary.seasons?.join(', ') ?? '—'}</strong></div>
               <div><span>Latest session</span><strong>{summary.latest_session ? `${summary.latest_session.season} · ${summary.latest_session.event} · ${summary.latest_session.session}` : '—'}</strong></div>
-              <div><span>Provenance</span><strong>{summary.is_synthetic ? 'Synthetic fixture' : 'User-supplied data'}</strong></div>
+              <div><span>Provenance</span><strong>{summary.is_synthetic ? 'Synthetic fixture' : (summary.data_source && summary.data_source !== 'user_supplied' ? summary.data_source.replace(/_/g, ' ').replace(/\+/g, ' + ') : 'User-supplied data')}</strong></div>
               {summary.missing_required_columns.length > 0 && <div><span>Missing columns</span><strong className="bad">{summary.missing_required_columns.join(', ')}</strong></div>}
             </div>
           )}
@@ -179,6 +179,8 @@ export default function Forecast() {
               <div><span>Driver · circuit · compound</span><strong>{fmtLap(result.historical_context.driver_circuit_compound_pace_s)}</strong></div>
               <div><span>Matched weather · compound</span><strong>{fmtLap(result.historical_context.matched_weather_compound_pace_s)}</strong></div>
               <div><span>Driver · matched weather</span><strong>{fmtLap(result.historical_context.driver_matched_weather_pace_s)}</strong></div>
+              <div><span>Driver · all earlier events</span><strong>{fmtLap(result.historical_context.driver_overall_pace_s)}</strong></div>
+              <div><span>Team · all earlier events</span><strong>{fmtLap(result.historical_context.team_overall_pace_s)}</strong></div>
             </div>
             <p className="prose small">{result.historical_context.note} Values are median lap times from previous events; the model uses them relative to the current rolling pace.</p>
           </Panel>

@@ -56,3 +56,8 @@ lightning_logs/
 *.key
 service-account*.json
 credentials*.json
+
+# Local datasets are never committed; only the synthetic fixture ships with the repo.
+data/imports/*.parquet
+data/imports/*.csv
+!data/imports/synthetic_fixture.csv
