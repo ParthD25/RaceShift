@@ -32,6 +32,27 @@ def run(cmd: list[str], out: Path | None = None, resume: bool = False) -> None:
     subprocess.run(cmd, check=True, cwd=ROOT)
 
 
+def backfill_shares(test: dict, out: Path, model: str | None) -> dict:
+    """Runs recorded before tolerance shares existed get them from their test predictions."""
+    if "within_0_5s_share" in test:
+        return test
+    path = out / "test_predictions.csv"
+    if not path.exists():
+        return test
+    import pandas as pd
+
+    frame = pd.read_csv(path)
+    col = "predicted_next_lap_s" if model is None else f"pred_{model}"
+    if col not in frame.columns:
+        return test
+    err = (frame[col] - frame["actual_next_lap_s"]).abs()
+    return {**test, "within_0_5s_share": float((err <= 0.5).mean()), "within_1s_share": float((err <= 1.0).mean())}
+
+
+def pct(value) -> str:
+    return "—" if value is None else f"{100 * value:.1f}%"
+
+
 def fmt(value, digits=3) -> str:
     if value is None:
         return "—"
@@ -96,7 +117,7 @@ def main() -> None:
                     "model": name,
                     "family": "baseline",
                     "validation": result["validation"],
-                    "test": result["test"],
+                    "test": backfill_shares(result["test"], out, name),
                     "resources": result.get("resources", {}),
                     "artifact": out.name,
                 })
@@ -106,7 +127,7 @@ def main() -> None:
                 "family": "forward-forward",
                 "architecture": metrics.get("architecture"),
                 "validation": metrics["validation"],
-                "test": metrics["test"],
+                "test": backfill_shares(metrics["test"], out, None),
                 "resources": metrics.get("resources", {}),
                 "features": metrics.get("features"),
                 "test_by_event": metrics.get("test_by_event"),
@@ -136,18 +157,18 @@ def main() -> None:
     r = summary["rows"] or {}
     lines.append(f"Rows: train {r.get('train')} · validation {r.get('validation')} · test {r.get('test')}")
     lines.append("")
-    lines.append("| Model | Val MAE (s) | Test MAE (s) | Test RMSE (s) | Test p90 (s) | 80% coverage | Interval width (s) | Train time (s) | Peak RSS (MB) | Traced train peak (MB) | Artifact (MB) |")
-    lines.append("| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |")
+    lines.append("| Model | Val MAE (s) | Test MAE (s) | Test RMSE (s) | Test p90 (s) | Laps within 0.5 s | Laps within 1 s | 80% coverage | Interval width (s) | Train time (s) | Peak RSS (MB) | Traced train peak (MB) | Artifact (MB) |")
+    lines.append("| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |")
     for row in rows:
         t = row["test"]; v = row["validation"]; res = row.get("resources", {}); tr = res.get("training", {})
         art = res.get("artifact_bytes")
         lines.append(
-            f"| {row['model']} | {fmt(v.get('mae_s'))} | {fmt(t.get('mae_s'))} | {fmt(t.get('rmse_s'))} | {fmt(t.get('p90_ae_s'))} | "
+            f"| {row['model']} | {fmt(v.get('mae_s'))} | {fmt(t.get('mae_s'))} | {fmt(t.get('rmse_s'))} | {fmt(t.get('p90_ae_s'))} | {pct(t.get('within_0_5s_share'))} | {pct(t.get('within_1s_share'))} | "
             f"{fmt(t.get('interval80_coverage'), 3) if t.get('interval80_coverage') is not None else '—'} | {fmt(t.get('interval80_width_s'))} | "
             f"{fmt(tr.get('wall_seconds'), 1)} | {fmt(tr.get('peak_rss_mb'), 0)} | {fmt(tr.get('peak_traced_mb'), 0)} | {fmt(art / 1e6, 2) if art else '—'} |"
         )
     lines.append("")
-    lines.append("MAE, RMSE and p90 are absolute errors on the true next lap time in seconds. Coverage is the share of test laps inside the 80% interval (baselines have no interval). Peak RSS is the process high-water mark, so it includes data loading; the traced peak is Python-allocated memory during the fit only (tracemalloc), the closer proxy for training-memory requirements.")
+    lines.append("MAE, RMSE and p90 are absolute errors on the true next lap time in seconds (lower is better); the within-tolerance columns are the share of test laps predicted within 0.5 s and 1 s of the true lap (higher is better). Coverage is the share of test laps inside the 80% interval (baselines have no interval). Peak RSS is the process high-water mark, so it includes data loading; the traced peak is Python-allocated memory during the fit only (tracemalloc), the closer proxy for training-memory requirements.")
     (report_dir / "summary.md").write_text("\n".join(lines) + "\n")
     print("\n".join(lines))
 

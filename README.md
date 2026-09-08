@@ -45,52 +45,60 @@ npm run build       # TypeScript check + Vite build
 <!-- RESULTS:BEGIN -->
 **Season-round split, 2018-2025 FastF1 tier** — train ≤ 2024 · validation 2025 rounds ≤ 12 · test 2025 rounds > 12. Rows: train 128071, validation 10248, test 10994. Data: fastf1_timing.
 
-| Model | Test MAE (s) | Test RMSE (s) | p90 (s) | 80% coverage | Train time (s) | Peak RSS (MB) | Traced train peak (MB) | Artifact (MB) |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| previous_lap | 0.357 | 0.645 | 0.822 | — | — | — | — | — |
-| rolling_median_5 | 0.394 | 0.675 | 0.889 | — | — | — | — | — |
-| ridge | 0.393 | 0.624 | 0.811 | — | 21.4 | 2478 | 804 | — |
-| **hist_gradient_boosting** | 0.317 | 0.570 | 0.680 | — | 43.4 | 2888 | 830 | — |
-| FFR-M | 0.352 | 0.595 | 0.740 | 0.857 | 2064.1 | 2973 | 1423 | 3.37 |
-| FFR-S | 0.357 | 0.596 | 0.747 | 0.856 | 375.2 | 1990 | 637 | 1.88 |
-| FFR-L | 0.349 | 0.595 | 0.735 | 0.858 | 9804.7 | 4324 | 2783 | 8.24 |
-| FFR-M-groups-coarse | 0.352 | 0.598 | 0.749 | 0.852 | 2077.7 | 2972 | 1419 | 3.33 |
-| FFR-M-groups-fine | 0.353 | 0.594 | 0.747 | 0.865 | 2154.2 | 2880 | 1431 | 3.37 |
-| FFR-M minus historical_numeric | 0.353 | 0.596 | 0.748 | 0.855 | 2135.9 | 2807 | 1423 | 3.33 |
-| FFR-M minus temporal_numeric | 0.375 | 0.623 | 0.798 | 0.858 | 1817.6 | 2867 | 1423 | 3.22 |
-| FFR-M minus static_categorical | 0.353 | 0.596 | 0.743 | 0.851 | 2081.3 | 2715 | 1422 | 2.94 |
+| Model | Test MAE (s) | Test RMSE (s) | p90 (s) | Laps within 0.5 s | 80% coverage | Train time (s) | Peak RSS (MB) | Traced train peak (MB) | Artifact (MB) |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| previous_lap | 0.357 | 0.645 | 0.822 | — | — | — | — | — | — |
+| rolling_median_5 | 0.394 | 0.675 | 0.889 | — | — | — | — | — | — |
+| ridge | 0.393 | 0.624 | 0.811 | — | — | 21.4 | 2478 | 804 | — |
+| **hist_gradient_boosting** | 0.317 | 0.570 | 0.680 | — | — | 43.4 | 2888 | 830 | — |
+| FFR-M | 0.352 | 0.595 | 0.740 | 80.2% | 0.857 | 2064.1 | 2973 | 1423 | 3.37 |
+| FFR-S | 0.357 | 0.596 | 0.747 | 79.6% | 0.856 | 375.2 | 1990 | 637 | 1.88 |
+| FFR-L | 0.349 | 0.595 | 0.735 | 80.4% | 0.858 | 9804.7 | 4324 | 2783 | 8.24 |
+| FFR-M-groups-coarse | 0.352 | 0.598 | 0.749 | 80.1% | 0.852 | 2077.7 | 2972 | 1419 | 3.33 |
+| FFR-M-groups-fine | 0.353 | 0.594 | 0.747 | 79.7% | 0.865 | 2154.2 | 2880 | 1431 | 3.37 |
+| FFR-M minus historical_numeric | 0.353 | 0.596 | 0.748 | 80.2% | 0.855 | 2135.9 | 2807 | 1423 | 3.33 |
+| FFR-M minus temporal_numeric | 0.375 | 0.623 | 0.798 | 77.8% | 0.858 | 1817.6 | 2867 | 1423 | 3.22 |
+| FFR-M minus static_categorical | 0.353 | 0.596 | 0.743 | 80.0% | 0.851 | 2081.3 | 2715 | 1422 | 2.94 |
 
 Full table with validation metrics, interval widths and latency: `reports/f1_2025h2/summary.md`.
 
 **Circuit holdout (Monza)** — every season of **Italian Grand Prix** held out; train ≤ 2024, validation 2025. Rows: train 123559, validation 20404, test 6166. Data: fastf1_timing.
 
-| Model | Test MAE (s) | Test RMSE (s) | p90 (s) | 80% coverage | Train time (s) | Peak RSS (MB) | Traced train peak (MB) | Artifact (MB) |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| previous_lap | 0.509 | 2.793 | 0.826 | — | — | — | — | — |
-| rolling_median_5 | 0.600 | 3.103 | 0.848 | — | — | — | — | — |
-| ridge | 0.576 | 2.550 | 0.790 | — | 25.1 | 2494 | 831 | — |
-| **hist_gradient_boosting** | 0.498 | 2.619 | 0.692 | — | 49.4 | 2915 | 855 | — |
-| FFR-M | 0.558 | 2.783 | 0.726 | 0.837 | 2051.9 | 2767 | 1373 | 2.72 |
-| FFR-S | 0.569 | 2.798 | 0.744 | 0.826 | 355.8 | 2087 | 615 | 1.24 |
+| Model | Test MAE (s) | Test RMSE (s) | p90 (s) | Laps within 0.5 s | 80% coverage | Train time (s) | Peak RSS (MB) | Traced train peak (MB) | Artifact (MB) |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| previous_lap | 0.509 | 2.793 | 0.826 | 80.6% | — | — | — | — | — |
+| rolling_median_5 | 0.600 | 3.103 | 0.848 | 77.9% | — | — | — | — | — |
+| ridge | 0.576 | 2.550 | 0.790 | 75.1% | — | 25.1 | 2494 | 831 | — |
+| **hist_gradient_boosting** | 0.498 | 2.619 | 0.692 | 84.0% | — | 49.4 | 2915 | 855 | — |
+| FFR-M | 0.558 | 2.783 | 0.726 | 79.2% | 0.837 | 2051.9 | 2767 | 1373 | 2.72 |
+| FFR-S | 0.569 | 2.798 | 0.744 | 78.2% | 0.826 | 355.8 | 2087 | 615 | 1.24 |
 
 Full table with validation metrics, interval widths and latency: `reports/holdout_monza/summary.md`.
 
 **2026 domain shift, no retraining** — train ≤ 2024 · validation 2025 · test 2026. Rows: train 128071, validation 21242, test 11483. Data: fastf1_timing.
 
-| Model | Test MAE (s) | Test RMSE (s) | p90 (s) | 80% coverage | Train time (s) | Peak RSS (MB) | Traced train peak (MB) | Artifact (MB) |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| previous_lap | 0.556 | 2.250 | 1.151 | — | — | — | — | — |
-| rolling_median_5 | 0.628 | 2.501 | 1.210 | — | — | — | — | — |
-| ridge | 0.553 | 2.065 | 1.026 | — | 23.5 | 2583 | 868 | — |
-| **hist_gradient_boosting** | 0.544 | 2.145 | 1.018 | — | 48.0 | 2970 | 892 | — |
-| FFR-M | 0.545 | 2.238 | 0.993 | 0.766 | 2124.6 | 2876 | 1423 | 3.40 |
-| FFR-S | 0.553 | 2.267 | 1.004 | 0.765 | 362.1 | 1996 | 637 | 1.91 |
+| Model | Test MAE (s) | Test RMSE (s) | p90 (s) | Laps within 0.5 s | 80% coverage | Train time (s) | Peak RSS (MB) | Traced train peak (MB) | Artifact (MB) |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| previous_lap | 0.556 | 2.250 | 1.151 | 72.5% | — | — | — | — | — |
+| rolling_median_5 | 0.628 | 2.501 | 1.210 | 68.8% | — | — | — | — | — |
+| ridge | 0.553 | 2.065 | 1.026 | 71.9% | — | 23.5 | 2583 | 868 | — |
+| **hist_gradient_boosting** | 0.544 | 2.145 | 1.018 | 72.3% | — | 48.0 | 2970 | 892 | — |
+| FFR-M | 0.545 | 2.238 | 0.993 | 73.6% | 0.766 | 2124.6 | 2876 | 1423 | 3.40 |
+| FFR-S | 0.553 | 2.267 | 1.004 | 72.8% | 0.765 | 362.1 | 1996 | 637 | 1.91 |
 
 Full table with validation metrics, interval widths and latency: `reports/domain_shift_2026/summary.md`.
 <!-- RESULTS:END -->
 
 Every number above is reproducible from `scripts/run_experiments.py` on FastF1 data. Synthetic
 fixture numbers are never reported as Formula 1 results.
+
+**How to read the numbers.** This is regression, not classification, so there is no
+"accuracy" percentage. MAE is the average distance in seconds between the predicted and the
+true next lap; a validation MAE of 0.43 s on laps of about 90 s is a relative error of 0.4%
+(R² 0.997 on the test laps), and lower is better. The accuracy-style views are the tolerance
+shares: FFR-M predicts 80% of test laps within 0.5 s and 94% within 1 s of the truth, and its
+80% prediction interval contains the true lap 86% of the time. Improving the model means
+lowering the MAE and raising the tolerance shares; both are recorded for every run.
 
 **What the numbers say so far** (2018-2024 training, 128k clean laps; test = 2025 rounds 13-24):
 

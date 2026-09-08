@@ -32,8 +32,8 @@ def table(summary: dict, title: str) -> list[str]:
     else:
         split_text = f"train ≤ {sp.get('train_end')} · validation {sp.get('validation')} · test {sp.get('test')}"
     lines = [f"**{title}** — {split_text}. Rows: train {rows.get('train')}, validation {rows.get('validation')}, test {rows.get('test')}. Data: {summary.get('data_source')}.", ""]
-    lines.append("| Model | Test MAE (s) | Test RMSE (s) | p90 (s) | 80% coverage | Train time (s) | Peak RSS (MB) | Traced train peak (MB) | Artifact (MB) |")
-    lines.append("| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |")
+    lines.append("| Model | Test MAE (s) | Test RMSE (s) | p90 (s) | Laps within 0.5 s | 80% coverage | Train time (s) | Peak RSS (MB) | Traced train peak (MB) | Artifact (MB) |")
+    lines.append("| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |")
     best = min((r["test"]["mae_s"] for r in summary["results"] if r.get("test")), default=None)
     for r in summary["results"]:
         t = r.get("test") or {}
@@ -46,6 +46,7 @@ def table(summary: dict, title: str) -> list[str]:
         cov = t.get("interval80_coverage")
         lines.append(
             f"| {name} | {fmt(t.get('mae_s'))} | {fmt(t.get('rmse_s'))} | {fmt(t.get('p90_ae_s'))} | "
+            f"{('%.1f%%' % (100 * t['within_0_5s_share'])) if t.get('within_0_5s_share') is not None else '—'} | "
             f"{fmt(cov) if cov is not None else '—'} | {fmt(tr.get('wall_seconds'), 1) if tr.get('wall_seconds') else '—'} | "
             f"{fmt(tr.get('peak_rss_mb'), 0) if tr.get('peak_rss_mb') else '—'} | {fmt(tr.get('peak_traced_mb'), 0) if tr.get('peak_traced_mb') else '—'} | {fmt(art / 1e6, 2) if art else '—'} |"
         )

@@ -1,6 +1,6 @@
 {
   "name": "domain_shift_2026",
-  "created_utc": "2026-09-08T18:48:23+00:00",
+  "created_utc": "2026-09-08T20:50:10+00:00",
   "input_file": "f1_laps_fastf1.parquet",
   "data_source": "fastf1_timing",
   "is_synthetic": false,
@@ -35,7 +35,9 @@
         "median_ae_s": 0.262999999999991,
         "p90_ae_s": 1.1505999999999994,
         "signed_bias_s": 0.11147200209004615,
-        "rows": 11483
+        "rows": 11483,
+        "within_0_5s_share": 0.7245493337977881,
+        "within_1s_share": 0.8766872768440304
       },
       "resources": {
         "training": {
@@ -64,7 +66,9 @@
         "median_ae_s": 0.29399999999999693,
         "p90_ae_s": 1.210000000000005,
         "signed_bias_s": 0.11839919881564051,
-        "rows": 11483
+        "rows": 11483,
+        "within_0_5s_share": 0.68762518505617,
+        "within_1s_share": 0.8685012627362187
       },
       "resources": {
         "training": {
@@ -93,7 +97,9 @@
         "median_ae_s": 0.2825201340606327,
         "p90_ae_s": 1.0262157418804783,
         "signed_bias_s": 0.0012867198697839011,
-        "rows": 11483
+        "rows": 11483,
+        "within_0_5s_share": 0.7194983889227554,
+        "within_1s_share": 0.8953235217277715
       },
       "resources": {
         "training": {
@@ -122,7 +128,9 @@
         "median_ae_s": 0.27021741779226716,
         "p90_ae_s": 1.0184429476731778,
         "signed_bias_s": -0.011730591810076315,
-        "rows": 11483
+        "rows": 11483,
+        "within_0_5s_share": 0.7228076286684664,
+        "within_1s_share": 0.8973264826264913
       },
       "resources": {
         "training": {
@@ -181,7 +189,9 @@
         "signed_bias_s": 0.06421231261577816,
         "rows": 11483,
         "interval80_coverage": 0.7664373421579727,
-        "interval80_width_s": 1.0983355038440945
+        "interval80_width_s": 1.0983355038440945,
+        "within_0_5s_share": 0.7357833318819124,
+        "within_1s_share": 0.9011582339109989
       },
       "resources": {
         "feature_build": {
@@ -383,7 +393,9 @@
         "signed_bias_s": 0.07951673635032486,
         "rows": 11483,
         "interval80_coverage": 0.7649568927980492,
-        "interval80_width_s": 1.11285543476031
+        "interval80_width_s": 1.11285543476031,
+        "within_0_5s_share": 0.727771488287033,
+        "within_1s_share": 0.8994165287816772
       },
       "resources": {
         "feature_build": {

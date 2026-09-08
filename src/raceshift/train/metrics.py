@@ -18,12 +18,19 @@ def regression_metrics(y_true, y_pred) -> dict[str, float | int]:
     if truth.size == 0:
         raise ValueError("No finite rows available for metrics")
     absolute = np.abs(truth - pred)
+    total_var = float(np.sum((truth - truth.mean()) ** 2))
     return {
         "mae_s": float(np.mean(absolute)),
         "rmse_s": float(np.sqrt(np.mean((truth - pred) ** 2))),
         "median_ae_s": float(np.median(absolute)),
         "p90_ae_s": float(np.quantile(absolute, 0.90)),
         "signed_bias_s": float(np.mean(pred - truth)),
+        # Accuracy-style views of the same errors: share of laps predicted within a tolerance,
+        # relative error, and variance explained. Higher is better for all four.
+        "within_0_5s_share": float(np.mean(absolute <= 0.5)),
+        "within_1s_share": float(np.mean(absolute <= 1.0)),
+        "mape_pct": float(100.0 * np.mean(absolute / np.maximum(np.abs(truth), 1e-9))),
+        "r2": float(1.0 - np.sum((truth - pred) ** 2) / total_var) if total_var > 0 else float("nan"),
         "rows": int(truth.size),
     }
 

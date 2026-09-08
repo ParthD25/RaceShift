@@ -91,7 +91,9 @@ fixture is a pipeline check, and the real question is answered only on unseen Fo
 
 ## Evaluation
 
-Headline metric: MAE in seconds.
+Headline metric: MAE in seconds, the average distance between the predicted and the true
+next lap. This is regression, so there is no classification accuracy; a 0.43 s MAE on a 90 s
+lap is a 0.4% relative error, and lower is better.
 
 Also report:
 
@@ -99,10 +101,14 @@ Also report:
 - median absolute error
 - p90 absolute error
 - signed bias
+- share of laps predicted within 0.5 s and within 1 s (the accuracy-style view; higher is better)
+- MAPE and R² on the true lap time
 - 80% interval coverage
 - interval width
 - artifact size
 - CPU inference latency
+
+Every metric is recorded for the training split as well as validation and test.
 
 Break down by circuit, driver, team, compound, tyre age, weather regime, traffic regime and track status.
 

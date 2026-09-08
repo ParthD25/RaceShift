@@ -1,6 +1,6 @@
 {
   "name": "holdout_monza",
-  "created_utc": "2026-09-08T17:57:22+00:00",
+  "created_utc": "2026-09-08T20:50:10+00:00",
   "input_file": "f1_laps_fastf1.parquet",
   "data_source": "fastf1_timing",
   "is_synthetic": false,
@@ -35,7 +35,9 @@
         "median_ae_s": 0.2049999999999983,
         "p90_ae_s": 0.8260000000000076,
         "signed_bias_s": 0.19336166072007785,
-        "rows": 6166
+        "rows": 6166,
+        "within_0_5s_share": 0.8063574440480052,
+        "within_1s_share": 0.9268569575089198
       },
       "resources": {
         "training": {
@@ -64,7 +66,9 @@
         "median_ae_s": 0.23000000000000398,
         "p90_ae_s": 0.8480000000000061,
         "signed_bias_s": 0.28459211806681806,
-        "rows": 6166
+        "rows": 6166,
+        "within_0_5s_share": 0.7789490755757379,
+        "within_1s_share": 0.9244242620823873
       },
       "resources": {
         "training": {
@@ -93,7 +97,9 @@
         "median_ae_s": 0.29679277270842164,
         "p90_ae_s": 0.7895179168079878,
         "signed_bias_s": 0.36490391547281514,
-        "rows": 6166
+        "rows": 6166,
+        "within_0_5s_share": 0.7505676289328576,
+        "within_1s_share": 0.9385338955562763
       },
       "resources": {
         "training": {
@@ -122,7 +128,9 @@
         "median_ae_s": 0.19156615315930736,
         "p90_ae_s": 0.6919619647278239,
         "signed_bias_s": 0.14503331283819795,
-        "rows": 6166
+        "rows": 6166,
+        "within_0_5s_share": 0.8397664612390529,
+        "within_1s_share": 0.9493999351281219
       },
       "resources": {
         "training": {
@@ -181,7 +189,9 @@
         "signed_bias_s": 0.304157548390678,
         "rows": 6166,
         "interval80_coverage": 0.8371715861174182,
-        "interval80_width_s": 1.134693742794067
+        "interval80_width_s": 1.134693742794067,
+        "within_0_5s_share": 0.7922478105741161,
+        "within_1s_share": 0.9481024975673046
       },
       "resources": {
         "feature_build": {
@@ -287,7 +297,9 @@
         "signed_bias_s": 0.32313204606216217,
         "rows": 6166,
         "interval80_coverage": 0.8264677262406747,
-        "interval80_width_s": 1.1339292529290117
+        "interval80_width_s": 1.1339292529290117,
+        "within_0_5s_share": 0.7820304897826792,
+        "within_1s_share": 0.945669802140772
       },
       "resources": {
         "feature_build": {
