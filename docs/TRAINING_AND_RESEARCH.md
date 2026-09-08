@@ -164,7 +164,11 @@ collected.
   fails to load timing data for that session (`Failed to load timing data!`), so the
   collector records it as a failure and every other 2018-2026 round is present.
 - Race-control messages are not yet used to flag laps affected by incidents that are not
-  encoded in the track status string.
+  encoded in the track status string. The visible cost: laps immediately around a red-flag
+  stoppage (2020 and 2026 Italian Grands Prix in the Monza holdout) carry status 1 or 2, pass
+  the validity rules, and produce 40-56 s errors for every model. They are under 1% of laps
+  but dominate RMSE; flagging the laps before and after a red flag from race-control messages
+  is the planned fix.
 - Historical priors are medians over earlier events; a nearest-neighbour similarity
   retrieval over normalised conditions is the planned replacement.
 - `scripts/eval_chronos2_zeroshot.py` expects the light table from `scripts/build_lap_dataset.py`

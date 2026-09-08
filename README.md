@@ -61,6 +61,32 @@ npm run build       # TypeScript check + Vite build
 | FFR-M minus static_categorical | 0.353 | 0.596 | 0.743 | 0.851 | 2081.3 | 2715 | 1422 | 2.94 |
 
 Full table with validation metrics, interval widths and latency: `reports/f1_2025h2/summary.md`.
+
+**Circuit holdout (Monza)** — every season of **Italian Grand Prix** held out; train ≤ 2024, validation 2025. Rows: train 123559, validation 20404, test 6166. Data: fastf1_timing.
+
+| Model | Test MAE (s) | Test RMSE (s) | p90 (s) | 80% coverage | Train time (s) | Peak RSS (MB) | Traced train peak (MB) | Artifact (MB) |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| previous_lap | 0.509 | 2.793 | 0.826 | — | — | — | — | — |
+| rolling_median_5 | 0.600 | 3.103 | 0.848 | — | — | — | — | — |
+| ridge | 0.576 | 2.550 | 0.790 | — | 25.1 | 2494 | 831 | — |
+| **hist_gradient_boosting** | 0.498 | 2.619 | 0.692 | — | 49.4 | 2915 | 855 | — |
+| FFR-M | 0.558 | 2.783 | 0.726 | 0.837 | 2051.9 | 2767 | 1373 | 2.72 |
+| FFR-S | 0.569 | 2.798 | 0.744 | 0.826 | 355.8 | 2087 | 615 | 1.24 |
+
+Full table with validation metrics, interval widths and latency: `reports/holdout_monza/summary.md`.
+
+**2026 domain shift, no retraining** — train ≤ 2024 · validation 2025 · test 2026. Rows: train 128071, validation 21242, test 11483. Data: fastf1_timing.
+
+| Model | Test MAE (s) | Test RMSE (s) | p90 (s) | 80% coverage | Train time (s) | Peak RSS (MB) | Traced train peak (MB) | Artifact (MB) |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| previous_lap | 0.556 | 2.250 | 1.151 | — | — | — | — | — |
+| rolling_median_5 | 0.628 | 2.501 | 1.210 | — | — | — | — | — |
+| ridge | 0.553 | 2.065 | 1.026 | — | 23.5 | 2583 | 868 | — |
+| **hist_gradient_boosting** | 0.544 | 2.145 | 1.018 | — | 48.0 | 2970 | 892 | — |
+| FFR-M | 0.545 | 2.238 | 0.993 | 0.766 | 2124.6 | 2876 | 1423 | 3.40 |
+| FFR-S | 0.553 | 2.267 | 1.004 | 0.765 | 362.1 | 1996 | 637 | 1.91 |
+
+Full table with validation metrics, interval widths and latency: `reports/domain_shift_2026/summary.md`.
 <!-- RESULTS:END -->
 
 Every number above is reproducible from `scripts/run_experiments.py` on FastF1 data. Synthetic
@@ -80,9 +106,19 @@ fixture numbers are never reported as Formula 1 results.
 - Ablations: removing the temporal pace features costs 0.02 s MAE; removing historical priors
   or driver/team/circuit identity changes nothing measurable. Recent pace carries the signal.
 - Group-ladder variants (4/8/16/32, 8/16/32/64, 16/32/64/64) are indistinguishable.
+- **Unseen circuit (every Italian Grand Prix held out).** Errors rise for every model and the
+  ranking holds: trees 0.498 s, previous lap 0.509 s, FFR-M 0.558 s, FFR-S 0.569 s. FFR loses
+  more than the tree when the circuit has never been seen. RMSE jumps to 2.5-3.1 s for every
+  model because of red-flag stoppages in the 2020 and 2026 races: the laps around the stoppage
+  pass the validity rules yet are 40-56 s off. They are 0.8% of test laps; without them FFR-M's
+  RMSE is 0.50 s. Red-flag-adjacent laps are a documented gap in the lap-state rules.
+- **2026 domain shift (new regulations, model trained through 2024, never retrained).** All
+  models degrade by about 0.2 s MAE and the gap between them closes: trees 0.544 s, FFR-M
+  0.545 s, previous lap 0.556 s, ridge 0.553 s. FFR-M has the best p90 (0.99 s) and degrades no
+  worse than the tree, but its 80% intervals, calibrated on 2025, cover only 77% of 2026 laps:
+  the shift is visible in calibration before it is visible in MAE.
 
-Circuit holdout, 2026 domain shift and the 2000-2024 legacy extension are reported as they
-finish; see `reports/`.
+The 2000-2024 legacy training extension is reported when it finishes; see `reports/`.
 
 ## Architecture
 
