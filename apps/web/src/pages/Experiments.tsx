@@ -20,7 +20,7 @@ export default function Experiments() {
         )}
         {runs.length > 0 && (
           <div className="wide-table experiments-table">
-            <div className="wide-head"><span>Run</span><span>Method</span><span>Split</span><span>Val MAE</span><span>Test MAE</span><span>Test RMSE</span><span>80% cov.</span><span>Source</span></div>
+            <div className="wide-head"><span>Run</span><span>Method</span><span>Split</span><span>Val MAE</span><span>Test MAE</span><span>Test RMSE</span><span>80% cov.</span><span>Train s</span><span>Peak MB</span><span>Source</span></div>
             {runs.map(r => (
               <div className="wide-row" key={r.run}>
                 <span><strong>{r.run}</strong></span>
@@ -30,6 +30,8 @@ export default function Experiments() {
                 <span>{fmtNumber(r.test?.mae_s)}</span>
                 <span>{fmtNumber(r.test?.rmse_s)}</span>
                 <span>{r.test?.interval80_coverage != null ? `${(r.test.interval80_coverage * 100).toFixed(1)}%` : '—'}</span>
+                <span>{r.resources?.training?.wall_seconds != null && r.resources.training.wall_seconds > 0 ? fmtNumber(r.resources.training.wall_seconds, 1) : '—'}</span>
+                <span>{r.resources?.training?.peak_rss_mb ? fmtNumber(r.resources.training.peak_rss_mb, 0) : '—'}</span>
                 <span><SourceBadge kind={sourceKindFor(r.is_synthetic)} text={r.is_synthetic ? 'Synthetic' : 'Real data'} /></span>
               </div>
             ))}

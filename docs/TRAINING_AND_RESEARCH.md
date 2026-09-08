@@ -1,5 +1,18 @@
 # Training and Research Standard
 
+## Research question
+
+> Can Forward-Forward regression, trained with local layer-wise updates and no global
+> backpropagation, approach the next-lap forecasting accuracy of conventional baselines
+> while reducing training-memory requirements?
+
+Forward-Forward is not assumed to be better than backpropagation. The FFR literature reports
+recovering most but not all of backprop accuracy on regression benchmarks with lower peak
+training memory, and the broader Forward-Forward literature acknowledges a gap to
+state-of-the-art backprop on standard benchmarks. RaceShift tests the trade-off, so every run
+records accuracy **and** resources: training wall time, peak RSS, traced peak memory,
+inference latency and artifact size.
+
 ## Primary architecture
 
 RaceShift FFR is a deep Forward-Forward regression model.
@@ -78,7 +91,9 @@ fixture is a pipeline check, and the real question is answered only on unseen Fo
 
 ## Evaluation
 
-Headline metric: MAE in seconds.
+Headline metric: MAE in seconds, the average distance between the predicted and the true
+next lap. This is regression, so there is no classification accuracy; a 0.43 s MAE on a 90 s
+lap is a 0.4% relative error, and lower is better.
 
 Also report:
 
@@ -86,53 +101,107 @@ Also report:
 - median absolute error
 - p90 absolute error
 - signed bias
+- share of laps predicted within 0.5 s and within 1 s (the accuracy-style view; higher is better)
+- MAPE and R² on the true lap time
 - 80% interval coverage
 - interval width
 - artifact size
 - CPU inference latency
 
+Every metric is recorded for the training split as well as validation and test.
+
 Break down by circuit, driver, team, compound, tyre age, weather regime, traffic regime and track status.
 
 ## Chronological validation
 
-Recommended:
+Headline protocol (FastF1 tier, every round, every team):
 
 ```text
-2019-2023 train
-2024 validation
-2025 test
-2026 future domain-shift holdout
+2018-2024              train
+2025 rounds 1-12       validation (interval calibration, config selection)
+2025 rounds 13-24      test
+2026                   domain-shift evaluation with the 2024-trained model, no retraining
 ```
 
-Do not use a random row split as the headline result.
+Extension experiment: the same validation and test rows, with training extended back to
+2000 using the legacy Ergast tier (lap times and positions only). This asks whether eighteen
+extra seasons of low-detail history help or hurt, and is reported next to the headline
+table, never merged into it. Do not use a random row split as the headline result.
 
-## Known gaps (tracked for Milestone 2)
+## Experiment protocol
 
-- Lag features (`*_lag1..4`) and rolling statistics are computed on the pit/deleted-lap filtered
-  sequence and are not adjacency-checked the way the target is. Across a pit stop `lap_time_s_lag1`
-  can therefore be the lap before the pit lap. This is backward-looking and not leakage, but it is a
-  quality issue on real data where pit laps are frequent.
-- Historical priors are a per-group Python loop called ten times per table build; expect this to
-  dominate feature-building time on multi-season data.
-- `scripts/eval_chronos2_zeroshot.py` expects the light table from `scripts/build_lap_dataset.py` and
-  an optional `chronos` install; it has not been run on real data yet.
+`scripts/run_experiments.py` runs the baselines and any list of FFR configs on the same table
+and split, as separate processes so peak memory is measured per run, and writes
+`reports/<name>/summary.{json,md}`.
 
-## Required ablations
+```bash
+python scripts/run_experiments.py --input data/processed/f1_laps.parquet --name f1_2025h2 \
+  --train-end 2024 --val-year 2025 --test-year 2025 --split-round 12 \
+  --ffr configs/ffr_small.json configs/ffr_production.json configs/ffr_colab_large.json \
+      configs/ffr_m_groups_coarse.json configs/ffr_m_groups_fine.json \
+  --ablate historical_numeric temporal_numeric static_categorical
+```
 
-- 1 lap vs 3 laps vs 5 laps context
-- no historical priors vs historical priors
-- weather removed
-- tyre features removed
-- driver/team categorical state removed
-- 2 vs 3 vs 4 vs 5 Forward-Forward layers
-- node-width ladder comparison
-- ordinal group count comparison
-- local optimizer/learning-rate comparison
+`scripts/full_pipeline.sh` chains collection, table building, the matrix above, the Monza
+circuit holdout, the 2026 domain-shift run and the legacy extension, and is resumable at
+every stage.
 
-## Research references
+Depth ladder: FFR-S (256 → 128), FFR-M (512 → 384 → 256 → 192), FFR-L (1024 → 768 → 512 →
+384 → 256). Group ladders: 4/8/16/32, 8/16/32/64, 16/32/64/64. Feature ablations drop one
+taxonomy group at a time. Splits: season-forward, season-round (early/late holdout season),
+circuit holdout (`--holdout-event`), and the 2026 domain-shift holdout once 2026 rounds are
+collected.
 
-- Geoffrey Hinton, *The Forward-Forward Algorithm: Some Preliminary Investigations*, arXiv:2212.13345
-- *FFR: Forward-Forward Learning for Regression* (2026 preprint), used as inspiration for ordinal/coarse-to-fine regression design
-- Self-Contrastive Forward-Forward work, used as a reference for sequential/local representation learning
+## Overfitting and memorisation checks
 
-RaceShift must describe itself as FFR-inspired unless and until the implementation is formally reproduced against the exact paper protocol.
+A model that memorises its training laps fits them far better than unseen laps. RaceShift
+makes that visible rather than assuming it away:
+
+- Every run records **train, validation and test** metrics in `metrics.json` (FFR and every
+  baseline), so the generalisation gap (test MAE minus train MAE) is a first-class number.
+- `scripts/generalization_gap.py` rebuilds an artifact's exact table and split, scores the
+  saved weights on all three splits, refits ridge and gradient-boosted trees on the same
+  training rows, and writes `reports/<name>/generalization.md` with a per-season table.
+- Preprocessing (imputation, scaling, one-hot vocabularies) is fitted on training rows only;
+  validation and test are transformed with training statistics.
+- The FFR readout is a closed-form ridge over layer features (`ridge_alpha`), hidden layers
+  use weight decay, update-norm clipping and a small learning rate; interval calibration uses
+  validation residuals, never training residuals.
+- `train_ffr.py --wandb` logs per-layer local losses and all split metrics to Weights &
+  Biases when `wandb` is installed (`pip install -e ".[research]"`; `WANDB_MODE=offline` works
+  without an account). It is optional and never required for a run.
+
+Measured on the 2018-2024 → 2025 split (`reports/f1_2025h2/generalization.md`): every model,
+FFR and baselines alike, has a **higher** error on its training laps (about 0.50 s) than on
+validation (0.43 s) or test (0.35 s). There is no memorisation; the training seasons simply
+contain more disrupted laps (training RMSE 1.5 s vs 0.6 s on test), and the per-season table
+attributes that to specific years. If anything FFR under-fits: its train and validation errors
+are close and both trail the tree model.
+
+## Data hygiene decisions that changed the results
+
+- Pit-in, pit-out, safety-car, VSC, red-flag, deleted and inaccurate laps are never
+  training rows or targets, and every lag or rolling statistic is scoped to the current run
+  of consecutive valid laps (`docs/FEATURE_CONTRACT.md`).
+- Lap-time-scale features are relative to the current rolling pace; the first real run with
+  absolute features had ridge extrapolating to −9 s residuals on unseen seasons.
+- Features observed in under 5% of training rows are dropped; weather-matched priors were
+  producing standardized shifts of 8+ between train and test after imputation.
+- The training residual target is winsorized to ±6 s; the raw target ranges from −54 s to
+  +18 s on real races and least-squares fits were dominated by the tails.
+
+## Known gaps
+
+- The 2018 Italian Grand Prix race is missing from the FastF1 tier: the live-timing archive
+  fails to load timing data for that session (`Failed to load timing data!`), so the
+  collector records it as a failure and every other 2018-2026 round is present.
+- Race-control messages are not yet used to flag laps affected by incidents that are not
+  encoded in the track status string. The visible cost: laps immediately around a red-flag
+  stoppage (2020 and 2026 Italian Grands Prix in the Monza holdout) carry status 1 or 2, pass
+  the validity rules, and produce 40-56 s errors for every model. They are under 1% of laps
+  but dominate RMSE; flagging the laps before and after a red flag from race-control messages
+  is the planned fix.
+- Historical priors are medians over earlier events; a nearest-neighbour similarity
+  retrieval over normalised conditions is the planned replacement.
+- `scripts/eval_chronos2_zeroshot.py` expects the light table from `scripts/build_lap_dataset.py`
+  and an optional `chronos` install; it has not been run on real data yet.

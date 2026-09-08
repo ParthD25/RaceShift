@@ -19,8 +19,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-local = ["fastf1>=3.6", "huggingface_hub>=0.34", "pytest>=8.0", "httpx>=0.27", "python-multipart>=0.0.9"]
-research = ["fastf1>=3.6", "huggingface_hub>=0.34", "datasets>=4.0", "pytest>=8.0", "httpx>=0.27", "python-multipart>=0.0.9"]
+local = ["fastf1>=3.6", "huggingface_hub>=0.34", "pytest>=8.0", "httpx>=0.27", "python-multipart>=0.0.9", "onnx>=1.16", "onnxruntime>=1.18", "skl2onnx>=1.17"]
+export = ["onnx>=1.16", "onnxruntime>=1.18", "skl2onnx>=1.17"]
+research = ["fastf1>=3.6", "huggingface_hub>=0.34", "datasets>=4.0", "pytest>=8.0", "httpx>=0.27", "python-multipart>=0.0.9", "wandb>=0.18"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

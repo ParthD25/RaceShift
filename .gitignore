@@ -21,6 +21,11 @@ artifacts/**
 # The small synthetic demo artifact is a committed fixture; real trained artifacts stay out of git.
 !artifacts/raceshift_ffr_demo/
 !artifacts/raceshift_ffr_demo/**
+# One real FFR-M artifact is committed so the UI can show a real-data model out of the box.
+!artifacts/f1_2025h2_ffr-m/
+!artifacts/f1_2025h2_ffr-m/**
+!artifacts/f1_2025h2_legacy_ext_ffr-s/
+!artifacts/f1_2025h2_legacy_ext_ffr-s/**
 
 # Model/checkpoint files
 *.pt
@@ -53,3 +58,11 @@ lightning_logs/
 *.key
 service-account*.json
 credentials*.json
+
+# Local datasets are never committed; only the synthetic fixture ships with the repo.
+data/imports/*.parquet
+data/imports/*.csv
+!data/imports/synthetic_fixture.csv
+
+# Export bundles are rebuilt on demand by the API or scripts/export_model.py
+exports/

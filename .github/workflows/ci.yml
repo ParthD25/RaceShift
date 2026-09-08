@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  python:
+    name: Python tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[local]"
+      - run: python -m pytest -q
+      - name: Synthetic pipeline smoke (fixture -> baselines -> FFR demo -> reload)
+        run: |
+          python scripts/train_baselines.py --input data/imports/synthetic_fixture.csv --output /tmp/ci_baselines
+          python scripts/train_ffr.py --input data/imports/synthetic_fixture.csv --config configs/ffr_demo.json --output /tmp/ci_ffr --train-end 2023 --val-year 2024 --test-year 2025
+          python -c "from raceshift.models.artifact import RaceShiftArtifact; import pandas as pd; a=RaceShiftArtifact('/tmp/ci_ffr'); print(a.forecast_last_available(pd.read_csv('data/imports/synthetic_fixture.csv'), driver='AAA')['predicted_next_lap_s'])"
+
+  web:
+    name: Web build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+
+  security:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: python -m pip install --upgrade pip setuptools pip-audit && pip install -e ".[local]"
+      # PYSEC-2026-3625: msgpack 1.1.2 is pinned exactly (msgpack==1.1.2) by signalrcore, a
+      # transitive dependency of fastf1's live-timing client. RaceShift never opens the
+      # live-timing socket, so the advisory is not reachable; drop the ignore once fastf1 or
+      # signalrcore lifts the pin.
+      - run: pip-audit --ignore-vuln PYSEC-2026-3625
+      - run: npm ci && npm audit --audit-level=high

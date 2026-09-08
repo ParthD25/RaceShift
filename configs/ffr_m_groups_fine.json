@@ -1,0 +1,28 @@
+{
+  "name": "FFR-M-groups-fine",
+  "model": "RaceShiftFFR",
+  "training_policy": "forward-forward-local-updates-no-global-backprop",
+  "history_laps": 5,
+  "layer_nodes": [
+    512,
+    384,
+    256,
+    192
+  ],
+  "ordinal_groups": [
+    16,
+    32,
+    64,
+    64
+  ],
+  "epochs_per_layer": 80,
+  "batch_size": 512,
+  "learning_rate": 0.0008,
+  "weight_decay": 1e-05,
+  "temperature": 0.55,
+  "target_sigma_groups": 1.1,
+  "ridge_alpha": 2.0,
+  "seed": 42,
+  "clip_update_norm": 5.0,
+  "notes": "Group-ladder ablation of FFR-M: 16/32/64/64 ordinal groups (192 nodes cannot split into 128)."
+}

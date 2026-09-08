@@ -21,8 +21,9 @@ uvicorn apps.api.main:app --reload --host 127.0.0.1 --port 8000
 | GET | `/api/models` | Every artifact under `artifacts/` (ready flag, architecture, metrics, provenance) plus required baselines |
 | GET | `/api/datasets` | `dataset_manifest.json` sources, files in `data/imports/`, processed tables |
 | GET | `/api/imports/{file}/summary` | Rows, columns, seasons, drivers and the latest session of one import |
-| POST | `/api/import` | Multipart upload of a `.csv`/`.parquet` lap table into `data/imports/` (200 MB cap, `?overwrite=true` to replace) |
-| POST | `/api/forecast/latest` | JSON `{file, driver?, artifact?}` → next-lap forecast with 80% interval |
+| GET | `/api/models/{id}/export` | Build (or reuse) and download the artifact's export bundle: weights, preprocessor, verified ONNX core, JSON preprocessor spec, model card |
+| POST | `/api/import` | Multipart upload of a `.csv`/`.parquet` lap table into `data/imports/` (200 MB, 250 columns and 2,000,000-row caps, `?overwrite=true` to replace) |
+| POST | `/api/forecast/latest` | JSON `{file, driver?, artifact?}` → next-lap forecast with 80% interval, `context` (tyre, weather, gaps at the end of the lap) and `historical_context` (medians from earlier events) |
 | GET | `/api/forecast` | Query-string alias of the forecast endpoint for `curl` |
 | GET | `/api/experiments` | Every `metrics.json` under `artifacts/`, baseline reports flattened per model |
 
@@ -39,6 +40,6 @@ curl -s -X POST http://127.0.0.1:8000/api/forecast/latest \
 - Binds `127.0.0.1`; CORS allows only the Vite origins on port 5173.
 - Import filenames and artifact ids are resolved strictly inside `data/imports/` and `artifacts/`;
   traversal, absolute paths and symlink escapes are rejected.
-- Uploads are limited to CSV/Parquet and 200 MB, sanitised to a basename, parsed before being kept.
+- Uploads are limited to CSV/Parquet, 200 MB, 250 columns and 2,000,000 rows, sanitised to a basename, and parsed before being kept; partial files are removed on any failure.
 - Responses contain relative paths only and never echo internal exception text.
 - Every forecast response carries `data_source` and `is_synthetic` so the UI can label it.

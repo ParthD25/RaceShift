@@ -18,10 +18,12 @@ from typing import Any
 
 import pandas as pd
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from raceshift import __version__
+from raceshift.data.provenance import infer_data_source
 from raceshift.data.schema import REQUIRED_FORECAST_COLUMNS
 from raceshift.models.artifact import ARTIFACT_FILES, RaceShiftArtifact, missing_artifact_files
 
@@ -33,6 +35,8 @@ PROCESSED = DATA / "processed"
 DEFAULT_ARTIFACT_ID = "raceshift_ffr_demo"
 ALLOWED_SUFFIXES = {".csv", ".parquet"}
 MAX_IMPORT_BYTES = 200 * 1024 * 1024
+MAX_IMPORT_ROWS = 2_000_000
+MAX_IMPORT_COLUMNS = 250
 UI_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173"]
 _SAFE_NAME = re.compile(r"[^A-Za-z0-9._-]+")
 
@@ -164,6 +168,7 @@ def _table_summary(frame: pd.DataFrame, name: str) -> dict[str, Any]:
         "columns": [str(c) for c in frame.columns],
         "missing_required_columns": missing,
         "is_synthetic": bool("event" in frame and frame["event"].astype(str).str.startswith("Synthetic_").all()) if len(frame) else False,
+        "data_source": infer_data_source(frame),
     }
     if not missing:
         latest_scope, key = RaceShiftArtifact.latest_session(frame)
@@ -308,6 +313,12 @@ async def import_file(file: UploadFile = File(...), overwrite: bool = Query(Fals
                     raise HTTPException(413, f"Import exceeds {MAX_IMPORT_BYTES // (1024 * 1024)} MB limit")
                 handle.write(chunk)
         frame = _load_table(tmp, suffix=target.suffix)
+        if len(frame) > MAX_IMPORT_ROWS:
+            raise HTTPException(413, f"Import has {len(frame)} rows; the limit is {MAX_IMPORT_ROWS}")
+        if len(frame.columns) > MAX_IMPORT_COLUMNS:
+            raise HTTPException(413, f"Import has {len(frame.columns)} columns; the limit is {MAX_IMPORT_COLUMNS}")
+        if frame.empty or len(frame.columns) < 2:
+            raise HTTPException(400, "Upload parsed to an empty or single-column table")
     except HTTPException:
         tmp.unlink(missing_ok=True)
         raise
@@ -321,6 +332,33 @@ async def import_file(file: UploadFile = File(...), overwrite: bool = Query(Fals
     summary["bytes"] = written
     summary["stored_as"] = _relative(target)
     return summary
+
+
+EXPORTS = ROOT / "exports"
+
+
+@app.get("/api/models/{artifact_id}/export")
+def export_model(artifact_id: str) -> FileResponse:
+    """Build (or reuse) the export bundle for a complete artifact and return it as a zip.
+
+    The bundle holds the weights, preprocessor, feature contract, metrics, the verified ONNX
+    core, the JSON preprocessor spec and the model card. It is rebuilt when metrics.json is
+    newer than the last export.
+    """
+    artifact_dir = _safe_artifact_path(artifact_id)
+    bundle = EXPORTS / f"{artifact_dir.name}.zip"
+    manifest = artifact_dir / "export" / "export_manifest.json"
+    stale = not bundle.is_file() or not manifest.is_file() or manifest.stat().st_mtime < (artifact_dir / "metrics.json").stat().st_mtime
+    if stale:
+        try:
+            from raceshift.models.export import export_artifact
+
+            export_artifact(artifact_dir, bundle_dir=EXPORTS)
+        except ImportError as exc:
+            raise HTTPException(503, f"Model export needs the export extras (pip install -e '.[export]'): {exc}") from exc
+        except Exception as exc:  # noqa: BLE001
+            raise HTTPException(500, f"Export failed: {type(exc).__name__}: {exc}") from exc
+    return FileResponse(bundle, media_type="application/zip", filename=bundle.name)
 
 
 @app.post("/api/forecast/latest")
@@ -355,7 +393,7 @@ def experiments() -> dict[str, Any]:
         }
         if isinstance(metrics.get("models"), dict):
             for name, result in metrics["models"].items():
-                runs.append({"run": f"{path.name}/{name}", "model": name, "method": "baseline", "training_policy": metrics.get("training_policy"), "validation": result.get("validation"), "test": result.get("test"), **common})
+                runs.append({"run": f"{path.name}/{name}", "model": name, "method": "baseline", "training_policy": metrics.get("training_policy"), "validation": result.get("validation"), "test": result.get("test"), "resources": result.get("resources"), **common})
         else:
-            runs.append({"run": path.name, "model": metrics.get("model", path.name), "method": "forward-forward" if "forward-forward" in str(metrics.get("training_policy", "")) else metrics.get("training_policy"), "training_policy": metrics.get("training_policy"), "architecture": metrics.get("architecture"), "validation": metrics.get("validation"), "test": metrics.get("test"), **common})
+            runs.append({"run": path.name, "model": metrics.get("name", metrics.get("model", path.name)), "method": "forward-forward" if "forward-forward" in str(metrics.get("training_policy", "")) else metrics.get("training_policy"), "training_policy": metrics.get("training_policy"), "architecture": metrics.get("architecture"), "validation": metrics.get("validation"), "test": metrics.get("test"), "resources": metrics.get("resources"), **common})
     return {"experiments": runs}

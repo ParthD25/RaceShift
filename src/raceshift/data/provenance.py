@@ -13,6 +13,11 @@ def infer_data_source(raw: pd.DataFrame) -> str:
     events = raw["event"].astype(str)
     if events.str.startswith(SYNTHETIC_EVENT_PREFIX).all():
         return SYNTHETIC_SOURCE
+    if "data_tier" in raw.columns:
+        # Files exported before the tier column existed are FastF1 timing by construction.
+        tiers = sorted(str(t) for t in raw["data_tier"].fillna("fastf1_timing").unique())
+        if tiers:
+            return "+".join(tiers)
     return "user_supplied"
 
 

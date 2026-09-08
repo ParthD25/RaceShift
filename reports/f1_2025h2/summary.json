@@ -1,0 +1,1816 @@
+{
+  "name": "f1_2025h2",
+  "created_utc": "2026-09-08T22:13:26+00:00",
+  "input_file": "f1_laps_fastf1.parquet",
+  "data_source": "fastf1_timing",
+  "is_synthetic": false,
+  "split": {
+    "mode": "season_round",
+    "train_end": 2024,
+    "validation": 2025,
+    "test": 2025,
+    "split_round": 12,
+    "holdout_event": null
+  },
+  "rows": {
+    "train": 128071,
+    "validation": 10248,
+    "test": 10994
+  },
+  "results": [
+    {
+      "model": "previous_lap",
+      "family": "baseline",
+      "validation": {
+        "mae_s": 0.43405025370804057,
+        "rmse_s": 0.7608875423913025,
+        "median_ae_s": 0.23900000000000432,
+        "p90_ae_s": 1.0176000000000067,
+        "signed_bias_s": 0.04695501561280248,
+        "within_0_5s_share": 0.7471701795472288,
+        "within_1s_share": 0.8964676034348166,
+        "mape_pct": 0.5068453824898348,
+        "r2": 0.9939169637738222,
+        "rows": 10248
+      },
+      "test": {
+        "mae_s": 0.3570389303256321,
+        "rmse_s": 0.6445179852628391,
+        "median_ae_s": 0.2049999999999983,
+        "p90_ae_s": 0.8220000000000027,
+        "signed_bias_s": 0.024686920138257237,
+        "within_0_5s_share": 0.8064398762961615,
+        "within_1s_share": 0.9270511187920684,
+        "mape_pct": 0.3963154414361497,
+        "r2": 0.9964476148642921,
+        "rows": 10994
+      },
+      "resources": {
+        "training": {
+          "wall_seconds": 0.0,
+          "peak_rss_mb": 0.0,
+          "peak_traced_mb": 0.0
+        },
+        "inference_batch_ms_per_row": 0.0
+      },
+      "artifact": "f1_2025h2_baselines"
+    },
+    {
+      "model": "rolling_median_5",
+      "family": "baseline",
+      "validation": {
+        "mae_s": 0.5240536202185793,
+        "rmse_s": 0.9002236786592832,
+        "median_ae_s": 0.29399999999999693,
+        "p90_ae_s": 1.2413000000000023,
+        "signed_bias_s": 0.07807499024199842,
+        "within_0_5s_share": 0.6857923497267759,
+        "within_1s_share": 0.8628024980483997,
+        "mape_pct": 0.6080445065317118,
+        "r2": 0.9914850849502714,
+        "rows": 10248
+      },
+      "test": {
+        "mae_s": 0.39357772421320725,
+        "rmse_s": 0.6750048834035951,
+        "median_ae_s": 0.24099999999999966,
+        "p90_ae_s": 0.8889999999999958,
+        "signed_bias_s": 0.020938375477533216,
+        "within_0_5s_share": 0.7692377660542113,
+        "within_1s_share": 0.9188648353647444,
+        "mape_pct": 0.4348853604807088,
+        "r2": 0.9961035976905313,
+        "rows": 10994
+      },
+      "resources": {
+        "training": {
+          "wall_seconds": 0.0,
+          "peak_rss_mb": 0.0,
+          "peak_traced_mb": 0.0
+        },
+        "inference_batch_ms_per_row": 0.0
+      },
+      "artifact": "f1_2025h2_baselines"
+    },
+    {
+      "model": "ridge",
+      "family": "baseline",
+      "validation": {
+        "mae_s": 0.4933467057412856,
+        "rmse_s": 0.7586164790153977,
+        "median_ae_s": 0.34159653593158623,
+        "p90_ae_s": 1.0307161776998761,
+        "signed_bias_s": 0.04906535867639152,
+        "within_0_5s_share": 0.6441256830601093,
+        "within_1s_share": 0.8934426229508197,
+        "mape_pct": 0.5688483776569205,
+        "r2": 0.9939532223347213,
+        "rows": 10248
+      },
+      "test": {
+        "mae_s": 0.39272590210597885,
+        "rmse_s": 0.624436965003622,
+        "median_ae_s": 0.28063180912460695,
+        "p90_ae_s": 0.8107386747688115,
+        "signed_bias_s": 0.08015826614751569,
+        "within_0_5s_share": 0.748044387847917,
+        "within_1s_share": 0.9355102783336365,
+        "mape_pct": 0.4342814870961327,
+        "r2": 0.9966655272628896,
+        "rows": 10994
+      },
+      "resources": {
+        "training": {
+          "wall_seconds": 23.576,
+          "peak_rss_mb": 2486.3,
+          "peak_traced_mb": 804.5
+        },
+        "inference_batch_ms_per_row": 0.0004
+      },
+      "artifact": "f1_2025h2_baselines"
+    },
+    {
+      "model": "hist_gradient_boosting",
+      "family": "baseline",
+      "validation": {
+        "mae_s": 0.39088311115312563,
+        "rmse_s": 0.6910263389454525,
+        "median_ae_s": 0.23456652157354085,
+        "p90_ae_s": 0.864183573197556,
+        "signed_bias_s": -0.02095197215858652,
+        "within_0_5s_share": 0.7788836846213896,
+        "within_1s_share": 0.9217408274785324,
+        "mape_pct": 0.45612313862539844,
+        "r2": 0.9949827163116939,
+        "rows": 10248
+      },
+      "test": {
+        "mae_s": 0.3171770788322215,
+        "rmse_s": 0.5696189153407748,
+        "median_ae_s": 0.19801281586023123,
+        "p90_ae_s": 0.6798496417859868,
+        "signed_bias_s": -0.022313684909417448,
+        "within_0_5s_share": 0.8355466618155357,
+        "within_1s_share": 0.9476077860651264,
+        "mape_pct": 0.35147082259744084,
+        "r2": 0.9972252825369056,
+        "rows": 10994
+      },
+      "resources": {
+        "training": {
+          "wall_seconds": 48.241,
+          "peak_rss_mb": 2896.0,
+          "peak_traced_mb": 830.1
+        },
+        "inference_batch_ms_per_row": 0.0045
+      },
+      "artifact": "f1_2025h2_baselines"
+    },
+    {
+      "model": "FFR-M",
+      "family": "forward-forward",
+      "architecture": [
+        {
+          "layer": 1,
+          "input_nodes": 327,
+          "hidden_nodes": 512,
+          "ordinal_groups": 8
+        },
+        {
+          "layer": 2,
+          "input_nodes": 512,
+          "hidden_nodes": 384,
+          "ordinal_groups": 16
+        },
+        {
+          "layer": 3,
+          "input_nodes": 384,
+          "hidden_nodes": 256,
+          "ordinal_groups": 32
+        },
+        {
+          "layer": 4,
+          "input_nodes": 256,
+          "hidden_nodes": 192,
+          "ordinal_groups": 64
+        }
+      ],
+      "validation": {
+        "mae_s": 0.430247635183824,
+        "rmse_s": 0.7076708019448168,
+        "median_ae_s": 0.28799929239601596,
+        "p90_ae_s": 0.9099675088286462,
+        "signed_bias_s": 0.036227201298412254,
+        "rows": 10248,
+        "interval80_coverage": 0.7999609679937549,
+        "interval80_width_s": 1.2133899915797648
+      },
+      "test": {
+        "mae_s": 0.3519178310970493,
+        "rmse_s": 0.5946217966914864,
+        "median_ae_s": 0.2372414656057913,
+        "p90_ae_s": 0.7399000756740564,
+        "signed_bias_s": 0.05723979575797377,
+        "rows": 10994,
+        "interval80_coverage": 0.8570129161360742,
+        "interval80_width_s": 1.213389992467247,
+        "within_0_5s_share": 0.8015281062397671,
+        "within_1s_share": 0.9423321811897398
+      },
+      "resources": {
+        "feature_build": {
+          "wall_seconds": 142.614,
+          "peak_rss_mb": 1823.4,
+          "peak_traced_mb": 1134.8
+        },
+        "training": {
+          "wall_seconds": 2064.121,
+          "peak_rss_mb": 2973.3,
+          "peak_traced_mb": 1423.2
+        },
+        "inference_batch_ms_per_row": 0.3329,
+        "inference_single_row_ms": 2.923,
+        "artifact_bytes": 3365011,
+        "device": "cpu-numpy"
+      },
+      "features": {
+        "count_raw": 76,
+        "numeric": 64,
+        "categorical": 12,
+        "input_nodes_after_encoding": 327,
+        "dropped_groups": [],
+        "dropped_sparse": [
+          "gap_ahead_s",
+          "gap_behind_s",
+          "mean_speed_kph",
+          "max_speed_kph",
+          "mean_throttle_pct",
+          "brake_fraction",
+          "mean_rpm",
+          "max_rpm",
+          "gear_changes",
+          "drs_fraction",
+          "hist_driver_weather_pace_rel",
+          "hist_team_weather_pace_rel",
+          "gap_ahead_s_lag1",
+          "gap_ahead_s_lag2",
+          "gap_ahead_s_lag3",
+          "gap_ahead_s_lag4",
+          "mean_speed_kph_lag1",
+          "mean_speed_kph_lag2",
+          "mean_speed_kph_lag3",
+          "mean_speed_kph_lag4",
+          "mean_throttle_pct_lag1",
+          "mean_throttle_pct_lag2",
+          "mean_throttle_pct_lag3",
+          "mean_throttle_pct_lag4",
+          "brake_fraction_lag1",
+          "brake_fraction_lag2",
+          "brake_fraction_lag3",
+          "brake_fraction_lag4"
+        ],
+        "min_feature_coverage": 0.05,
+        "target_clip_s": 6.0,
+        "contract_version": "full_context_v2_adjacency_safe_relative",
+        "history_laps": 5
+      },
+      "test_by_event": {
+        "Abu Dhabi Grand Prix": {
+          "mae_s": 0.3050089361896797,
+          "rmse_s": 0.43348007326085614,
+          "median_ae_s": 0.2147815672829836,
+          "p90_ae_s": 0.6662931417107544,
+          "signed_bias_s": -0.016091383070935838,
+          "rows": 964
+        },
+        "Azerbaijan Grand Prix": {
+          "mae_s": 0.40659180139233886,
+          "rmse_s": 0.6084853824192443,
+          "median_ae_s": 0.2849504837989798,
+          "p90_ae_s": 0.8345683131813928,
+          "signed_bias_s": 0.21442228378018566,
+          "rows": 816
+        },
+        "Belgian Grand Prix": {
+          "mae_s": 0.5602092357594451,
+          "rmse_s": 0.8156688756072967,
+          "median_ae_s": 0.37506618642807155,
+          "p90_ae_s": 1.350694915413854,
+          "signed_bias_s": 0.060138580477137715,
+          "rows": 681
+        },
+        "Dutch Grand Prix": {
+          "mae_s": 0.28957592325741927,
+          "rmse_s": 0.45755089548293,
+          "median_ae_s": 0.17919513237475826,
+          "p90_ae_s": 0.6244954657435441,
+          "signed_bias_s": 0.05316825088260791,
+          "rows": 932
+        },
+        "Hungarian Grand Prix": {
+          "mae_s": 0.3782045049951082,
+          "rmse_s": 0.5635178441387826,
+          "median_ae_s": 0.2744757066518062,
+          "p90_ae_s": 0.7649360497832376,
+          "signed_bias_s": 0.13978953651970347,
+          "rows": 1214
+        },
+        "Italian Grand Prix": {
+          "mae_s": 0.26583154687906335,
+          "rmse_s": 0.35360050202984605,
+          "median_ae_s": 0.21645772191136814,
+          "p90_ae_s": 0.505188904470198,
+          "signed_bias_s": 0.14073637888208093,
+          "rows": 838
+        },
+        "Las Vegas Grand Prix": {
+          "mae_s": 0.2996812862351458,
+          "rmse_s": 0.42061017295388226,
+          "median_ae_s": 0.22183681368827735,
+          "p90_ae_s": 0.6118043526410986,
+          "signed_bias_s": 0.02375742088845552,
+          "rows": 712
+        },
+        "Mexico City Grand Prix": {
+          "mae_s": 0.35294743255723243,
+          "rmse_s": 0.5733814102957177,
+          "median_ae_s": 0.22862173356115534,
+          "p90_ae_s": 0.715556909334653,
+          "signed_bias_s": 0.04110067812484922,
+          "rows": 1090
+        },
+        "Qatar Grand Prix": {
+          "mae_s": 0.2607751595678127,
+          "rmse_s": 0.39411503510747,
+          "median_ae_s": 0.17914789006113807,
+          "p90_ae_s": 0.5299849311709395,
+          "signed_bias_s": 0.0013523585586621648,
+          "rows": 830
+        },
+        "Singapore Grand Prix": {
+          "mae_s": 0.4616994896839232,
+          "rmse_s": 0.7440700851728105,
+          "median_ae_s": 0.2682811282277129,
+          "p90_ae_s": 1.0797662224639168,
+          "signed_bias_s": 0.0024339475170904474,
+          "rows": 1086
+        },
+        "S\u00e3o Paulo Grand Prix": {
+          "mae_s": 0.2874629128000523,
+          "rmse_s": 0.4097449403747502,
+          "median_ae_s": 0.19905222773552111,
+          "p90_ae_s": 0.632606753945339,
+          "signed_bias_s": -0.05285365536251298,
+          "rows": 981
+        },
+        "United States Grand Prix": {
+          "mae_s": 0.3669962732934861,
+          "rmse_s": 1.0211069060509101,
+          "median_ae_s": 0.2568308983221641,
+          "p90_ae_s": 0.714448666310304,
+          "signed_bias_s": 0.09183264327999825,
+          "rows": 850
+        }
+      },
+      "artifact": "f1_2025h2_ffr-m"
+    },
+    {
+      "model": "FFR-S",
+      "family": "forward-forward",
+      "architecture": [
+        {
+          "layer": 1,
+          "input_nodes": 327,
+          "hidden_nodes": 256,
+          "ordinal_groups": 8
+        },
+        {
+          "layer": 2,
+          "input_nodes": 256,
+          "hidden_nodes": 128,
+          "ordinal_groups": 16
+        }
+      ],
+      "validation": {
+        "mae_s": 0.4359432549206751,
+        "rmse_s": 0.7111396093041784,
+        "median_ae_s": 0.29589564561843673,
+        "p90_ae_s": 0.8903389797210638,
+        "signed_bias_s": 0.04220739177295138,
+        "rows": 10248,
+        "interval80_coverage": 0.7999609679937549,
+        "interval80_width_s": 1.2210769653669287
+      },
+      "test": {
+        "mae_s": 0.3571386240214374,
+        "rmse_s": 0.5956188885194003,
+        "median_ae_s": 0.2464501791000302,
+        "p90_ae_s": 0.74668005123138,
+        "signed_bias_s": 0.06680725950480854,
+        "rows": 10994,
+        "interval80_coverage": 0.8556485355648535,
+        "interval80_width_s": 1.2210769653211881,
+        "within_0_5s_share": 0.7955248317263962,
+        "within_1s_share": 0.9422412224849918
+      },
+      "resources": {
+        "feature_build": {
+          "wall_seconds": 145.441,
+          "peak_rss_mb": 1826.4,
+          "peak_traced_mb": 1134.8
+        },
+        "training": {
+          "wall_seconds": 375.2,
+          "peak_rss_mb": 1990.2,
+          "peak_traced_mb": 637.0
+        },
+        "inference_batch_ms_per_row": 0.0628,
+        "inference_single_row_ms": 0.761,
+        "artifact_bytes": 1879797,
+        "device": "cpu-numpy"
+      },
+      "features": {
+        "count_raw": 76,
+        "numeric": 64,
+        "categorical": 12,
+        "input_nodes_after_encoding": 327,
+        "dropped_groups": [],
+        "dropped_sparse": [
+          "gap_ahead_s",
+          "gap_behind_s",
+          "mean_speed_kph",
+          "max_speed_kph",
+          "mean_throttle_pct",
+          "brake_fraction",
+          "mean_rpm",
+          "max_rpm",
+          "gear_changes",
+          "drs_fraction",
+          "hist_driver_weather_pace_rel",
+          "hist_team_weather_pace_rel",
+          "gap_ahead_s_lag1",
+          "gap_ahead_s_lag2",
+          "gap_ahead_s_lag3",
+          "gap_ahead_s_lag4",
+          "mean_speed_kph_lag1",
+          "mean_speed_kph_lag2",
+          "mean_speed_kph_lag3",
+          "mean_speed_kph_lag4",
+          "mean_throttle_pct_lag1",
+          "mean_throttle_pct_lag2",
+          "mean_throttle_pct_lag3",
+          "mean_throttle_pct_lag4",
+          "brake_fraction_lag1",
+          "brake_fraction_lag2",
+          "brake_fraction_lag3",
+          "brake_fraction_lag4"
+        ],
+        "min_feature_coverage": 0.05,
+        "target_clip_s": 6.0,
+        "contract_version": "full_context_v2_adjacency_safe_relative",
+        "history_laps": 5
+      },
+      "test_by_event": {
+        "Abu Dhabi Grand Prix": {
+          "mae_s": 0.3144463097861198,
+          "rmse_s": 0.44111916071676854,
+          "median_ae_s": 0.2281764922142102,
+          "p90_ae_s": 0.6870461467742901,
+          "signed_bias_s": 0.01007102156081136,
+          "rows": 964
+        },
+        "Azerbaijan Grand Prix": {
+          "mae_s": 0.4174026352587866,
+          "rmse_s": 0.6077223057005273,
+          "median_ae_s": 0.3007961940765327,
+          "p90_ae_s": 0.8354917554855348,
+          "signed_bias_s": 0.21716323029293716,
+          "rows": 816
+        },
+        "Belgian Grand Prix": {
+          "mae_s": 0.5717025852441435,
+          "rmse_s": 0.8132833872133813,
+          "median_ae_s": 0.40138524818419796,
+          "p90_ae_s": 1.3015669431686518,
+          "signed_bias_s": 0.07349463634098881,
+          "rows": 681
+        },
+        "Dutch Grand Prix": {
+          "mae_s": 0.30138651719318466,
+          "rmse_s": 0.46522797538727895,
+          "median_ae_s": 0.19832198762893682,
+          "p90_ae_s": 0.67808039302826,
+          "signed_bias_s": 0.08736414183260548,
+          "rows": 932
+        },
+        "Hungarian Grand Prix": {
+          "mae_s": 0.3882446299369096,
+          "rmse_s": 0.567621343002032,
+          "median_ae_s": 0.2855031232833838,
+          "p90_ae_s": 0.7695708459854206,
+          "signed_bias_s": 0.14514164002998278,
+          "rows": 1214
+        },
+        "Italian Grand Prix": {
+          "mae_s": 0.2667304511844116,
+          "rmse_s": 0.3604653974645721,
+          "median_ae_s": 0.21068588638305386,
+          "p90_ae_s": 0.5373626544952417,
+          "signed_bias_s": 0.14407119802757212,
+          "rows": 838
+        },
+        "Las Vegas Grand Prix": {
+          "mae_s": 0.31954398075650253,
+          "rmse_s": 0.43191163881216194,
+          "median_ae_s": 0.2520513963699358,
+          "p90_ae_s": 0.637551293945313,
+          "signed_bias_s": 0.0824409059781711,
+          "rows": 712
+        },
+        "Mexico City Grand Prix": {
+          "mae_s": 0.3535241349369013,
+          "rmse_s": 0.5704437483095424,
+          "median_ae_s": 0.23215609073639598,
+          "p90_ae_s": 0.7495502266883863,
+          "signed_bias_s": 0.03434564033123353,
+          "rows": 1090
+        },
+        "Qatar Grand Prix": {
+          "mae_s": 0.2572096540106348,
+          "rmse_s": 0.3922077521048217,
+          "median_ae_s": 0.1751105823516852,
+          "p90_ae_s": 0.5497002580642744,
+          "signed_bias_s": -0.011846807741831732,
+          "rows": 830
+        },
+        "Singapore Grand Prix": {
+          "mae_s": 0.4524956914408214,
+          "rmse_s": 0.7360406570718065,
+          "median_ae_s": 0.2601401329040556,
+          "p90_ae_s": 1.0781857976913471,
+          "signed_bias_s": -0.0309071693973647,
+          "rows": 1086
+        },
+        "S\u00e3o Paulo Grand Prix": {
+          "mae_s": 0.29035024695537376,
+          "rmse_s": 0.40427392947234636,
+          "median_ae_s": 0.21119425010680004,
+          "p90_ae_s": 0.6059747180938757,
+          "signed_bias_s": -0.002565280011183951,
+          "rows": 981
+        },
+        "United States Grand Prix": {
+          "mae_s": 0.3705881161162429,
+          "rmse_s": 1.0262715572070142,
+          "median_ae_s": 0.26694086647034254,
+          "p90_ae_s": 0.717862172317514,
+          "signed_bias_s": 0.08110401279673819,
+          "rows": 850
+        }
+      },
+      "artifact": "f1_2025h2_ffr-s"
+    },
+    {
+      "model": "FFR-L",
+      "family": "forward-forward",
+      "architecture": [
+        {
+          "layer": 1,
+          "input_nodes": 327,
+          "hidden_nodes": 1024,
+          "ordinal_groups": 8
+        },
+        {
+          "layer": 2,
+          "input_nodes": 1024,
+          "hidden_nodes": 768,
+          "ordinal_groups": 16
+        },
+        {
+          "layer": 3,
+          "input_nodes": 768,
+          "hidden_nodes": 512,
+          "ordinal_groups": 32
+        },
+        {
+          "layer": 4,
+          "input_nodes": 512,
+          "hidden_nodes": 384,
+          "ordinal_groups": 64
+        },
+        {
+          "layer": 5,
+          "input_nodes": 384,
+          "hidden_nodes": 256,
+          "ordinal_groups": 64
+        }
+      ],
+      "validation": {
+        "mae_s": 0.4284789907068225,
+        "rmse_s": 0.712258114155666,
+        "median_ae_s": 0.2793346381187405,
+        "p90_ae_s": 0.922634074592587,
+        "signed_bias_s": 0.019693164265686208,
+        "rows": 10248,
+        "interval80_coverage": 0.7999609679937549,
+        "interval80_width_s": 1.2086765767307044
+      },
+      "test": {
+        "mae_s": 0.34922173085183644,
+        "rmse_s": 0.5952815970278781,
+        "median_ae_s": 0.23335818862914692,
+        "p90_ae_s": 0.7351134113788621,
+        "signed_bias_s": 0.04887815042608585,
+        "rows": 10994,
+        "interval80_coverage": 0.8580134618883027,
+        "interval80_width_s": 1.2086765766062475,
+        "within_0_5s_share": 0.8035291977442242,
+        "within_1s_share": 0.9417864289612516
+      },
+      "resources": {
+        "feature_build": {
+          "wall_seconds": 180.663,
+          "peak_rss_mb": 1827.2,
+          "peak_traced_mb": 1134.8
+        },
+        "training": {
+          "wall_seconds": 9804.657,
+          "peak_rss_mb": 4324.1,
+          "peak_traced_mb": 2782.7
+        },
+        "inference_batch_ms_per_row": 1.231,
+        "inference_single_row_ms": 7.769,
+        "artifact_bytes": 8236873,
+        "device": "cpu-numpy"
+      },
+      "features": {
+        "count_raw": 76,
+        "numeric": 64,
+        "categorical": 12,
+        "input_nodes_after_encoding": 327,
+        "dropped_groups": [],
+        "dropped_sparse": [
+          "gap_ahead_s",
+          "gap_behind_s",
+          "mean_speed_kph",
+          "max_speed_kph",
+          "mean_throttle_pct",
+          "brake_fraction",
+          "mean_rpm",
+          "max_rpm",
+          "gear_changes",
+          "drs_fraction",
+          "hist_driver_weather_pace_rel",
+          "hist_team_weather_pace_rel",
+          "gap_ahead_s_lag1",
+          "gap_ahead_s_lag2",
+          "gap_ahead_s_lag3",
+          "gap_ahead_s_lag4",
+          "mean_speed_kph_lag1",
+          "mean_speed_kph_lag2",
+          "mean_speed_kph_lag3",
+          "mean_speed_kph_lag4",
+          "mean_throttle_pct_lag1",
+          "mean_throttle_pct_lag2",
+          "mean_throttle_pct_lag3",
+          "mean_throttle_pct_lag4",
+          "brake_fraction_lag1",
+          "brake_fraction_lag2",
+          "brake_fraction_lag3",
+          "brake_fraction_lag4"
+        ],
+        "min_feature_coverage": 0.05,
+        "target_clip_s": 6.0,
+        "contract_version": "full_context_v2_adjacency_safe_relative",
+        "history_laps": 5
+      },
+      "test_by_event": {
+        "Abu Dhabi Grand Prix": {
+          "mae_s": 0.3090066633847739,
+          "rmse_s": 0.43939918462245053,
+          "median_ae_s": 0.21340794992447343,
+          "p90_ae_s": 0.6836956403017028,
+          "signed_bias_s": 0.003475056812476278,
+          "rows": 964
+        },
+        "Azerbaijan Grand Prix": {
+          "mae_s": 0.4126966160874739,
+          "rmse_s": 0.6234549090103373,
+          "median_ae_s": 0.28980006766319377,
+          "p90_ae_s": 0.847006299018858,
+          "signed_bias_s": 0.22085030817050544,
+          "rows": 816
+        },
+        "Belgian Grand Prix": {
+          "mae_s": 0.5450500472390177,
+          "rmse_s": 0.8027447481723055,
+          "median_ae_s": 0.3666422767639119,
+          "p90_ae_s": 1.3329889698028552,
+          "signed_bias_s": 0.0481190081234373,
+          "rows": 681
+        },
+        "Dutch Grand Prix": {
+          "mae_s": 0.28945776857071215,
+          "rmse_s": 0.4570373741956482,
+          "median_ae_s": 0.1822793126106248,
+          "p90_ae_s": 0.633072987365726,
+          "signed_bias_s": 0.04226439979352667,
+          "rows": 932
+        },
+        "Hungarian Grand Prix": {
+          "mae_s": 0.3566924346871982,
+          "rmse_s": 0.5559196976139082,
+          "median_ae_s": 0.24964198875427712,
+          "p90_ae_s": 0.7412522662162816,
+          "signed_bias_s": 0.0813245926739947,
+          "rows": 1214
+        },
+        "Italian Grand Prix": {
+          "mae_s": 0.24966792445592487,
+          "rmse_s": 0.3421277654641055,
+          "median_ae_s": 0.19534266662596877,
+          "p90_ae_s": 0.47858019294738646,
+          "signed_bias_s": 0.11067968045612513,
+          "rows": 838
+        },
+        "Las Vegas Grand Prix": {
+          "mae_s": 0.31278645554385826,
+          "rmse_s": 0.427009139749303,
+          "median_ae_s": 0.23823668909072637,
+          "p90_ae_s": 0.6184576303958934,
+          "signed_bias_s": 0.06330734817198196,
+          "rows": 712
+        },
+        "Mexico City Grand Prix": {
+          "mae_s": 0.3505119242224123,
+          "rmse_s": 0.5769699980672007,
+          "median_ae_s": 0.22621717882155679,
+          "p90_ae_s": 0.7140020653724563,
+          "signed_bias_s": 0.02303273625220749,
+          "rows": 1090
+        },
+        "Qatar Grand Prix": {
+          "mae_s": 0.2718476383034004,
+          "rmse_s": 0.40220328279782697,
+          "median_ae_s": 0.1958480777740519,
+          "p90_ae_s": 0.5562296293258598,
+          "signed_bias_s": 0.029978410954360355,
+          "rows": 830
+        },
+        "Singapore Grand Prix": {
+          "mae_s": 0.4661603524013122,
+          "rmse_s": 0.7504178384699436,
+          "median_ae_s": 0.26831180191040005,
+          "p90_ae_s": 1.0873913023471857,
+          "signed_bias_s": -4.2340594321579605e-05,
+          "rows": 1086
+        },
+        "S\u00e3o Paulo Grand Prix": {
+          "mae_s": 0.28653573403178606,
+          "rmse_s": 0.4106554276445217,
+          "median_ae_s": 0.19979230260850045,
+          "p90_ae_s": 0.6404397726059017,
+          "signed_bias_s": -0.060949111809181354,
+          "rows": 981
+        },
+        "United States Grand Prix": {
+          "mae_s": 0.35736893710388834,
+          "rmse_s": 1.0185438279994588,
+          "median_ae_s": 0.2520949335098237,
+          "p90_ae_s": 0.692312632513044,
+          "signed_bias_s": 0.06463523734906103,
+          "rows": 850
+        }
+      },
+      "artifact": "f1_2025h2_ffr-l"
+    },
+    {
+      "model": "FFR-M-groups-coarse",
+      "family": "forward-forward",
+      "architecture": [
+        {
+          "layer": 1,
+          "input_nodes": 327,
+          "hidden_nodes": 512,
+          "ordinal_groups": 4
+        },
+        {
+          "layer": 2,
+          "input_nodes": 512,
+          "hidden_nodes": 384,
+          "ordinal_groups": 8
+        },
+        {
+          "layer": 3,
+          "input_nodes": 384,
+          "hidden_nodes": 256,
+          "ordinal_groups": 16
+        },
+        {
+          "layer": 4,
+          "input_nodes": 256,
+          "hidden_nodes": 192,
+          "ordinal_groups": 32
+        }
+      ],
+      "validation": {
+        "mae_s": 0.42551247469817893,
+        "rmse_s": 0.7143977967627679,
+        "median_ae_s": 0.27105985575913394,
+        "p90_ae_s": 0.9096810440540367,
+        "signed_bias_s": 0.007976841699273719,
+        "rows": 10248,
+        "interval80_coverage": 0.7999609679937549,
+        "interval80_width_s": 1.2005556842325302
+      },
+      "test": {
+        "mae_s": 0.35170440002786196,
+        "rmse_s": 0.5976752000541273,
+        "median_ae_s": 0.23538321931660278,
+        "p90_ae_s": 0.749367607606945,
+        "signed_bias_s": 0.049671906345406296,
+        "rows": 10994,
+        "interval80_coverage": 0.8522830634891759,
+        "interval80_width_s": 1.2005556828301887,
+        "within_0_5s_share": 0.801255230125523,
+        "within_1s_share": 0.9408768419137712
+      },
+      "resources": {
+        "feature_build": {
+          "wall_seconds": 192.981,
+          "peak_rss_mb": 1822.4,
+          "peak_traced_mb": 1134.8
+        },
+        "training": {
+          "wall_seconds": 2077.695,
+          "peak_rss_mb": 2972.1,
+          "peak_traced_mb": 1419.3
+        },
+        "inference_batch_ms_per_row": 0.3366,
+        "inference_single_row_ms": 3.858,
+        "artifact_bytes": 3328954,
+        "device": "cpu-numpy"
+      },
+      "features": {
+        "count_raw": 76,
+        "numeric": 64,
+        "categorical": 12,
+        "input_nodes_after_encoding": 327,
+        "dropped_groups": [],
+        "dropped_sparse": [
+          "gap_ahead_s",
+          "gap_behind_s",
+          "mean_speed_kph",
+          "max_speed_kph",
+          "mean_throttle_pct",
+          "brake_fraction",
+          "mean_rpm",
+          "max_rpm",
+          "gear_changes",
+          "drs_fraction",
+          "hist_driver_weather_pace_rel",
+          "hist_team_weather_pace_rel",
+          "gap_ahead_s_lag1",
+          "gap_ahead_s_lag2",
+          "gap_ahead_s_lag3",
+          "gap_ahead_s_lag4",
+          "mean_speed_kph_lag1",
+          "mean_speed_kph_lag2",
+          "mean_speed_kph_lag3",
+          "mean_speed_kph_lag4",
+          "mean_throttle_pct_lag1",
+          "mean_throttle_pct_lag2",
+          "mean_throttle_pct_lag3",
+          "mean_throttle_pct_lag4",
+          "brake_fraction_lag1",
+          "brake_fraction_lag2",
+          "brake_fraction_lag3",
+          "brake_fraction_lag4"
+        ],
+        "min_feature_coverage": 0.05,
+        "target_clip_s": 6.0,
+        "contract_version": "full_context_v2_adjacency_safe_relative",
+        "history_laps": 5
+      },
+      "test_by_event": {
+        "Abu Dhabi Grand Prix": {
+          "mae_s": 0.3141294541685508,
+          "rmse_s": 0.4446339382978802,
+          "median_ae_s": 0.2212565923631189,
+          "p90_ae_s": 0.7039526504039714,
+          "signed_bias_s": 0.011215481991498955,
+          "rows": 964
+        },
+        "Azerbaijan Grand Prix": {
+          "mae_s": 0.3971148434851018,
+          "rmse_s": 0.6173112652689756,
+          "median_ae_s": 0.27516734172403545,
+          "p90_ae_s": 0.8322948092520264,
+          "signed_bias_s": 0.1828696540338385,
+          "rows": 816
+        },
+        "Belgian Grand Prix": {
+          "mae_s": 0.5203808078619296,
+          "rmse_s": 0.783784852568622,
+          "median_ae_s": 0.3241223860681117,
+          "p90_ae_s": 1.3247029824256913,
+          "signed_bias_s": 0.013884450756047164,
+          "rows": 681
+        },
+        "Dutch Grand Prix": {
+          "mae_s": 0.2999401596300944,
+          "rmse_s": 0.45915907500279457,
+          "median_ae_s": 0.19873707612604363,
+          "p90_ae_s": 0.6545339916229296,
+          "signed_bias_s": 0.04727719435563942,
+          "rows": 932
+        },
+        "Hungarian Grand Prix": {
+          "mae_s": 0.3660605258700617,
+          "rmse_s": 0.5686417928642641,
+          "median_ae_s": 0.2510915642306202,
+          "p90_ae_s": 0.7676732036113764,
+          "signed_bias_s": 0.08497864277210436,
+          "rows": 1214
+        },
+        "Italian Grand Prix": {
+          "mae_s": 0.2517358494073408,
+          "rmse_s": 0.3519039203730371,
+          "median_ae_s": 0.18602371838502307,
+          "p90_ae_s": 0.5192929995715618,
+          "signed_bias_s": 0.09845614800987397,
+          "rows": 838
+        },
+        "Las Vegas Grand Prix": {
+          "mae_s": 0.34375709788659853,
+          "rmse_s": 0.451015243565701,
+          "median_ae_s": 0.29161290686577956,
+          "p90_ae_s": 0.66529326871633,
+          "signed_bias_s": 0.11478175757331044,
+          "rows": 712
+        },
+        "Mexico City Grand Prix": {
+          "mae_s": 0.3494967285816122,
+          "rmse_s": 0.5781370561850969,
+          "median_ae_s": 0.21594930098206078,
+          "p90_ae_s": 0.7302387403666941,
+          "signed_bias_s": 0.005348300551649808,
+          "rows": 1090
+        },
+        "Qatar Grand Prix": {
+          "mae_s": 0.27661467821130065,
+          "rmse_s": 0.4103909669683402,
+          "median_ae_s": 0.19912982320785488,
+          "p90_ae_s": 0.5664239213257988,
+          "signed_bias_s": 0.03388638450641294,
+          "rows": 830
+        },
+        "Singapore Grand Prix": {
+          "mae_s": 0.464642133861451,
+          "rmse_s": 0.7514731873134304,
+          "median_ae_s": 0.2662366733551025,
+          "p90_ae_s": 1.1102433589845901,
+          "signed_bias_s": 0.004117566935213772,
+          "rows": 1086
+        },
+        "S\u00e3o Paulo Grand Prix": {
+          "mae_s": 0.29267546221654456,
+          "rmse_s": 0.4113047601508902,
+          "median_ae_s": 0.21263535177708093,
+          "p90_ae_s": 0.6327593152523008,
+          "signed_bias_s": -0.02374537070019741,
+          "rows": 981
+        },
+        "United States Grand Prix": {
+          "mae_s": 0.3570392142265869,
+          "rmse_s": 1.0211548961627823,
+          "median_ae_s": 0.2485841141641174,
+          "p90_ae_s": 0.7033113549470913,
+          "signed_bias_s": 0.05884019811703513,
+          "rows": 850
+        }
+      },
+      "artifact": "f1_2025h2_ffr-m-groups-coarse"
+    },
+    {
+      "model": "FFR-M-groups-fine",
+      "family": "forward-forward",
+      "architecture": [
+        {
+          "layer": 1,
+          "input_nodes": 327,
+          "hidden_nodes": 512,
+          "ordinal_groups": 16
+        },
+        {
+          "layer": 2,
+          "input_nodes": 512,
+          "hidden_nodes": 384,
+          "ordinal_groups": 32
+        },
+        {
+          "layer": 3,
+          "input_nodes": 384,
+          "hidden_nodes": 256,
+          "ordinal_groups": 64
+        },
+        {
+          "layer": 4,
+          "input_nodes": 256,
+          "hidden_nodes": 192,
+          "ordinal_groups": 64
+        }
+      ],
+      "validation": {
+        "mae_s": 0.4391344046290138,
+        "rmse_s": 0.707036927668784,
+        "median_ae_s": 0.2975491506159358,
+        "p90_ae_s": 0.9309713586807312,
+        "signed_bias_s": 0.04245829868499667,
+        "rows": 10248,
+        "interval80_coverage": 0.7999609679937549,
+        "interval80_width_s": 1.2579201481142936
+      },
+      "test": {
+        "mae_s": 0.3526891106318853,
+        "rmse_s": 0.5941959161992764,
+        "median_ae_s": 0.2399944380521788,
+        "p90_ae_s": 0.7471457870006605,
+        "signed_bias_s": 0.07011541190031151,
+        "rows": 10994,
+        "interval80_coverage": 0.8651991995633982,
+        "interval80_width_s": 1.2579201465170666,
+        "within_0_5s_share": 0.797071129707113,
+        "within_1s_share": 0.942605057303984
+      },
+      "resources": {
+        "feature_build": {
+          "wall_seconds": 187.106,
+          "peak_rss_mb": 1823.6,
+          "peak_traced_mb": 1134.8
+        },
+        "training": {
+          "wall_seconds": 2154.15,
+          "peak_rss_mb": 2879.8,
+          "peak_traced_mb": 1431.1
+        },
+        "inference_batch_ms_per_row": 0.3498,
+        "inference_single_row_ms": 3.628,
+        "artifact_bytes": 3373356,
+        "device": "cpu-numpy"
+      },
+      "features": {
+        "count_raw": 76,
+        "numeric": 64,
+        "categorical": 12,
+        "input_nodes_after_encoding": 327,
+        "dropped_groups": [],
+        "dropped_sparse": [
+          "gap_ahead_s",
+          "gap_behind_s",
+          "mean_speed_kph",
+          "max_speed_kph",
+          "mean_throttle_pct",
+          "brake_fraction",
+          "mean_rpm",
+          "max_rpm",
+          "gear_changes",
+          "drs_fraction",
+          "hist_driver_weather_pace_rel",
+          "hist_team_weather_pace_rel",
+          "gap_ahead_s_lag1",
+          "gap_ahead_s_lag2",
+          "gap_ahead_s_lag3",
+          "gap_ahead_s_lag4",
+          "mean_speed_kph_lag1",
+          "mean_speed_kph_lag2",
+          "mean_speed_kph_lag3",
+          "mean_speed_kph_lag4",
+          "mean_throttle_pct_lag1",
+          "mean_throttle_pct_lag2",
+          "mean_throttle_pct_lag3",
+          "mean_throttle_pct_lag4",
+          "brake_fraction_lag1",
+          "brake_fraction_lag2",
+          "brake_fraction_lag3",
+          "brake_fraction_lag4"
+        ],
+        "min_feature_coverage": 0.05,
+        "target_clip_s": 6.0,
+        "contract_version": "full_context_v2_adjacency_safe_relative",
+        "history_laps": 5
+      },
+      "test_by_event": {
+        "Abu Dhabi Grand Prix": {
+          "mae_s": 0.3050218760467943,
+          "rmse_s": 0.43009381284195564,
+          "median_ae_s": 0.21991253280267387,
+          "p90_ae_s": 0.6632033890128133,
+          "signed_bias_s": 0.03899722865027665,
+          "rows": 964
+        },
+        "Azerbaijan Grand Prix": {
+          "mae_s": 0.3910960879861798,
+          "rmse_s": 0.5876131280910505,
+          "median_ae_s": 0.27258754694462084,
+          "p90_ae_s": 0.8461860222220423,
+          "signed_bias_s": 0.1730913656226554,
+          "rows": 816
+        },
+        "Belgian Grand Prix": {
+          "mae_s": 0.5385956575344993,
+          "rmse_s": 0.8089885871181678,
+          "median_ae_s": 0.3331350931227206,
+          "p90_ae_s": 1.314777949810022,
+          "signed_bias_s": 0.0021164249366142722,
+          "rows": 681
+        },
+        "Dutch Grand Prix": {
+          "mae_s": 0.29754788549705286,
+          "rmse_s": 0.467546905077027,
+          "median_ae_s": 0.19064211000688402,
+          "p90_ae_s": 0.6528454062581118,
+          "signed_bias_s": 0.07543229912347342,
+          "rows": 932
+        },
+        "Hungarian Grand Prix": {
+          "mae_s": 0.37460916284326484,
+          "rmse_s": 0.563042168514407,
+          "median_ae_s": 0.26785821080208194,
+          "p90_ae_s": 0.7821228527307525,
+          "signed_bias_s": 0.13441704728123363,
+          "rows": 1214
+        },
+        "Italian Grand Prix": {
+          "mae_s": 0.281473976615259,
+          "rmse_s": 0.37105013708702606,
+          "median_ae_s": 0.2330096883252324,
+          "p90_ae_s": 0.5473393465876615,
+          "signed_bias_s": 0.17173686547687467,
+          "rows": 838
+        },
+        "Las Vegas Grand Prix": {
+          "mae_s": 0.32085677900795184,
+          "rmse_s": 0.42923055717636316,
+          "median_ae_s": 0.2496653189957172,
+          "p90_ae_s": 0.6496737732633959,
+          "signed_bias_s": 0.12218219581852607,
+          "rows": 712
+        },
+        "Mexico City Grand Prix": {
+          "mae_s": 0.3760323964097853,
+          "rmse_s": 0.5814336218047266,
+          "median_ae_s": 0.2607587546706185,
+          "p90_ae_s": 0.7522852794617351,
+          "signed_bias_s": 0.10521167182236603,
+          "rows": 1090
+        },
+        "Qatar Grand Prix": {
+          "mae_s": 0.25009635428922283,
+          "rmse_s": 0.39027947670608293,
+          "median_ae_s": 0.16703492331504322,
+          "p90_ae_s": 0.5340162828564615,
+          "signed_bias_s": -0.03524906472749798,
+          "rows": 830
+        },
+        "Singapore Grand Prix": {
+          "mae_s": 0.4550334806714469,
+          "rmse_s": 0.7415004403474209,
+          "median_ae_s": 0.26245661187171265,
+          "p90_ae_s": 1.0604531178474446,
+          "signed_bias_s": 0.009003346926218994,
+          "rows": 1086
+        },
+        "S\u00e3o Paulo Grand Prix": {
+          "mae_s": 0.27872049992971526,
+          "rmse_s": 0.40441298654533664,
+          "median_ae_s": 0.19393864281475715,
+          "p90_ae_s": 0.6142726771831519,
+          "signed_bias_s": -0.05903003536331082,
+          "rows": 981
+        },
+        "United States Grand Prix": {
+          "mae_s": 0.3718154289187435,
+          "rmse_s": 1.0222588446999585,
+          "median_ae_s": 0.2665671522617288,
+          "p90_ae_s": 0.7306694294214225,
+          "signed_bias_s": 0.10456951385330454,
+          "rows": 850
+        }
+      },
+      "artifact": "f1_2025h2_ffr-m-groups-fine"
+    },
+    {
+      "model": "FFR-M minus historical_numeric",
+      "family": "forward-forward",
+      "architecture": [
+        {
+          "layer": 1,
+          "input_nodes": 311,
+          "hidden_nodes": 512,
+          "ordinal_groups": 8
+        },
+        {
+          "layer": 2,
+          "input_nodes": 512,
+          "hidden_nodes": 384,
+          "ordinal_groups": 16
+        },
+        {
+          "layer": 3,
+          "input_nodes": 384,
+          "hidden_nodes": 256,
+          "ordinal_groups": 32
+        },
+        {
+          "layer": 4,
+          "input_nodes": 256,
+          "hidden_nodes": 192,
+          "ordinal_groups": 64
+        }
+      ],
+      "validation": {
+        "mae_s": 0.4325437590720063,
+        "rmse_s": 0.723319772821513,
+        "median_ae_s": 0.2821778700798703,
+        "p90_ae_s": 0.9200528420686723,
+        "signed_bias_s": 0.02507332215169797,
+        "rows": 10248,
+        "interval80_coverage": 0.7999609679937549,
+        "interval80_width_s": 1.208910941847896
+      },
+      "test": {
+        "mae_s": 0.35253980950613606,
+        "rmse_s": 0.5963472400475657,
+        "median_ae_s": 0.23743539392948065,
+        "p90_ae_s": 0.7477193657249218,
+        "signed_bias_s": 0.050222857141201165,
+        "rows": 10994,
+        "interval80_coverage": 0.8545570311078771,
+        "interval80_width_s": 1.2089109423514255,
+        "within_0_5s_share": 0.8023467345824995,
+        "within_1s_share": 0.9422412224849918
+      },
+      "resources": {
+        "feature_build": {
+          "wall_seconds": 188.83,
+          "peak_rss_mb": 1818.6,
+          "peak_traced_mb": 1134.8
+        },
+        "training": {
+          "wall_seconds": 2135.933,
+          "peak_rss_mb": 2806.8,
+          "peak_traced_mb": 1423.1
+        },
+        "inference_batch_ms_per_row": 0.3485,
+        "inference_single_row_ms": 3.876,
+        "artifact_bytes": 3333603,
+        "device": "cpu-numpy"
+      },
+      "features": {
+        "count_raw": 68,
+        "numeric": 56,
+        "categorical": 12,
+        "input_nodes_after_encoding": 311,
+        "dropped_groups": [
+          "historical_numeric"
+        ],
+        "dropped_sparse": [
+          "gap_ahead_s",
+          "gap_behind_s",
+          "mean_speed_kph",
+          "max_speed_kph",
+          "mean_throttle_pct",
+          "brake_fraction",
+          "mean_rpm",
+          "max_rpm",
+          "gear_changes",
+          "drs_fraction",
+          "gap_ahead_s_lag1",
+          "gap_ahead_s_lag2",
+          "gap_ahead_s_lag3",
+          "gap_ahead_s_lag4",
+          "mean_speed_kph_lag1",
+          "mean_speed_kph_lag2",
+          "mean_speed_kph_lag3",
+          "mean_speed_kph_lag4",
+          "mean_throttle_pct_lag1",
+          "mean_throttle_pct_lag2",
+          "mean_throttle_pct_lag3",
+          "mean_throttle_pct_lag4",
+          "brake_fraction_lag1",
+          "brake_fraction_lag2",
+          "brake_fraction_lag3",
+          "brake_fraction_lag4"
+        ],
+        "min_feature_coverage": 0.05,
+        "target_clip_s": 6.0,
+        "contract_version": "full_context_v2_adjacency_safe_relative",
+        "history_laps": 5
+      },
+      "test_by_event": {
+        "Abu Dhabi Grand Prix": {
+          "mae_s": 0.31258203458723194,
+          "rmse_s": 0.43891124023218503,
+          "median_ae_s": 0.22113030362129393,
+          "p90_ae_s": 0.6995068378202561,
+          "signed_bias_s": 0.03361876007815803,
+          "rows": 964
+        },
+        "Azerbaijan Grand Prix": {
+          "mae_s": 0.39261178481682146,
+          "rmse_s": 0.6224183543767708,
+          "median_ae_s": 0.256607724815602,
+          "p90_ae_s": 0.8307098423242607,
+          "signed_bias_s": 0.15222798921432434,
+          "rows": 816
+        },
+        "Belgian Grand Prix": {
+          "mae_s": 0.5222261445951644,
+          "rmse_s": 0.7738713454293574,
+          "median_ae_s": 0.33726678550242184,
+          "p90_ae_s": 1.225724775314319,
+          "signed_bias_s": 0.024614273728217742,
+          "rows": 681
+        },
+        "Dutch Grand Prix": {
+          "mae_s": 0.2943256007866383,
+          "rmse_s": 0.463705292685183,
+          "median_ae_s": 0.18287110620736513,
+          "p90_ae_s": 0.6530256401896445,
+          "signed_bias_s": 0.05472646267397122,
+          "rows": 932
+        },
+        "Hungarian Grand Prix": {
+          "mae_s": 0.3736042549924174,
+          "rmse_s": 0.5655504305315381,
+          "median_ae_s": 0.26294075524806715,
+          "p90_ae_s": 0.764724419283873,
+          "signed_bias_s": 0.10475535858478927,
+          "rows": 1214
+        },
+        "Italian Grand Prix": {
+          "mae_s": 0.2698941644344114,
+          "rmse_s": 0.3589973589774033,
+          "median_ae_s": 0.22532996646314984,
+          "p90_ae_s": 0.5196892953693819,
+          "signed_bias_s": 0.13003496892633296,
+          "rows": 838
+        },
+        "Las Vegas Grand Prix": {
+          "mae_s": 0.3175739098754659,
+          "rmse_s": 0.4407401267079342,
+          "median_ae_s": 0.2341069363653574,
+          "p90_ae_s": 0.6602588841259359,
+          "signed_bias_s": -0.0007525485267471287,
+          "rows": 712
+        },
+        "Mexico City Grand Prix": {
+          "mae_s": 0.3532287562137891,
+          "rmse_s": 0.5744641719119856,
+          "median_ae_s": 0.23390183550120014,
+          "p90_ae_s": 0.7245008527755704,
+          "signed_bias_s": 0.037294193882009295,
+          "rows": 1090
+        },
+        "Qatar Grand Prix": {
+          "mae_s": 0.26887079864705793,
+          "rmse_s": 0.4087698538709447,
+          "median_ae_s": 0.18022631096093988,
+          "p90_ae_s": 0.5689575705528257,
+          "signed_bias_s": -0.004544056870252202,
+          "rows": 830
+        },
+        "Singapore Grand Prix": {
+          "mae_s": 0.47132501028773544,
+          "rmse_s": 0.7471102738660298,
+          "median_ae_s": 0.28112759970873213,
+          "p90_ae_s": 1.0776511235572386,
+          "signed_bias_s": 0.05345240265891305,
+          "rows": 1086
+        },
+        "S\u00e3o Paulo Grand Prix": {
+          "mae_s": 0.2932810851380877,
+          "rmse_s": 0.41584733084759545,
+          "median_ae_s": 0.20345520645381043,
+          "p90_ae_s": 0.6508155915737177,
+          "signed_bias_s": -0.05253821733431253,
+          "rows": 981
+        },
+        "United States Grand Prix": {
+          "mae_s": 0.36539481355787273,
+          "rmse_s": 1.0237823006018316,
+          "median_ae_s": 0.26077319413423794,
+          "p90_ae_s": 0.7137467886447895,
+          "signed_bias_s": 0.05736619639084473,
+          "rows": 850
+        }
+      },
+      "artifact": "f1_2025h2_ffr-m_minus_historical_numeric"
+    },
+    {
+      "model": "FFR-M minus temporal_numeric",
+      "family": "forward-forward",
+      "architecture": [
+        {
+          "layer": 1,
+          "input_nodes": 255,
+          "hidden_nodes": 512,
+          "ordinal_groups": 8
+        },
+        {
+          "layer": 2,
+          "input_nodes": 512,
+          "hidden_nodes": 384,
+          "ordinal_groups": 16
+        },
+        {
+          "layer": 3,
+          "input_nodes": 384,
+          "hidden_nodes": 256,
+          "ordinal_groups": 32
+        },
+        {
+          "layer": 4,
+          "input_nodes": 256,
+          "hidden_nodes": 192,
+          "ordinal_groups": 64
+        }
+      ],
+      "validation": {
+        "mae_s": 0.4631449584184117,
+        "rmse_s": 0.7502337806755445,
+        "median_ae_s": 0.3017809568643628,
+        "p90_ae_s": 1.0077872083306278,
+        "signed_bias_s": 0.04455438456758188,
+        "rows": 10248,
+        "interval80_coverage": 0.7999609679937549,
+        "interval80_width_s": 1.324683784638807
+      },
+      "test": {
+        "mae_s": 0.37471172406069825,
+        "rmse_s": 0.6227189486576984,
+        "median_ae_s": 0.2503682627081858,
+        "p90_ae_s": 0.7984252484798392,
+        "signed_bias_s": 0.08815404433975516,
+        "rows": 10994,
+        "interval80_coverage": 0.858468255412043,
+        "interval80_width_s": 1.3246837854141407,
+        "within_0_5s_share": 0.7784245952337638,
+        "within_1s_share": 0.9348735674004002
+      },
+      "resources": {
+        "feature_build": {
+          "wall_seconds": 179.083,
+          "peak_rss_mb": 1815.5,
+          "peak_traced_mb": 1134.8
+        },
+        "training": {
+          "wall_seconds": 1817.633,
+          "peak_rss_mb": 2866.6,
+          "peak_traced_mb": 1422.8
+        },
+        "inference_batch_ms_per_row": 0.3023,
+        "inference_single_row_ms": 3.488,
+        "artifact_bytes": 3219001,
+        "device": "cpu-numpy"
+      },
+      "features": {
+        "count_raw": 37,
+        "numeric": 25,
+        "categorical": 12,
+        "input_nodes_after_encoding": 255,
+        "dropped_groups": [
+          "temporal_numeric"
+        ],
+        "dropped_sparse": [
+          "gap_ahead_s",
+          "gap_behind_s",
+          "mean_speed_kph",
+          "max_speed_kph",
+          "mean_throttle_pct",
+          "brake_fraction",
+          "mean_rpm",
+          "max_rpm",
+          "gear_changes",
+          "drs_fraction",
+          "hist_driver_weather_pace_rel",
+          "hist_team_weather_pace_rel"
+        ],
+        "min_feature_coverage": 0.05,
+        "target_clip_s": 6.0,
+        "contract_version": "full_context_v2_adjacency_safe_relative",
+        "history_laps": 5
+      },
+      "test_by_event": {
+        "Abu Dhabi Grand Prix": {
+          "mae_s": 0.3325286480478931,
+          "rmse_s": 0.45639776918450325,
+          "median_ae_s": 0.2508737445473699,
+          "p90_ae_s": 0.7161181981130545,
+          "signed_bias_s": 0.09055280300232464,
+          "rows": 964
+        },
+        "Azerbaijan Grand Prix": {
+          "mae_s": 0.419306304190835,
+          "rmse_s": 0.6443083326293391,
+          "median_ae_s": 0.27833976274728656,
+          "p90_ae_s": 0.8975220980197207,
+          "signed_bias_s": 0.22128952173184932,
+          "rows": 816
+        },
+        "Belgian Grand Prix": {
+          "mae_s": 0.6328540493745785,
+          "rmse_s": 0.8892503773412538,
+          "median_ae_s": 0.4317604770660495,
+          "p90_ae_s": 1.4865184116363537,
+          "signed_bias_s": 0.11465499902865003,
+          "rows": 681
+        },
+        "Dutch Grand Prix": {
+          "mae_s": 0.3166414810884912,
+          "rmse_s": 0.4973488161590648,
+          "median_ae_s": 0.2008801415860617,
+          "p90_ae_s": 0.7086896731495825,
+          "signed_bias_s": 0.11304241296271318,
+          "rows": 932
+        },
+        "Hungarian Grand Prix": {
+          "mae_s": 0.40733134047380326,
+          "rmse_s": 0.5993785126401701,
+          "median_ae_s": 0.28540487653017266,
+          "p90_ae_s": 0.8687311600446793,
+          "signed_bias_s": 0.1591922904488475,
+          "rows": 1214
+        },
+        "Italian Grand Prix": {
+          "mae_s": 0.27392997631364757,
+          "rmse_s": 0.3721425941108481,
+          "median_ae_s": 0.2034136055559017,
+          "p90_ae_s": 0.5649080562353191,
+          "signed_bias_s": 0.1526322037619676,
+          "rows": 838
+        },
+        "Las Vegas Grand Prix": {
+          "mae_s": 0.3348541229217906,
+          "rmse_s": 0.4517776140743172,
+          "median_ae_s": 0.2750109205469542,
+          "p90_ae_s": 0.6730186722219031,
+          "signed_bias_s": 0.12536228331787752,
+          "rows": 712
+        },
+        "Mexico City Grand Prix": {
+          "mae_s": 0.37134560875916095,
+          "rmse_s": 0.600339665236773,
+          "median_ae_s": 0.2419894048646185,
+          "p90_ae_s": 0.7814508555233403,
+          "signed_bias_s": 0.03336210843437178,
+          "rows": 1090
+        },
+        "Qatar Grand Prix": {
+          "mae_s": 0.25741303768610646,
+          "rmse_s": 0.3937999668179272,
+          "median_ae_s": 0.17620487610994928,
+          "p90_ae_s": 0.5121400458395542,
+          "signed_bias_s": 0.008422816990798679,
+          "rows": 830
+        },
+        "Singapore Grand Prix": {
+          "mae_s": 0.5076389831662039,
+          "rmse_s": 0.7945125148223378,
+          "median_ae_s": 0.2990804254412609,
+          "p90_ae_s": 1.1776349578499818,
+          "signed_bias_s": 0.05444280207437579,
+          "rows": 1086
+        },
+        "S\u00e3o Paulo Grand Prix": {
+          "mae_s": 0.29304361883815105,
+          "rmse_s": 0.4147533428410291,
+          "median_ae_s": 0.2166425391435638,
+          "p90_ae_s": 0.6165350928306452,
+          "signed_bias_s": -0.03300443820250849,
+          "rows": 981
+        },
+        "United States Grand Prix": {
+          "mae_s": 0.36602906088804477,
+          "rmse_s": 1.0182363907350793,
+          "median_ae_s": 0.2550154529809987,
+          "p90_ae_s": 0.7521797788620049,
+          "signed_bias_s": 0.043927635143977385,
+          "rows": 850
+        }
+      },
+      "artifact": "f1_2025h2_ffr-m_minus_temporal_numeric"
+    },
+    {
+      "model": "FFR-M minus static_categorical",
+      "family": "forward-forward",
+      "architecture": [
+        {
+          "layer": 1,
+          "input_nodes": 107,
+          "hidden_nodes": 512,
+          "ordinal_groups": 8
+        },
+        {
+          "layer": 2,
+          "input_nodes": 512,
+          "hidden_nodes": 384,
+          "ordinal_groups": 16
+        },
+        {
+          "layer": 3,
+          "input_nodes": 384,
+          "hidden_nodes": 256,
+          "ordinal_groups": 32
+        },
+        {
+          "layer": 4,
+          "input_nodes": 256,
+          "hidden_nodes": 192,
+          "ordinal_groups": 64
+        }
+      ],
+      "validation": {
+        "mae_s": 0.4231047918045449,
+        "rmse_s": 0.7023306658032485,
+        "median_ae_s": 0.2737682715505372,
+        "p90_ae_s": 0.9168361977338763,
+        "signed_bias_s": 0.027262995912680364,
+        "rows": 10248,
+        "interval80_coverage": 0.7999609679937549,
+        "interval80_width_s": 1.1874607819700316
+      },
+      "test": {
+        "mae_s": 0.3531578268138063,
+        "rmse_s": 0.5958817525296655,
+        "median_ae_s": 0.2383797428160932,
+        "p90_ae_s": 0.7429245501995099,
+        "signed_bias_s": 0.06429152517945873,
+        "rows": 10994,
+        "interval80_coverage": 0.8507367655084591,
+        "interval80_width_s": 1.18746078046361,
+        "within_0_5s_share": 0.7998908495543023,
+        "within_1s_share": 0.9436056030562124
+      },
+      "resources": {
+        "feature_build": {
+          "wall_seconds": 183.188,
+          "peak_rss_mb": 1820.3,
+          "peak_traced_mb": 1134.8
+        },
+        "training": {
+          "wall_seconds": 2081.323,
+          "peak_rss_mb": 2714.8,
+          "peak_traced_mb": 1422.0
+        },
+        "inference_batch_ms_per_row": 0.3612,
+        "inference_single_row_ms": 4.167,
+        "artifact_bytes": 2942833,
+        "device": "cpu-numpy"
+      },
+      "features": {
+        "count_raw": 64,
+        "numeric": 64,
+        "categorical": 0,
+        "input_nodes_after_encoding": 107,
+        "dropped_groups": [
+          "static_categorical"
+        ],
+        "dropped_sparse": [
+          "gap_ahead_s",
+          "gap_behind_s",
+          "mean_speed_kph",
+          "max_speed_kph",
+          "mean_throttle_pct",
+          "brake_fraction",
+          "mean_rpm",
+          "max_rpm",
+          "gear_changes",
+          "drs_fraction",
+          "hist_driver_weather_pace_rel",
+          "hist_team_weather_pace_rel",
+          "gap_ahead_s_lag1",
+          "gap_ahead_s_lag2",
+          "gap_ahead_s_lag3",
+          "gap_ahead_s_lag4",
+          "mean_speed_kph_lag1",
+          "mean_speed_kph_lag2",
+          "mean_speed_kph_lag3",
+          "mean_speed_kph_lag4",
+          "mean_throttle_pct_lag1",
+          "mean_throttle_pct_lag2",
+          "mean_throttle_pct_lag3",
+          "mean_throttle_pct_lag4",
+          "brake_fraction_lag1",
+          "brake_fraction_lag2",
+          "brake_fraction_lag3",
+          "brake_fraction_lag4"
+        ],
+        "min_feature_coverage": 0.05,
+        "target_clip_s": 6.0,
+        "contract_version": "full_context_v2_adjacency_safe_relative",
+        "history_laps": 5
+      },
+      "test_by_event": {
+        "Abu Dhabi Grand Prix": {
+          "mae_s": 0.30859411929101194,
+          "rmse_s": 0.43624870880701916,
+          "median_ae_s": 0.21629148799181053,
+          "p90_ae_s": 0.6956617387533187,
+          "signed_bias_s": -0.0002465703169264324,
+          "rows": 964
+        },
+        "Azerbaijan Grand Prix": {
+          "mae_s": 0.4269439767379605,
+          "rmse_s": 0.6322692850364037,
+          "median_ae_s": 0.29160244745015973,
+          "p90_ae_s": 0.8826808296442081,
+          "signed_bias_s": 0.22727379278736598,
+          "rows": 816
+        },
+        "Belgian Grand Prix": {
+          "mae_s": 0.5285487518232997,
+          "rmse_s": 0.8017644980009071,
+          "median_ae_s": 0.3112336575388781,
+          "p90_ae_s": 1.3086550598740558,
+          "signed_bias_s": -0.005369338722484231,
+          "rows": 681
+        },
+        "Dutch Grand Prix": {
+          "mae_s": 0.29654250883571276,
+          "rmse_s": 0.46104280347193294,
+          "median_ae_s": 0.1878246510624848,
+          "p90_ae_s": 0.6485676732599684,
+          "signed_bias_s": 0.07351759032929486,
+          "rows": 932
+        },
+        "Hungarian Grand Prix": {
+          "mae_s": 0.36032609736727317,
+          "rmse_s": 0.5527114780698621,
+          "median_ae_s": 0.24585112696885858,
+          "p90_ae_s": 0.7622099644936554,
+          "signed_bias_s": 0.08485741130112572,
+          "rows": 1214
+        },
+        "Italian Grand Prix": {
+          "mae_s": 0.2611916811191709,
+          "rmse_s": 0.35484878803427905,
+          "median_ae_s": 0.20941820740699768,
+          "p90_ae_s": 0.5194387650310918,
+          "signed_bias_s": 0.13642381553322336,
+          "rows": 838
+        },
+        "Las Vegas Grand Prix": {
+          "mae_s": 0.3341817635757804,
+          "rmse_s": 0.444252145773071,
+          "median_ae_s": 0.27120163041353607,
+          "p90_ae_s": 0.6587399075269714,
+          "signed_bias_s": 0.1423381908290502,
+          "rows": 712
+        },
+        "Mexico City Grand Prix": {
+          "mae_s": 0.35458999671536046,
+          "rmse_s": 0.5728471870635893,
+          "median_ae_s": 0.23731324812769827,
+          "p90_ae_s": 0.7372496949553494,
+          "signed_bias_s": 0.04281501917161417,
+          "rows": 1090
+        },
+        "Qatar Grand Prix": {
+          "mae_s": 0.2795154740825559,
+          "rmse_s": 0.40670296336998984,
+          "median_ae_s": 0.209272389441729,
+          "p90_ae_s": 0.5566146287500885,
+          "signed_bias_s": 0.0862717723752522,
+          "rows": 830
+        },
+        "Singapore Grand Prix": {
+          "mae_s": 0.46018632957949845,
+          "rmse_s": 0.74331990101999,
+          "median_ae_s": 0.258021201372145,
+          "p90_ae_s": 1.0705233599133805,
+          "signed_bias_s": -0.017225412002461072,
+          "rows": 1086
+        },
+        "S\u00e3o Paulo Grand Prix": {
+          "mae_s": 0.28932605873965583,
+          "rmse_s": 0.4072113695337616,
+          "median_ae_s": 0.20708724927902722,
+          "p90_ae_s": 0.6118010653257357,
+          "signed_bias_s": -0.004069358895258683,
+          "rows": 981
+        },
+        "United States Grand Prix": {
+          "mae_s": 0.35774438781980183,
+          "rmse_s": 1.0195516251541685,
+          "median_ae_s": 0.24530989335477216,
+          "p90_ae_s": 0.7157903886318167,
+          "signed_bias_s": 0.049978214250371474,
+          "rows": 850
+        }
+      },
+      "artifact": "f1_2025h2_ffr-m_minus_static_categorical"
+    }
+  ]
+}

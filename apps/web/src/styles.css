@@ -36,7 +36,7 @@
 .check-row strong{display:block;font-size:12px;color:#dce4eb}
 .check-row p{margin:2px 0 0;font-size:10px;color:#87939e;line-height:1.5}
 .prose.small{font-size:10px;margin-top:12px}
-.experiments-table .wide-head,.experiments-table .wide-row{grid-template-columns:1.9fr 1.1fr 1.2fr .8fr .8fr .8fr .8fr 1fr}
+.experiments-table .wide-head,.experiments-table .wide-row{grid-template-columns:1.9fr 1fr 1.2fr .7fr .7fr .7fr .7fr .6fr .6fr 1fr}
 .imports-table .wide-head,.imports-table .wide-row{grid-template-columns:2fr 1fr 1.4fr}
 .sources-table .wide-head,.sources-table .wide-row{grid-template-columns:1.2fr 1.6fr 1.6fr 1.6fr}
 .sources-table a{color:#dce4eb;text-decoration:none}

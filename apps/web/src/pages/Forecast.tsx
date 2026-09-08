@@ -94,7 +94,7 @@ export default function Forecast() {
               <div><span>Rows</span><strong>{summary.rows.toLocaleString()}</strong></div>
               <div><span>Seasons</span><strong>{summary.seasons?.join(', ') ?? '—'}</strong></div>
               <div><span>Latest session</span><strong>{summary.latest_session ? `${summary.latest_session.season} · ${summary.latest_session.event} · ${summary.latest_session.session}` : '—'}</strong></div>
-              <div><span>Provenance</span><strong>{summary.is_synthetic ? 'Synthetic fixture' : 'User-supplied data'}</strong></div>
+              <div><span>Provenance</span><strong>{summary.is_synthetic ? 'Synthetic fixture' : (summary.data_source && summary.data_source !== 'user_supplied' ? summary.data_source.replace(/_/g, ' ').replace(/\+/g, ' + ') : 'User-supplied data')}</strong></div>
               {summary.missing_required_columns.length > 0 && <div><span>Missing columns</span><strong className="bad">{summary.missing_required_columns.join(', ')}</strong></div>}
             </div>
           )}
@@ -155,6 +155,37 @@ export default function Forecast() {
           </div>
         )}
       </Panel>
+
+      {result && (
+        <div className="two-col">
+          <Panel title="Input context at end of lap" icon={<Target size={17} />} action={<SourceBadge kind="local" />}>
+            <div className="detail-list compact">
+              <div><span>Tyre</span><strong>{result.context.compound ?? '—'}{result.context.tyre_life != null ? ` · ${result.context.tyre_life.toFixed(0)} laps` : ''}{result.context.stint != null ? ` · stint ${result.context.stint.toFixed(0)}` : ''}</strong></div>
+              <div><span>Consecutive clean laps</span><strong>{result.context.laps_in_segment != null ? result.context.laps_in_segment.toFixed(0) : '—'}</strong></div>
+              <div><span>Position</span><strong>{result.context.position != null ? `P${result.context.position.toFixed(0)}` : '—'}</strong></div>
+              <div><span>Track / air</span><strong>{fmtNumber(result.context.track_temp_c, 1)} °C / {fmtNumber(result.context.air_temp_c, 1)} °C</strong></div>
+              <div><span>Humidity</span><strong>{fmtNumber(result.context.humidity_pct, 0)} %</strong></div>
+              <div><span>Wind</span><strong>{fmtNumber(result.context.wind_speed_ms, 1)} m/s{result.context.wind_direction_deg != null ? ` from ${result.context.wind_direction_deg.toFixed(0)}°` : ''}</strong></div>
+              <div><span>Rain</span><strong>{result.context.rainfall ?? '—'}</strong></div>
+              <div><span>Gap ahead / behind</span><strong>{fmtNumber(result.context.gap_ahead_s, 1)} s / {fmtNumber(result.context.gap_behind_s, 1)} s</strong></div>
+              <div><span>Team</span><strong>{result.context.team ?? '—'}</strong></div>
+            </div>
+          </Panel>
+          <Panel title="Historical context (earlier events only)" icon={<BrainCircuit size={17} />} action={<SourceBadge kind="local" text="Prior events" />}>
+            <div className="detail-list compact">
+              <div><span>Driver at this circuit</span><strong>{fmtLap(result.historical_context.driver_circuit_pace_s)}</strong></div>
+              <div><span>Team at this circuit</span><strong>{fmtLap(result.historical_context.team_circuit_pace_s)}</strong></div>
+              <div><span>Compound at this circuit</span><strong>{fmtLap(result.historical_context.compound_circuit_pace_s)}</strong></div>
+              <div><span>Driver · circuit · compound</span><strong>{fmtLap(result.historical_context.driver_circuit_compound_pace_s)}</strong></div>
+              <div><span>Matched weather · compound</span><strong>{fmtLap(result.historical_context.matched_weather_compound_pace_s)}</strong></div>
+              <div><span>Driver · matched weather</span><strong>{fmtLap(result.historical_context.driver_matched_weather_pace_s)}</strong></div>
+              <div><span>Driver · all earlier events</span><strong>{fmtLap(result.historical_context.driver_overall_pace_s)}</strong></div>
+              <div><span>Team · all earlier events</span><strong>{fmtLap(result.historical_context.team_overall_pace_s)}</strong></div>
+            </div>
+            <p className="prose small">{result.historical_context.note} Values are median lap times from previous events; the model uses them relative to the current rolling pace.</p>
+          </Panel>
+        </div>
+      )}
     </div>
   );
 }

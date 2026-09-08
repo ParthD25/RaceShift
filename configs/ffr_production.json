@@ -1,13 +1,24 @@
 {
+  "name": "FFR-M",
   "model": "RaceShiftFFR",
   "training_policy": "forward-forward-local-updates-no-global-backprop",
   "history_laps": 5,
-  "layer_nodes": [512, 384, 256, 192],
-  "ordinal_groups": [8, 16, 32, 64],
+  "layer_nodes": [
+    512,
+    384,
+    256,
+    192
+  ],
+  "ordinal_groups": [
+    8,
+    16,
+    32,
+    64
+  ],
   "epochs_per_layer": 80,
   "batch_size": 512,
   "learning_rate": 0.0008,
-  "weight_decay": 0.00001,
+  "weight_decay": 1e-05,
   "temperature": 0.55,
   "target_sigma_groups": 1.1,
   "ridge_alpha": 2.0,

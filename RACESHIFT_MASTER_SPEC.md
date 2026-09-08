@@ -820,12 +820,12 @@ Implemented:
 - local model save/load
 - local forecast endpoint
 - synthetic demo artifact
-- 26 passing Python tests (leakage, chronological split, Forward-Forward policy, artifact forecasting, local API)
+- 47 passing Python tests (leakage and feature-availability, lap-state adjacency, chronological and round splits, Forward-Forward policy, artifact forecasting, local API)
+- real FastF1 collection and experiment runner with baselines, FFR depth/group ladders, feature ablations, circuit holdout and resource metrics
 
-Not yet validated on real F1:
+Validated on real F1 so far: see `reports/` for the measured tables. Not yet validated:
 
-- headline MAE
-- wet-race performance
+- wet-race performance in isolation
 - 2026 domain shift
 - live-stream reliability
 - endurance-series generalization
