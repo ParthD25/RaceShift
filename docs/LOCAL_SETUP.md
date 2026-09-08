@@ -31,13 +31,33 @@ Windows PowerShell activation:
 npm run dev
 ```
 
-`concurrently` starts the local FastAPI server and the React/Vite development server together.
+`concurrently` starts the local FastAPI server (127.0.0.1:8000) and the React/Vite development
+server (127.0.0.1:5173) together. If either port is taken you get `Address already in use`;
+pick other ports for both with environment variables, which the API, the Vite proxy and the
+sidebar status all read:
+
+```bash
+API_PORT=8010 WEB_PORT=5180 npm run dev
+```
+
+Expected output: `[API] Uvicorn running on http://127.0.0.1:8000` and `[WEB] Local:
+http://127.0.0.1:5173/`. The Settings page shows a setup checklist with every dependency,
+artifact and data file it found.
 
 ## Local data connection
 
-Copy CSV or Parquet into `data/imports/`, or upload it from the Datasets page (the UI calls
-`POST /api/import`). The backend resolves filenames strictly inside this directory and rejects
-path traversal.
+The repository ships two tables in `data/imports/`: `f1_2025_season.parquet` (every 2025 race,
+FastF1 timing, 640 KB) and `synthetic_fixture.csv` (generated engineering data). The Forecast
+page selects the real season by default, so the first **Run forecast** predicts a real driver's
+next lap at the 2025 Abu Dhabi Grand Prix and then backtests that driver's last ten laps.
+
+To add a race, fetch it (about 15 s per race, cached afterwards) or copy CSV/Parquet into
+`data/imports/`, or upload it from the Datasets page (the UI calls `POST /api/import`). The
+backend resolves filenames strictly inside this directory and rejects path traversal.
+
+```bash
+python scripts/fetch_fastf1.py --year 2025 --event "Abu Dhabi" --session R --output data/imports/abu_dhabi_2025.parquet
+```
 
 Required columns: `season, event, session, driver, lap_number, lap_time_s`. The full schema is in
 `docs/FEATURE_CONTRACT.md`.
@@ -51,6 +71,11 @@ curl -s -X POST http://127.0.0.1:8000/api/forecast/latest \
 
 # equivalent query-string alias
 curl -s "http://127.0.0.1:8000/api/forecast?file=my_2025_race_laps.parquet&driver=VER"
+
+# how did the model do on the laps that were actually driven? (predicted vs actual, last 10 lap pairs)
+curl -s -X POST http://127.0.0.1:8000/api/forecast/backtest \
+  -H 'Content-Type: application/json' \
+  -d '{"file": "f1_2025_season.parquet", "driver": "VER", "laps": 10}'
 ```
 
 The forecast uses the chronologically latest session in the file. Omit `driver` to use the driver
@@ -101,7 +126,7 @@ Results land in `reports/f1_2025/summary.md` and every run's `metrics.json` is l
 ## Verify the install
 
 ```bash
-npm run test:py        # 39 Python tests: leakage, availability, adjacency, splits, no-backprop policy, artifact, API
+npm run test:py        # Python tests: leakage, availability, adjacency, gradients, splits, artifact, API (count printed by pytest)
 npm run build          # TypeScript check + Vite production build
 ```
 

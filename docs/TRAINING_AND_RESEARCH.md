@@ -196,6 +196,36 @@ are close and both trail the tree model.
 - The training residual target is winsorized to ±6 s; the raw target ranges from −54 s to
   +18 s on real races and least-squares fits were dominated by the tails.
 
+## What "Forward-Forward" means here, and what it does not
+
+RaceShift FFR trains each layer with its own objective: hidden units are split into ordered
+groups, the mean squared activation of each group is its "goodness", and a softmax over group
+goodness is trained by cross entropy against a soft ordinal target derived from the scaled
+residual. The gradient of that loss with respect to the layer's weight and bias is derived by
+hand (`_FFLocalLayer.local_gradient`) and applied with a local Adam step. Layer *k*+1 receives
+the normalised output of layer *k* as a plain array; no quantity computed in layer *k*+1 ever
+reaches layer *k*. Two tests make this concrete: the analytic gradient is compared with finite
+differences entry by entry, and a layer's gradient and update are asserted to be bit-identical
+when every later layer's weights are replaced with random values.
+
+This is **greedy layer-wise supervised training with local objectives**. It shares with
+Hinton's Forward-Forward algorithm the absence of a backward pass across layers and the use of
+a per-layer goodness measure, but it does **not** use positive and negative data passes. Calling
+it "Forward-Forward regression" is a shorthand for the family (local goodness objectives,
+forward-only training), not a claim to reproduce the original algorithm.
+
+The 80% interval is the 80th percentile of |validation residual|, computed on the clipped (±6 s)
+validation target. Clipping only affects residuals beyond ±6 s, which are far outside the
+80th percentile (about 0.6 s), so the interval is unaffected; the coverage reported in the tables
+is always evaluated on the raw, unclipped target.
+
+## Seed sensitivity
+
+Every headline row is one run with seed 42. Where `scripts/seed_sweep.py` has been run, the
+resulting `reports/<name>/seeds.md` gives the mean and standard deviation of test MAE across
+seeds for FFR-S, which is the yardstick for deciding whether a difference between two FFR
+variants is an effect or noise.
+
 ## Known gaps
 
 - The 2018 Italian Grand Prix race is missing from the FastF1 tier: the live-timing archive

@@ -95,17 +95,25 @@ class _FFLocalLayer:
         target = np.exp(-0.5 * dist2 / max(self.target_sigma_groups**2, 1e-6))
         return target / np.maximum(target.sum(axis=1, keepdims=True), 1e-8)
 
-    def local_train_step(self, x: np.ndarray, y_scaled: np.ndarray) -> float:
-        """One local update with a manually derived gradient.
+    def local_loss(self, x: np.ndarray, y_scaled: np.ndarray) -> float:
+        """The layer's own objective: cross entropy between soft ordinal targets and the
+        softmax over group goodness. Depends on this layer's weights only."""
+        return self.local_gradient(x, y_scaled)[0]
 
-        This is not global backpropagation. No gradient is propagated through other
-        layers and no autograd engine is invoked.
+    def local_gradient(self, x: np.ndarray, y_scaled: np.ndarray) -> tuple[float, np.ndarray, np.ndarray]:
+        """Loss and its analytic gradient with respect to this layer's weight and bias.
+
+        The computation uses only this layer's input, weights and targets; there is no
+        reference to any other layer, so nothing can flow backwards. Arithmetic follows the
+        dtype of ``self.weight`` (float32 in training; tests use float64 to compare against
+        finite differences).
         """
-        x_norm = self._normalize_rows(x.astype(np.float32, copy=False))
+        dtype = self.weight.dtype
+        x_norm = self._normalize_rows(x.astype(dtype, copy=False))
         z = x_norm @ self.weight + self.bias
         hidden = np.maximum(z, 0.0)
         goodness = self.goodness(hidden)
-        target = self._soft_targets(y_scaled.astype(np.float32, copy=False))
+        target = self._soft_targets(y_scaled.astype(dtype, copy=False))
 
         logits = goodness / self.temperature
         logits = logits - logits.max(axis=1, keepdims=True)
@@ -122,6 +130,15 @@ class _FFLocalLayer:
         d_z = d_hidden * (z > 0.0)
         d_w = x_norm.T @ d_z
         d_b = d_z.sum(axis=0)
+        return float(loss), d_w, d_b
+
+    def local_train_step(self, x: np.ndarray, y_scaled: np.ndarray) -> float:
+        """One local update with a manually derived gradient.
+
+        This is not global backpropagation. No gradient is propagated through other
+        layers and no autograd engine is invoked.
+        """
+        loss, d_w, d_b = self.local_gradient(x, y_scaled)
 
         total_norm = float(np.sqrt(np.sum(d_w * d_w) + np.sum(d_b * d_b)))
         if total_norm > self.clip_update_norm:

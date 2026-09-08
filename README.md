@@ -31,14 +31,34 @@ npm install
 npm run dev
 ```
 
-UI at <http://127.0.0.1:5173>, API at <http://127.0.0.1:8000/api/health>. Open **Forecast**,
-pick a dataset and an artifact, press **Run forecast**. The packaged demo artifact is trained on
-a synthetic fixture and is badged *Synthetic model*; real artifacts are badged *Real artifact*.
+UI at <http://127.0.0.1:5173>, API at <http://127.0.0.1:8000/api/health>. Open **Forecast** and
+press **Run forecast**: the repository ships the whole 2025 season of FastF1 race timing
+(`data/imports/f1_2025_season.parquet`, 640 KB) and the real-data FFR-M model, so the first
+forecast is a real driver's next lap at the 2025 Abu Dhabi Grand Prix, followed by a backtest of
+that driver's last ten laps (predicted vs actual). Nothing needs to be trained or downloaded.
+Also included: a synthetic fixture and a small demo model trained on it, both badged
+*Synthetic* wherever they appear.
 
 ```bash
-npm run test:py     # 47 tests: leakage, feature availability, lap adjacency, splits, no-backprop policy, artifact, API
+npm run test:py     # Python tests: leakage, feature availability, lap adjacency, gradients, splits, artifact, API
 npm run build       # TypeScript check + Vite build
+API_PORT=8010 WEB_PORT=5180 npm run dev                # if 8000 or 5173 is taken
+python scripts/fetch_fastf1.py --year 2025 --event "Abu Dhabi" --session R \
+    --output data/imports/abu_dhabi_2025.parquet       # one more race in about 15 s; the UI lists it
+npm run demo:data && npm run demo:model                # regenerate the synthetic fixture and demo model (untracked output)
 ```
+
+A step-by-step walkthrough with expected output is in `docs/LOCAL_SETUP.md`. There is no
+live-timing connection; RaceShift reads local files only.
+
+**How to read the numbers.** This is regression, not classification, so there is no
+"accuracy" percentage. MAE is the average distance in seconds between the predicted and the
+true next lap, and lower is better. Read the results as: the model is typically within about a
+third of a second of the real next lap on laps of about 90 s, predicts 8 in 10 laps within
+half a second and 19 in 20 within one second, and its "80% interval" contains the true lap
+about 86% of the time. Every table also reports the two zero-parameter baselines (repeat the
+last lap, take the five-lap median): a model that does not clearly beat them has not learned
+anything a fan could not do with a stopwatch.
 
 ## Results
 
@@ -105,13 +125,22 @@ Full table with validation metrics, interval widths and latency: `reports/domain
 Every number above is reproducible from `scripts/run_experiments.py` on FastF1 data. Synthetic
 fixture numbers are never reported as Formula 1 results.
 
-**How to read the numbers.** This is regression, not classification, so there is no
-"accuracy" percentage. MAE is the average distance in seconds between the predicted and the
-true next lap; a validation MAE of 0.43 s on laps of about 90 s is a relative error of 0.4%
-(R² 0.997 on the test laps), and lower is better. The accuracy-style views are the tolerance
-shares: FFR-M predicts 80% of test laps within 0.5 s and 94% within 1 s of the truth, and its
-80% prediction interval contains the true lap 86% of the time. Improving the model means
-lowering the MAE and raising the tolerance shares; both are recorded for every run.
+**Protocol notes that matter when reading the tables.**
+
+- Every row is a single run with seed 42. Differences of a few thousandths of a second between
+  FFR variants (depth, group ladders, ablations that "change nothing") are within what a
+  different seed could produce and are not claimed as effects; `reports/<name>/seeds.md`
+  records the seed spread where it has been measured.
+- The learned baselines (ridge, gradient-boosted trees) report validation metrics from a
+  train-only fit and test metrics from a refit on train + validation, the usual practice for
+  models with no early stopping. FFR is trained on the training seasons only and uses the
+  validation rounds to calibrate its interval. The asymmetry favours the baselines slightly;
+  `reports/f1_2025h2/generalization.md` shows the train-only tree at 0.316 s vs 0.317 s.
+- "Forward-Forward" here means greedy layer-wise training with a local ordinal-goodness
+  objective and no gradient flowing between layers. There is no positive/negative data pass as
+  in Hinton's original formulation; `docs/TRAINING_AND_RESEARCH.md` spells out the difference.
+- Lap-validity rules are versioned (`lap_validity_version` in every metrics file). All tables
+  above were produced under version 2, which excludes the restart lap after a red flag.
 
 **What the numbers say so far** (2018-2024 training, 128k clean laps; test = 2025 rounds 13-24):
 
@@ -198,7 +227,11 @@ either appears in the model source.
   holdout, train ≤ 2024 → 2026 domain shift without retraining, and a 2000-2024 legacy
   training extension on the same test rows.
 - **Baselines first.** Previous lap, rolling-five median, ridge, gradient-boosted trees on the
-  same table, split, sparse-feature filter and clipped target.
+  same table, split, sparse-feature filter and clipped target (learned baselines refit on
+  train + validation for the test score; see the protocol notes under Results).
+- **Local learning, tested.** Each layer's analytic gradient is checked against finite
+  differences, and a test asserts that a layer's update does not change when the weights of
+  any later layer change: nothing flows backwards between layers.
 - **Resources.** Training wall time, peak RSS, traced peak, single-row latency, artifact bytes.
 
 Details: `docs/FEATURE_CONTRACT.md`, `docs/TRAINING_AND_RESEARCH.md`, `RACESHIFT_MASTER_SPEC.md`.
@@ -238,8 +271,13 @@ NumPy implementation with onnxruntime before it is saved), the fitted preprocess
 JSON with a pure-NumPy implementation (`raceshift.models.export.apply_preprocessor_spec`, no
 pickle needed), a generated model card (data, split, metrics, resources, limitations,
 inference snippet) and an export manifest, plus `exports/<name>.zip` bundling the whole
-artifact. The same bundle is served by `GET /api/models/{id}/export` and linked from the
-Models page. The real FFR-M export is committed under `artifacts/f1_2025h2_ffr-m/export/`.
+artifact. The same bundle is served by `GET /api/models/{id}/export` (staged under
+`exports/<name>/`, never inside the tracked artifact) and linked from the Models page.
+
+What is in git for the real FFR-M artifact: the NumPy weights, preprocessor, feature contract,
+metrics, test predictions, the JSON preprocessor spec, the model card and the export manifest.
+The `.onnx` file itself is not committed (`*.onnx` is ignored); the command above regenerates
+and re-verifies it in a few seconds.
 
 ## Local API
 
@@ -251,6 +289,8 @@ Models page. The real FFR-M export is committed under `artifacts/f1_2025h2_ffr-m
 | GET | `/api/models/{id}/export` | Zip bundle of an artifact: weights, preprocessor, ONNX core, JSON preprocessor spec, model card |
 | POST | `/api/import` | Upload a CSV/Parquet lap table (200 MB, 2M rows, 250 columns) into `data/imports/` |
 | POST | `/api/forecast/latest` | `{file, driver?, artifact?}` → next lap, 80% interval, input and historical context |
+| POST | `/api/forecast/backtest` | `{file, driver?, artifact?, laps?}` → predicted vs actual for the driver's last completed laps, MAE, naive-baseline MAE, interval coverage |
+| GET | `/api/reports`, `/api/reports/drivers` | Committed breakdown reports (MAE by circuit, team, compound, ...) and per-driver test error of every artifact |
 
 Localhost only, no credentials, path-restricted file access. See `apps/api/README.md` and
 `docs/SECURITY.md`.
@@ -258,7 +298,7 @@ Localhost only, no credentials, path-restricted file access. See `apps/api/READM
 ## Project map
 
 ```text
-apps/web/                  React/Vite UI (live API data; fixture visuals are badged)
+apps/web/                  React/Vite UI (Overview, Forecast + backtest, Compare Drivers, Experiments, Datasets, Models; Telemetry/Strategy are marked Planned)
 apps/api/                  local FastAPI backend
 src/raceshift/data/        schema, provenance, splits, FastF1 / Jolpica-Ergast / OpenF1 adapters
 src/raceshift/features/    lap-state flags, segments, leakage-safe features, selection
@@ -269,10 +309,10 @@ scripts/                   collectors (FastF1, Jolpica), training, baselines, ex
 configs/                   FFR-S/M/L, group-ladder ablations, baseline settings
 reports/                   measured experiment tables (committed)
 notebooks/                 Colab workflow
-data/imports/              local datasets (synthetic fixture included)
-artifacts/                 model artifacts (synthetic demo committed; real runs listed when present)
-docs/                      feature contract, research standard, sources, security
-tests/                     47 tests
+data/imports/              local datasets (2025 season FastF1 timing and the synthetic fixture included)
+artifacts/                 model artifacts (real FFR-M and legacy FFR-S, baseline metrics and the synthetic demo committed)
+docs/                      feature contract, research standard, sources, security, local setup walkthrough
+tests/                     Python tests (see `npm run test:py`)
 ```
 
 ## Status
