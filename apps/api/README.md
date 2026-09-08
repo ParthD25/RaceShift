@@ -24,6 +24,9 @@ uvicorn apps.api.main:app --reload --host 127.0.0.1 --port 8000
 | GET | `/api/models/{id}/export` | Build (or reuse) and download the artifact's export bundle: weights, preprocessor, verified ONNX core, JSON preprocessor spec, model card |
 | POST | `/api/import` | Multipart upload of a `.csv`/`.parquet` lap table into `data/imports/` (200 MB, 250 columns and 2,000,000-row caps, `?overwrite=true` to replace) |
 | POST | `/api/forecast/latest` | JSON `{file, driver?, artifact?}` → next-lap forecast with 80% interval, `context` (tyre, weather, gaps at the end of the lap) and `historical_context` (medians from earlier events) |
+| POST | `/api/forecast/backtest` | JSON `{file, driver?, artifact?, laps?}` → predicted vs actual for the driver's last completed lap pairs in the latest session, with MAE, naive previous-lap MAE and 80% interval coverage |
+| GET | `/api/reports` | Committed `reports/<name>/breakdowns.json` (test MAE by circuit, team, compound, tyre age, race phase, position) |
+| GET | `/api/reports/drivers` | `test_by_driver` metrics of every complete artifact |
 | GET | `/api/forecast` | Query-string alias of the forecast endpoint for `curl` |
 | GET | `/api/experiments` | Every `metrics.json` under `artifacts/`, baseline reports flattened per model |
 
