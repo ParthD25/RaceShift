@@ -70,6 +70,8 @@ stage_experiments() {
           configs/ffr_m_groups_coarse.json configs/ffr_m_groups_fine.json \
     --ablate historical_numeric temporal_numeric static_categorical \
     --artifacts-dir "$ARTIFACTS" --reports-dir "$REPORTS" --resume
+  "$PY" scripts/breakdown_report.py --input "$input" --report f1_2025h2 --reports-dir "$REPORTS" \
+    --artifacts "$ARTIFACTS"/f1_2025h2_baselines "$ARTIFACTS"/f1_2025h2_ffr-*
   log "Circuit holdout: every Italian Grand Prix held out"
   "$PY" scripts/run_experiments.py --input "$input" --name holdout_monza \
     --train-end 2024 --val-year 2025 --test-year 2025 --holdout-event "Italian Grand Prix" \
@@ -91,6 +93,8 @@ stage_legacy_experiments() {
     --train-end 2024 --val-year 2025 --test-year 2025 --split-round 12 \
     --ffr configs/ffr_production.json configs/ffr_small.json \
     --artifacts-dir "$ARTIFACTS" --reports-dir "$REPORTS" --resume
+  "$PY" scripts/breakdown_report.py --input "$input" --report f1_2025h2_legacy_ext --reports-dir "$REPORTS" \
+    --artifacts "$ARTIFACTS"/f1_2025h2_legacy_ext_baselines "$ARTIFACTS"/f1_2025h2_legacy_ext_ffr-*
   "$PY" scripts/update_readme_results.py f1_2025h2 f1_2025h2_legacy_ext holdout_monza domain_shift_2026 \
     --titles "Season-round split, 2018-2025 FastF1 tier" "Same split, training extended to 2000 with the legacy tier" \
              "Circuit holdout (Monza)" "2026 domain shift, no retraining"

@@ -62,6 +62,19 @@ npm run build       # TypeScript check + Vite build
 
 Full table with validation metrics, interval widths and latency: `reports/f1_2025h2/summary.md`.
 
+**Same split, training extended to 2000 with the legacy tier** — train ≤ 2024 · validation 2025 rounds ≤ 12 · test 2025 rounds > 12. Rows: train 429756, validation 10248, test 10994. Data: fastf1_timing+legacy_timing.
+
+| Model | Test MAE (s) | Test RMSE (s) | p90 (s) | Laps within 0.5 s | 80% coverage | Train time (s) | Peak RSS (MB) | Traced train peak (MB) | Artifact (MB) |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| previous_lap | 0.357 | 0.645 | 0.822 | — | — | — | — | — | — |
+| rolling_median_5 | 0.394 | 0.675 | 0.889 | — | — | — | — | — | — |
+| ridge | 0.372 | 0.615 | 0.784 | — | — | 117.8 | 9373 | 4861 | — |
+| **hist_gradient_boosting** | 0.314 | 0.569 | 0.680 | — | — | 246.4 | 11273 | 5668 | — |
+| FFR-M | 0.347 | 0.592 | 0.742 | — | 0.856 | 8156.7 | 8941 | 4764 | 3.99 |
+| FFR-S | 0.342 | 0.588 | 0.740 | 81.0% | 0.855 | 1640.6 | 7389 | 2571 | 2.21 |
+
+Full table with validation metrics, interval widths and latency: `reports/f1_2025h2_legacy_ext/summary.md`.
+
 **Circuit holdout (Monza)** — every season of **Italian Grand Prix** held out; train ≤ 2024, validation 2025. Rows: train 123559, validation 20404, test 6166. Data: fastf1_timing.
 
 | Model | Test MAE (s) | Test RMSE (s) | p90 (s) | Laps within 0.5 s | 80% coverage | Train time (s) | Peak RSS (MB) | Traced train peak (MB) | Artifact (MB) |
@@ -130,7 +143,12 @@ lowering the MAE and raising the tolerance shares; both are recorded for every r
   worse than the tree, but its 80% intervals, calibrated on 2025, cover only 77% of 2026 laps:
   the shift is visible in calibration before it is visible in MAE.
 
-The 2000-2024 legacy training extension is reported when it finishes; see `reports/`.
+- **Training extended to 2000 with the legacy tier (429,756 laps, same 2025 test rows).** Every
+  learned model improves a little: ridge 0.393 → 0.372 s, trees 0.317 → 0.314 s, FFR-M 0.352 →
+  0.347 s, FFR-S 0.357 → 0.342 s. Eighteen seasons of lap-time-only history help, and the small
+  FFR benefits most; on the larger table FFR-S overtakes FFR-M while training five times faster.
+  Training cost grows with the data: the tree needs 4 minutes and 5.7 GB traced, FFR-S 27
+  minutes and 2.6 GB, FFR-M over two hours.
 
 ## Architecture
 
