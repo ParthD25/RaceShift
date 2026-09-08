@@ -23,7 +23,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def run(cmd: list[str]) -> None:
+def run(cmd: list[str], out: Path | None = None, resume: bool = False) -> None:
+    """Run one training process; with ``resume`` a finished run (metrics.json present) is skipped."""
+    if resume and out is not None and (out / "metrics.json").exists():
+        print(f"= reusing finished run {out}", flush=True)
+        return
     print("+", " ".join(cmd), flush=True)
     subprocess.run(cmd, check=True, cwd=ROOT)
 
@@ -50,6 +54,7 @@ def main() -> None:
     p.add_argument("--artifacts-dir", default=str(ROOT / "artifacts"))
     p.add_argument("--reports-dir", default=str(ROOT / "reports"))
     p.add_argument("--skip-baselines", action="store_true")
+    p.add_argument("--resume", action="store_true", help="Skip runs whose metrics.json already exists (restart-safe)")
     p.add_argument("--data-source")
     args = p.parse_args()
 
@@ -66,19 +71,19 @@ def main() -> None:
     runs: list[tuple[str, Path]] = []
     if not args.skip_baselines:
         out = artifacts / f"{args.name}_baselines"
-        run([py, "scripts/train_baselines.py", "--input", args.input, "--output", str(out), *split_args])
+        run([py, "scripts/train_baselines.py", "--input", args.input, "--output", str(out), *split_args], out, args.resume)
         runs.append(("baselines", out))
     for cfg in args.ffr:
         cfg_name = json.loads(Path(cfg).read_text()).get("name", Path(cfg).stem)
         out = artifacts / f"{args.name}_{cfg_name.lower().replace(' ', '_')}"
-        run([py, "scripts/train_ffr.py", "--input", args.input, "--config", cfg, "--output", str(out), *split_args])
+        run([py, "scripts/train_ffr.py", "--input", args.input, "--config", cfg, "--output", str(out), *split_args], out, args.resume)
         runs.append((cfg_name, out))
     for group in args.ablate:
         cfg = args.ffr[0]
         cfg_name = json.loads(Path(cfg).read_text()).get("name", Path(cfg).stem)
         label = f"{cfg_name} minus {group}"
         out = artifacts / f"{args.name}_{cfg_name.lower()}_minus_{group}"
-        run([py, "scripts/train_ffr.py", "--input", args.input, "--config", cfg, "--output", str(out), "--drop-feature-group", group, "--name", label, *split_args])
+        run([py, "scripts/train_ffr.py", "--input", args.input, "--config", cfg, "--output", str(out), "--drop-feature-group", group, "--name", label, *split_args], out, args.resume)
         runs.append((label, out))
 
     # Aggregate.
