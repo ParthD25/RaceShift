@@ -47,10 +47,10 @@ npm run build       # TypeScript check + Vite build
 
 | Model | Test MAE (s) | Test RMSE (s) | p90 (s) | Laps within 0.5 s | 80% coverage | Train time (s) | Peak RSS (MB) | Traced train peak (MB) | Artifact (MB) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| previous_lap | 0.357 | 0.645 | 0.822 | — | — | — | — | — | — |
-| rolling_median_5 | 0.394 | 0.675 | 0.889 | — | — | — | — | — | — |
-| ridge | 0.393 | 0.624 | 0.811 | — | — | 21.4 | 2478 | 804 | — |
-| **hist_gradient_boosting** | 0.317 | 0.570 | 0.680 | — | — | 43.4 | 2888 | 830 | — |
+| previous_lap | 0.357 | 0.645 | 0.822 | 80.6% | — | — | — | — | — |
+| rolling_median_5 | 0.394 | 0.675 | 0.889 | 76.9% | — | — | — | — | — |
+| ridge | 0.393 | 0.624 | 0.811 | 74.8% | — | 23.6 | 2486 | 804 | — |
+| **hist_gradient_boosting** | 0.317 | 0.570 | 0.680 | 83.6% | — | 48.2 | 2896 | 830 | — |
 | FFR-M | 0.352 | 0.595 | 0.740 | 80.2% | 0.857 | 2064.1 | 2973 | 1423 | 3.37 |
 | FFR-S | 0.357 | 0.596 | 0.747 | 79.6% | 0.856 | 375.2 | 1990 | 637 | 1.88 |
 | FFR-L | 0.349 | 0.595 | 0.735 | 80.4% | 0.858 | 9804.7 | 4324 | 2783 | 8.24 |
@@ -60,20 +60,20 @@ npm run build       # TypeScript check + Vite build
 | FFR-M minus temporal_numeric | 0.375 | 0.623 | 0.798 | 77.8% | 0.858 | 1817.6 | 2867 | 1423 | 3.22 |
 | FFR-M minus static_categorical | 0.353 | 0.596 | 0.743 | 80.0% | 0.851 | 2081.3 | 2715 | 1422 | 2.94 |
 
-Full table with validation metrics, interval widths and latency: `reports/f1_2025h2/summary.md`.
+Full table with validation metrics, interval widths and latency: `reports/f1_2025h2/summary.md`. Error by circuit, constructor, compound, tyre age, conditions, race phase and position: `reports/f1_2025h2/breakdowns.md`.
 
 **Same split, training extended to 2000 with the legacy tier** — train ≤ 2024 · validation 2025 rounds ≤ 12 · test 2025 rounds > 12. Rows: train 429756, validation 10248, test 10994. Data: fastf1_timing+legacy_timing.
 
 | Model | Test MAE (s) | Test RMSE (s) | p90 (s) | Laps within 0.5 s | 80% coverage | Train time (s) | Peak RSS (MB) | Traced train peak (MB) | Artifact (MB) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| previous_lap | 0.357 | 0.645 | 0.822 | — | — | — | — | — | — |
-| rolling_median_5 | 0.394 | 0.675 | 0.889 | — | — | — | — | — | — |
-| ridge | 0.372 | 0.615 | 0.784 | — | — | 117.8 | 9373 | 4861 | — |
-| **hist_gradient_boosting** | 0.314 | 0.569 | 0.680 | — | — | 246.4 | 11273 | 5668 | — |
-| FFR-M | 0.347 | 0.592 | 0.742 | — | 0.856 | 8156.7 | 8941 | 4764 | 3.99 |
+| previous_lap | 0.357 | 0.645 | 0.822 | 80.6% | — | — | — | — | — |
+| rolling_median_5 | 0.394 | 0.675 | 0.889 | 76.9% | — | — | — | — | — |
+| ridge | 0.372 | 0.615 | 0.784 | 77.9% | — | 117.8 | 9373 | 4861 | — |
+| **hist_gradient_boosting** | 0.314 | 0.569 | 0.680 | 83.8% | — | 246.4 | 11273 | 5668 | — |
+| FFR-M | 0.347 | 0.592 | 0.742 | 80.6% | 0.856 | 8156.7 | 8941 | 4764 | 3.99 |
 | FFR-S | 0.342 | 0.588 | 0.740 | 81.0% | 0.855 | 1640.6 | 7389 | 2571 | 2.21 |
 
-Full table with validation metrics, interval widths and latency: `reports/f1_2025h2_legacy_ext/summary.md`.
+Full table with validation metrics, interval widths and latency: `reports/f1_2025h2_legacy_ext/summary.md`. Error by circuit, constructor, compound, tyre age, conditions, race phase and position: `reports/f1_2025h2_legacy_ext/breakdowns.md`.
 
 **Circuit holdout (Monza)** — every season of **Italian Grand Prix** held out; train ≤ 2024, validation 2025. Rows: train 123559, validation 20404, test 6166. Data: fastf1_timing.
 

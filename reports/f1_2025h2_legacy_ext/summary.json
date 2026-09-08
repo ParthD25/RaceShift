@@ -1,6 +1,6 @@
 {
   "name": "f1_2025h2_legacy_ext",
-  "created_utc": "2026-09-08T21:59:20+00:00",
+  "created_utc": "2026-09-08T22:27:53+00:00",
   "input_file": "f1_laps_all_tiers.parquet",
   "data_source": "fastf1_timing+legacy_timing",
   "is_synthetic": false,
@@ -35,7 +35,9 @@
         "median_ae_s": 0.2049999999999983,
         "p90_ae_s": 0.8220000000000027,
         "signed_bias_s": 0.024686920138257237,
-        "rows": 10994
+        "rows": 10994,
+        "within_0_5s_share": 0.8064398762961615,
+        "within_1s_share": 0.9270511187920684
       },
       "resources": {
         "training": {
@@ -64,7 +66,9 @@
         "median_ae_s": 0.24099999999999966,
         "p90_ae_s": 0.8889999999999958,
         "signed_bias_s": 0.020938375477533216,
-        "rows": 10994
+        "rows": 10994,
+        "within_0_5s_share": 0.7692377660542113,
+        "within_1s_share": 0.9188648353647444
       },
       "resources": {
         "training": {
@@ -93,7 +97,9 @@
         "median_ae_s": 0.2524841082661311,
         "p90_ae_s": 0.7839423561573995,
         "signed_bias_s": 0.04757894804952619,
-        "rows": 10994
+        "rows": 10994,
+        "within_0_5s_share": 0.7792432235764962,
+        "within_1s_share": 0.9360560305621248
       },
       "resources": {
         "training": {
@@ -122,7 +128,9 @@
         "median_ae_s": 0.19244960800967448,
         "p90_ae_s": 0.6800872687969391,
         "signed_bias_s": -0.0309967938157372,
-        "rows": 10994
+        "rows": 10994,
+        "within_0_5s_share": 0.838002546843733,
+        "within_1s_share": 0.9468801164271421
       },
       "resources": {
         "training": {
@@ -181,7 +189,9 @@
         "signed_bias_s": 0.037083861111049686,
         "rows": 10994,
         "interval80_coverage": 0.8561033290885938,
-        "interval80_width_s": 1.1913143393531245
+        "interval80_width_s": 1.1913143393531245,
+        "within_0_5s_share": 0.8058941240676732,
+        "within_1s_share": 0.9435146443514645
       },
       "resources": {
         "feature_build": {
