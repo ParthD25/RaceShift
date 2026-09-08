@@ -61,3 +61,6 @@ credentials*.json
 data/imports/*.parquet
 data/imports/*.csv
 !data/imports/synthetic_fixture.csv
+
+# Export bundles are rebuilt on demand by the API or scripts/export_model.py
+exports/

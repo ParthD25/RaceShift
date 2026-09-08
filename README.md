@@ -36,7 +36,7 @@ pick a dataset and an artifact, press **Run forecast**. The packaged demo artifa
 a synthetic fixture and is badged *Synthetic model*; real artifacts are badged *Real artifact*.
 
 ```bash
-npm run test:py     # 44 tests: leakage, feature availability, lap adjacency, splits, no-backprop policy, artifact, API
+npm run test:py     # 47 tests: leakage, feature availability, lap adjacency, splits, no-backprop policy, artifact, API
 npm run build       # TypeScript check + Vite build
 ```
 
@@ -208,6 +208,20 @@ allow about 500 requests per hour), so a full collection takes several hours una
 Colab notebook `notebooks/RaceShift_FFR_Colab.ipynb` runs the same pipeline with data in
 Drive. Copy any finished artifact folder into `artifacts/` and the UI lists it.
 
+## Export a model
+
+```bash
+python scripts/export_model.py artifacts/f1_2025h2_ffr-m --verify-input data/imports/f1_2025_season.parquet
+```
+
+Writes `artifacts/<name>/export/` with the Forward-Forward core as ONNX (verified against the
+NumPy implementation with onnxruntime before it is saved), the fitted preprocessor as plain
+JSON with a pure-NumPy implementation (`raceshift.models.export.apply_preprocessor_spec`, no
+pickle needed), a generated model card (data, split, metrics, resources, limitations,
+inference snippet) and an export manifest, plus `exports/<name>.zip` bundling the whole
+artifact. The same bundle is served by `GET /api/models/{id}/export` and linked from the
+Models page. The real FFR-M export is committed under `artifacts/f1_2025h2_ffr-m/export/`.
+
 ## Local API
 
 | Method | Path | Purpose |
@@ -215,6 +229,7 @@ Drive. Copy any finished artifact folder into `artifacts/` and the UI lists it.
 | GET | `/api/health`, `/api/runtime`, `/api/setup` | Liveness, runtime versions and offline-local mode, setup checklist |
 | GET | `/api/models`, `/api/datasets`, `/api/experiments` | Artifacts and baselines, local imports and sources, every `metrics.json` |
 | GET | `/api/imports/{file}/summary` | Rows, seasons, drivers and latest session of one import |
+| GET | `/api/models/{id}/export` | Zip bundle of an artifact: weights, preprocessor, ONNX core, JSON preprocessor spec, model card |
 | POST | `/api/import` | Upload a CSV/Parquet lap table (200 MB, 2M rows, 250 columns) into `data/imports/` |
 | POST | `/api/forecast/latest` | `{file, driver?, artifact?}` → next lap, 80% interval, input and historical context |
 
@@ -238,7 +253,7 @@ notebooks/                 Colab workflow
 data/imports/              local datasets (synthetic fixture included)
 artifacts/                 model artifacts (synthetic demo committed; real runs listed when present)
 docs/                      feature contract, research standard, sources, security
-tests/                     44 tests
+tests/                     47 tests
 ```
 
 ## Status

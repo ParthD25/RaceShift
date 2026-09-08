@@ -191,6 +191,7 @@ export const api = {
   runtime: () => getJson<RuntimeResponse>('/api/runtime'),
   setup: () => getJson<SetupResponse>('/api/setup'),
   models: () => getJson<ModelsResponse>('/api/models'),
+  modelExportUrl: (id: string) => `/api/models/${encodeURIComponent(id)}/export`,
   datasets: () => getJson<DatasetsResponse>('/api/datasets'),
   experiments: () => getJson<ExperimentsResponse>('/api/experiments'),
   importSummary: (file: string) => getJson<ImportSummary>(`/api/imports/${encodeURIComponent(file)}/summary`),

@@ -18,6 +18,7 @@ from typing import Any
 
 import pandas as pd
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -331,6 +332,33 @@ async def import_file(file: UploadFile = File(...), overwrite: bool = Query(Fals
     summary["bytes"] = written
     summary["stored_as"] = _relative(target)
     return summary
+
+
+EXPORTS = ROOT / "exports"
+
+
+@app.get("/api/models/{artifact_id}/export")
+def export_model(artifact_id: str) -> FileResponse:
+    """Build (or reuse) the export bundle for a complete artifact and return it as a zip.
+
+    The bundle holds the weights, preprocessor, feature contract, metrics, the verified ONNX
+    core, the JSON preprocessor spec and the model card. It is rebuilt when metrics.json is
+    newer than the last export.
+    """
+    artifact_dir = _safe_artifact_path(artifact_id)
+    bundle = EXPORTS / f"{artifact_dir.name}.zip"
+    manifest = artifact_dir / "export" / "export_manifest.json"
+    stale = not bundle.is_file() or not manifest.is_file() or manifest.stat().st_mtime < (artifact_dir / "metrics.json").stat().st_mtime
+    if stale:
+        try:
+            from raceshift.models.export import export_artifact
+
+            export_artifact(artifact_dir, bundle_dir=EXPORTS)
+        except ImportError as exc:
+            raise HTTPException(503, f"Model export needs the export extras (pip install -e '.[export]'): {exc}") from exc
+        except Exception as exc:  # noqa: BLE001
+            raise HTTPException(500, f"Export failed: {type(exc).__name__}: {exc}") from exc
+    return FileResponse(bundle, media_type="application/zip", filename=bundle.name)
 
 
 @app.post("/api/forecast/latest")
