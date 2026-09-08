@@ -8,6 +8,7 @@ laps ago". Historical priors use strictly earlier events.
 """
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass
 from typing import Iterable
 
@@ -345,6 +346,15 @@ CHRONOLOGY_COLUMNS = ("event_date", "round_number")
 
 
 def build_full_context_table(raw: pd.DataFrame, history: int = 5, require_chronology: bool = True) -> pd.DataFrame:
+    """Build the leakage-safe feature table. See ``_build_full_context_table`` for the steps."""
+    with warnings.catch_warnings():
+        # ~60 derived columns are appended one at a time; pandas warns about block
+        # fragmentation on every build, which drowns test output without changing results.
+        warnings.simplefilter("ignore", pd.errors.PerformanceWarning)
+        return _build_full_context_table(raw, history=history, require_chronology=require_chronology)
+
+
+def _build_full_context_table(raw: pd.DataFrame, history: int = 5, require_chronology: bool = True) -> pd.DataFrame:
     """Build the canonical leakage-safe lap-N -> lap-(N+1) forecasting table.
 
     Returned rows are valid racing laps whose *next* lap is also a valid, adjacent racing

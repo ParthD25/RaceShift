@@ -8,19 +8,20 @@ import { useForecast } from '../context/ForecastContext';
 import { api } from '../lib/api';
 import { useApi } from '../lib/useApi';
 
+// Pages backed by the local API and real files.
 const nav = [
   ['/', 'Overview', Gauge],
   ['/forecast', 'Forecast', Target],
-  ['/telemetry', 'Telemetry', Activity],
+  ['/compare', 'Compare Drivers', GitCompareArrows],
   ['/experiments', 'Experiments', FlaskConical],
   ['/datasets', 'Datasets', Database],
   ['/models', 'Models', BrainCircuit]
 ] as const;
 
-const secondary = [
-  ['/compare', 'Compare Drivers', GitCompareArrows],
-  ['/strategy', 'Strategy Insights', Sparkles],
-  ['/settings', 'Settings', Settings]
+// Pages that show fixtures or are intentionally empty until the underlying model exists.
+const planned = [
+  ['/telemetry', 'Telemetry', Activity, 'Fixture trace: no telemetry endpoint yet'],
+  ['/strategy', 'Strategy Insights', Sparkles, 'Empty until a pit-loss model exists']
 ] as const;
 
 function ContextBox({ label, value, wide = false }: { label: string; value: string; wide?: boolean }) {
@@ -35,7 +36,9 @@ function ContextBox({ label, value, wide = false }: { label: string; value: stri
 export function AppShell() {
   const { result } = useForecast();
   const health = useApi(() => api.health());
+  const runtime = useApi(() => api.runtime());
   const online = Boolean(health.data) && !health.error;
+  const apiBind = runtime.data?.api_bind ?? (online ? 'local API' : 'not reachable');
 
   return (
     <div className="app-shell">
@@ -50,20 +53,28 @@ export function AppShell() {
           ))}
         </nav>
         <div className="nav-divider" />
-        <nav className="nav-list secondary" aria-label="Secondary navigation">
-          {secondary.map(([to, label, Icon]) => (
-            <NavLink key={to} to={to} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+        <div className="nav-group-label" title="These pages are not backed by a validated model yet">Planned</div>
+        <nav className="nav-list secondary" aria-label="Planned pages">
+          {planned.map(([to, label, Icon, note]) => (
+            <NavLink key={to} to={to} title={note} className={({ isActive }) => `nav-item planned ${isActive ? 'active' : ''}`}>
               <Icon size={18} strokeWidth={1.8} />
               <span>{label}</span>
             </NavLink>
           ))}
         </nav>
+        <div className="nav-divider" />
+        <nav className="nav-list secondary" aria-label="Secondary navigation">
+          <NavLink to="/settings" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+            <Settings size={18} strokeWidth={1.8} />
+            <span>Settings</span>
+          </NavLink>
+        </nav>
         <div className="sidebar-spacer" />
         <div className="dataset-mini">
           <div className="dataset-mini-title"><Database size={16} /> Local API</div>
-          <div className="dataset-mini-row"><span>127.0.0.1:8000</span><span className={online ? 'ok-dot' : 'off-dot'} /></div>
+          <div className="dataset-mini-row"><span>{apiBind}</span><span className={online ? 'ok-dot' : 'off-dot'} /></div>
           <div className="dataset-mini-row"><span>Demo artifact</span><span className={health.data?.demo_artifact_ready ? 'ok-dot' : 'off-dot'} /></div>
-          <div className="dataset-mini-row"><span>Live timing</span><span className="off-dot" title="Not configured. RaceShift is offline-first." /></div>
+          <div className="dataset-mini-row" title="RaceShift reads local files only. There is no live-timing connection and none is planned for this release."><span>Live timing</span><span className="off-dot" /></div>
           <div className="storage-copy">{online ? `Offline-local mode · v${health.data?.version}` : health.error ?? 'Connecting…'}</div>
         </div>
         <div className="sidebar-version">v0.4.0</div>
@@ -77,8 +88,12 @@ export function AppShell() {
             <ContextBox label="Driver" value={result ? result.driver : '—'} wide />
             <div className="model-status">
               <span className={online ? 'status-dot' : 'off-dot'} />
-              <span><small>Model</small><strong>{result ? result.artifact : 'raceshift_ffr_demo'}</strong></span>
-              {result ? <SourceBadge kind={sourceKindFor(result.is_synthetic)} text={result.is_synthetic ? 'Synthetic' : 'Real'} /> : <SourceBadge kind="synthetic" text="Synthetic demo" />}
+              <span><small>Model</small><strong>{result ? result.artifact : runtime.data?.default_artifact.id ?? '—'}</strong></span>
+              {result
+                ? <SourceBadge kind={sourceKindFor(result.is_synthetic)} text={result.is_synthetic ? 'Synthetic' : 'Real'} />
+                : runtime.data
+                  ? <SourceBadge kind={sourceKindFor(runtime.data.default_artifact.is_synthetic)} text={runtime.data.default_artifact.is_synthetic ? 'Synthetic demo' : 'Real data'} />
+                  : null}
             </div>
           </div>
           <div className="topbar-actions">

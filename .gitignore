@@ -26,6 +26,10 @@ artifacts/**
 !artifacts/f1_2025h2_ffr-m/**
 !artifacts/f1_2025h2_legacy_ext_ffr-s/
 !artifacts/f1_2025h2_legacy_ext_ffr-s/**
+# Baseline runs: only the small metrics files are committed so the UI shows the tree/ridge
+# rows the README leads with; the fitted baseline models and predictions stay out of git.
+!artifacts/*_baselines/
+!artifacts/*_baselines/metrics.json
 
 # Model/checkpoint files
 *.pt
@@ -59,10 +63,12 @@ lightning_logs/
 service-account*.json
 credentials*.json
 
-# Local datasets are never committed; only the synthetic fixture ships with the repo.
+# Local datasets are never committed. Two small tables ship with the repo: the synthetic
+# fixture and one real season (2025 races, FastF1 timing, 640 KB) so the first forecast is real.
 data/imports/*.parquet
 data/imports/*.csv
 !data/imports/synthetic_fixture.csv
+!data/imports/f1_2025_season.parquet
 
 # Export bundles are rebuilt on demand by the API or scripts/export_model.py
 exports/

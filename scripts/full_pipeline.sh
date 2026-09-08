@@ -72,6 +72,9 @@ stage_experiments() {
     --artifacts-dir "$ARTIFACTS" --reports-dir "$REPORTS" --resume
   "$PY" scripts/breakdown_report.py --input "$input" --report f1_2025h2 --reports-dir "$REPORTS" \
     --artifacts "$ARTIFACTS"/f1_2025h2_baselines "$ARTIFACTS"/f1_2025h2_ffr-*
+  "$PY" scripts/generalization_gap.py --input "$input" --report f1_2025h2 --reports-dir "$REPORTS" \
+    --artifacts "$ARTIFACTS"/f1_2025h2_ffr-s "$ARTIFACTS"/f1_2025h2_ffr-m "$ARTIFACTS"/f1_2025h2_ffr-l
+  "$PY" scripts/export_model.py "$ARTIFACTS"/f1_2025h2_ffr-m --verify-input "$input" --bundle-dir ''
   log "Circuit holdout: every Italian Grand Prix held out"
   "$PY" scripts/run_experiments.py --input "$input" --name holdout_monza \
     --train-end 2024 --val-year 2025 --test-year 2025 --holdout-event "Italian Grand Prix" \
@@ -100,7 +103,9 @@ stage_legacy_experiments() {
              "Circuit holdout (Monza)" "2026 domain shift, no retraining"
 }
 
-for stage in "${@:-fastf1 build-fastf1 experiments}"; do
+stages=("$@")
+if [ ${#stages[@]} -eq 0 ]; then stages=(fastf1 build-fastf1 experiments); fi
+for stage in "${stages[@]}"; do
   case "$stage" in
     fastf1) stage_fastf1 ;;
     legacy) stage_legacy ;;

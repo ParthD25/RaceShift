@@ -1,15 +1,29 @@
 {
+  "status_legend": {
+    "used": "Collected by a script in this repository and part of the published results",
+    "planned": "Documented candidate source; nothing in the repository reads it yet"
+  },
   "sources": [
     {
       "name": "FastF1",
       "url": "https://github.com/theOehrly/Fast-F1",
-      "role": "Primary reproducible F1 session, lap, telemetry and weather ingestion",
+      "status": "used",
+      "role": "Primary tier: every race 2018-2026, laps, sectors, tyres, track status, weather (scripts/fetch_fastf1_seasons.py)",
       "coverage_note": "Detailed timing/telemetry is strongest from 2018 onward",
       "local_policy": "Cache locally/Google Drive; do not commit raw data"
     },
     {
+      "name": "Jolpica / Ergast",
+      "url": "https://api.jolpi.ca/ergast/",
+      "status": "used",
+      "role": "Legacy tier: every race 2000-2017, lap times, positions, pit stops from 2011 (scripts/fetch_jolpica_seasons.py)",
+      "coverage_note": "No sectors, tyres, track status or weather; lap validity is a documented heuristic",
+      "local_policy": "Stay under the public rate limit; do not commit raw data"
+    },
+    {
       "name": "OpenF1",
       "url": "https://openf1.org/docs/",
+      "status": "planned",
       "role": "Historical F1 API and future application data source",
       "coverage_note": "Historical data from 2023 onward is available without authentication",
       "local_policy": "Store fetched historical JSON outside git"
@@ -17,28 +31,32 @@
     {
       "name": "TracingInsights 2026",
       "url": "https://github.com/TracingInsights/2026",
-      "role": "Public telemetry archive and 2026 regulation-domain-shift test set",
+      "status": "planned",
+      "role": "Public telemetry archive; the 2026 domain-shift test currently uses FastF1 instead",
       "coverage_note": "Telemetry, lap timing, weather, race control, corners",
       "local_policy": "Prefer sparse/targeted download; verify license/terms before redistribution"
     },
     {
       "name": "F1 Corner Telemetry 2024-2025",
       "url": "https://huggingface.co/datasets/FlorindoDev/f1_corner_telemetry_2024_2025",
-      "role": "Phase 2 corner encoder and masked-patch self-supervised pretraining",
+      "status": "planned",
+      "role": "Candidate for a corner encoder and self-supervised pretraining",
       "coverage_note": "50 samples per corner across speed/RPM/throttle/brake/acceleration/position/distance/time",
       "local_policy": "Large data; stream/sample first, full download only in large research mode"
     },
     {
       "name": "F1 StratLab Strategy Dataset",
       "url": "https://huggingface.co/datasets/VforVitorio/f1-strategy-dataset",
-      "role": "Model-ready prototyping and benchmarking",
+      "status": "planned",
+      "role": "Optional benchmark data",
       "coverage_note": "70 Grands Prix, 2023-2025, ~16.1 GB",
       "local_policy": "Optional benchmark data, not required for MVP"
     },
     {
       "name": "IMSA Hugging Face Dataset",
       "url": "https://huggingface.co/datasets/tobil/imsa",
-      "role": "Phase 3 endurance-racing generalization",
+      "status": "planned",
+      "role": "Endurance-racing generalization candidate",
       "coverage_note": "Laps, sectors, stints, classes, pits and weather",
       "local_policy": "Do not mix into F1 MVP; separate adapter and evaluation"
     }
