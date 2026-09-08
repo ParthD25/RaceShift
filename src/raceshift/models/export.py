@@ -271,7 +271,7 @@ def model_card(artifact: Path, metrics: dict, config: dict, contract: dict, expo
         lines.append(f"- `{key}`: {note}")
     lines += [
         "", "## Limitations", "",
-        "- Laps around red-flag stoppages can pass the validity rules and produce very large errors (documented gap).",
+        "- Red-flag stoppage laps and the restart lap after them are excluded from training and evaluation (lap-validity rules v2); incidents not encoded in the track status string still reach the model.",
         "- Intervals are calibrated on the validation season; under regulation change (2026) coverage drops below the nominal 80%.",
         "- Historical priors need earlier events in the same table; a single-race file yields missing priors, which the model treats as their own category.",
         "- The model is a research artifact for comparing local Forward-Forward learning against baselines; the gradient-boosted tree baseline is more accurate on the same data.",

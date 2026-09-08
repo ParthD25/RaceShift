@@ -1,6 +1,6 @@
 # FFR-demo model card
 
-RaceShift Forward-Forward regressor exported from `artifacts/raceshift_ffr_demo` on 2026-09-07T22:29:06+00:00.
+RaceShift Forward-Forward regressor exported from `artifacts/raceshift_ffr_demo` on 2026-09-08T23:06:07+00:00.
 
 ## What it predicts
 
@@ -25,13 +25,14 @@ also returns an 80% interval (validation-residual quantile widened by cross-laye
 
 | Split | MAE (s) | RMSE (s) | p90 (s) | Laps within 0.5 s | 80% coverage |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| validation | 0.156 | 0.211 | 0.367 | — | 0.799 |
-| test | 0.172 | 0.222 | 0.354 | — | 0.753 |
+| train | 0.165 | 0.216 | 0.355 | 96.3% | 0.775 |
+| validation | 0.156 | 0.211 | 0.367 | 97.8% | 0.799 |
+| test | 0.172 | 0.222 | 0.354 | 97.2% | 0.753 |
 
 ## Resources
 
-- Training wall time 1.4 s, peak RSS 212 MB, traced training peak 2 MB, device cpu-numpy
-- Inference 0.783 ms per single row, artifact 0.24 MB
+- Training wall time 0.1 s, peak RSS 212 MB, traced training peak 2 MB, device cpu-numpy
+- Inference 0.450 ms per single row, artifact 0.44 MB
 
 ## Files in this export
 

@@ -27,7 +27,13 @@ sys.path.insert(0, str(ROOT / "src"))
 from raceshift import __version__  # noqa: E402
 from raceshift.data.provenance import infer_data_source, is_synthetic_source  # noqa: E402
 from raceshift.data.splits import split_from_args  # noqa: E402
-from raceshift.features.full_context import RAW_TARGET_COLUMN, TARGET_COLUMN, assert_no_target_leakage, build_full_context_table  # noqa: E402
+from raceshift.features.full_context import (  # noqa: E402
+    LAP_VALIDITY_VERSION,
+    RAW_TARGET_COLUMN,
+    TARGET_COLUMN,
+    assert_no_target_leakage,
+    build_full_context_table,
+)
 from raceshift.features.preprocessing import make_preprocessor  # noqa: E402
 from raceshift.features.selection import ABLATION_GROUPS, drop_sparse_features, select_features  # noqa: E402
 from raceshift.train.metrics import regression_metrics  # noqa: E402
@@ -144,6 +150,7 @@ def main() -> None:
         "data_source": data_source,
         "is_synthetic": is_synthetic_source(data_source),
         "input_file": Path(args.input).name,
+        "lap_validity_version": LAP_VALIDITY_VERSION,
         "created_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
     out = Path(args.output)

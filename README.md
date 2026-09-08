@@ -184,9 +184,10 @@ either appears in the model source.
 
 - **Target.** Residual of lap N+1 against the rolling five-lap median at lap N; forecast =
   baseline + residual. Training winsorizes the residual to ±6 s; evaluation never does.
-- **Valid laps.** Pit-in, pit-out, safety-car, VSC, red-flag, deleted and inaccurate laps are
-  never rows or targets, and every lag or rolling statistic is scoped to the current run of
-  consecutive clean laps, so a pit stop resets the temporal context.
+- **Valid laps.** Pit-in, pit-out, safety-car, VSC, red-flag, red-flag restart, deleted and
+  inaccurate laps are never rows or targets, and every lag or rolling statistic is scoped to
+  the current run of consecutive clean laps, so a pit stop resets the temporal context. The
+  rule set is versioned (`lap_validity_version` in every metrics file).
 - **Relative pace features.** Lap-time-scale inputs are relative to the current rolling pace
   so they transfer across circuits; the one absolute anchor is the rolling median itself.
 - **Historical priors.** Medians of per-event medians from strictly earlier events (driver ×
