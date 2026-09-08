@@ -80,7 +80,12 @@ def main() -> None:
     y_trainval = np.clip(trainval[TARGET_COLUMN].to_numpy(dtype=np.float64), -clip, clip)
 
     results: dict[str, dict] = {}
+    # Per-row test predictions for every baseline, so breakdown reports can compare models
+    # on the same laps (scripts/breakdown_report.py).
+    predictions = test[[c for c in ["season", "round_number", "event", "session", "driver", "lap_number"] if c in test.columns]].copy()
+    predictions["actual_next_lap_s"] = test[RAW_TARGET_COLUMN].to_numpy(dtype=np.float64)
     for name, column in [("previous_lap", "lap_time_s"), ("rolling_median_5", "rolling_median_5")]:
+        predictions[f"pred_{name}"] = test[column].to_numpy(dtype=np.float64)
         results[name] = {
             "validation": evaluate(val, val[column].to_numpy(dtype=np.float64)),
             "test": evaluate(test, test[column].to_numpy(dtype=np.float64)),
@@ -110,6 +115,7 @@ def main() -> None:
         t0 = time.perf_counter()
         test_pred = test["rolling_median_5"].to_numpy(dtype=np.float64) + model_full.predict(x_test)
         latency = (time.perf_counter() - t0) * 1000.0 / max(1, len(test))
+        predictions[f"pred_{name}"] = test_pred
         results[name] = {
             "validation": evaluate(val, val_pred),
             "test": evaluate(test, test_pred),
@@ -140,6 +146,7 @@ def main() -> None:
     out = Path(args.output)
     out.mkdir(parents=True, exist_ok=True)
     (out / "metrics.json").write_text(json.dumps(metrics, indent=2))
+    predictions.to_csv(out / "test_predictions.csv", index=False)
     print(json.dumps({k: {"val_mae": round(v["validation"]["mae_s"], 4), "test_mae": round(v["test"]["mae_s"], 4)} for k, v in results.items()}, indent=2))
 
 

@@ -67,7 +67,10 @@ def main() -> None:
         summary = json.loads((ROOT / "reports" / name / "summary.json").read_text())
         title = args.titles[i] if i < len(args.titles) else name
         blocks += table(summary, title)
-        blocks.append(f"Full table with validation metrics, interval widths and latency: `reports/{name}/summary.md`.")
+        extra = f"Full table with validation metrics, interval widths and latency: `reports/{name}/summary.md`."
+        if (ROOT / "reports" / name / "breakdowns.md").exists():
+            extra += f" Error by circuit, constructor, compound, tyre age, conditions, race phase and position: `reports/{name}/breakdowns.md`."
+        blocks.append(extra)
         blocks.append("")
     head, rest = text.split(BEGIN, 1)
     _, tail = rest.split(END, 1)
