@@ -43,11 +43,46 @@ npm run build       # TypeScript check + Vite build
 ## Results
 
 <!-- RESULTS:BEGIN -->
-Real Formula 1 results are being generated; see `reports/` for every measured table.
+**Season-round split, 2018-2025 FastF1 tier** — train ≤ 2024 · validation 2025 rounds ≤ 12 · test 2025 rounds > 12. Rows: train 128071, validation 10248, test 10994. Data: fastf1_timing.
+
+| Model | Test MAE (s) | Test RMSE (s) | p90 (s) | 80% coverage | Train time (s) | Peak RSS (MB) | Traced train peak (MB) | Artifact (MB) |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| previous_lap | 0.357 | 0.645 | 0.822 | — | — | — | — | — |
+| rolling_median_5 | 0.394 | 0.675 | 0.889 | — | — | — | — | — |
+| ridge | 0.393 | 0.624 | 0.811 | — | 21.4 | 2478 | 804 | — |
+| **hist_gradient_boosting** | 0.317 | 0.570 | 0.680 | — | 43.4 | 2888 | 830 | — |
+| FFR-M | 0.352 | 0.595 | 0.740 | 0.857 | 2064.1 | 2973 | 1423 | 3.37 |
+| FFR-S | 0.357 | 0.596 | 0.747 | 0.856 | 375.2 | 1990 | 637 | 1.88 |
+| FFR-L | 0.349 | 0.595 | 0.735 | 0.858 | 9804.7 | 4324 | 2783 | 8.24 |
+| FFR-M-groups-coarse | 0.352 | 0.598 | 0.749 | 0.852 | 2077.7 | 2972 | 1419 | 3.33 |
+| FFR-M-groups-fine | 0.353 | 0.594 | 0.747 | 0.865 | 2154.2 | 2880 | 1431 | 3.37 |
+| FFR-M minus historical_numeric | 0.353 | 0.596 | 0.748 | 0.855 | 2135.9 | 2807 | 1423 | 3.33 |
+| FFR-M minus temporal_numeric | 0.375 | 0.623 | 0.798 | 0.858 | 1817.6 | 2867 | 1423 | 3.22 |
+| FFR-M minus static_categorical | 0.353 | 0.596 | 0.743 | 0.851 | 2081.3 | 2715 | 1422 | 2.94 |
+
+Full table with validation metrics, interval widths and latency: `reports/f1_2025h2/summary.md`.
 <!-- RESULTS:END -->
 
 Every number above is reproducible from `scripts/run_experiments.py` on FastF1 data. Synthetic
 fixture numbers are never reported as Formula 1 results.
+
+**What the numbers say so far** (2018-2024 training, 128k clean laps; test = 2025 rounds 13-24):
+
+- Gradient-boosted trees are the most accurate model and train in under a minute. Forward-Forward
+  regression does not beat them on this task.
+- FFR beats the linear and rolling-median baselines and, at M and L depth, edges the naive
+  previous-lap baseline; FFR-S ties it. Depth helps a little (0.357 → 0.352 → 0.349 s) at a
+  large cost in training time (6 → 34 → 163 minutes).
+- Interval calibration works: the 80% intervals cover 85-87% of test laps.
+- Memory: FFR-S trains within 637 MB of traced allocations, below the tree's 830 MB, but is
+  less accurate; FFR-M and FFR-L need more, not less. The training-memory advantage argued for
+  Forward-Forward does not appear in this NumPy implementation at this scale.
+- Ablations: removing the temporal pace features costs 0.02 s MAE; removing historical priors
+  or driver/team/circuit identity changes nothing measurable. Recent pace carries the signal.
+- Group-ladder variants (4/8/16/32, 8/16/32/64, 16/32/64/64) are indistinguishable.
+
+Circuit holdout, 2026 domain shift and the 2000-2024 legacy extension are reported as they
+finish; see `reports/`.
 
 ## Architecture
 
