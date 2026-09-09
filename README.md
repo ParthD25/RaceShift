@@ -139,8 +139,9 @@ fixture numbers are never reported as Formula 1 results.
 - "Forward-Forward" here means greedy layer-wise training with a local ordinal-goodness
   objective and no gradient flowing between layers. There is no positive/negative data pass as
   in Hinton's original formulation; `docs/TRAINING_AND_RESEARCH.md` spells out the difference.
-- Lap-validity rules are versioned (`lap_validity_version` in every metrics file). All tables
-  above were produced under version 2, which excludes the restart lap after a red flag.
+- Lap-validity rules are versioned (`lap_validity_version` in every metrics file). Version 2
+  excludes the restart lap after a red flag; the tables above still show the version 1 runs
+  (the Monza RMSE of 2.5-3.1 s is the visible cost) and are being regenerated under version 2.
 
 **What the numbers say so far** (2018-2024 training, 128k clean laps; test = 2025 rounds 13-24):
 
