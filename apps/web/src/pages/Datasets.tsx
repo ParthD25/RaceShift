@@ -40,8 +40,8 @@ export default function Datasets() {
               {datasets.data.imports.map(i => <div className="wide-row" key={i.name}><span><strong>{i.name}</strong></span><span>{fmtBytes(i.bytes)}</span><span>{i.modified_utc.replace('T', ' ').slice(0, 19)}</span></div>)}
             </div>
           )}
-          {datasets.data && datasets.data.processed_files.length > 0 && (
-            <div className="detail-list compact"><div><span>Processed tables</span><strong>{datasets.data.processed_files.join(', ')}</strong></div></div>
+          {datasets.data && datasets.data.processed_files.filter(f => !f.startsWith('.')).length > 0 && (
+            <div className="detail-list compact"><div><span>Processed tables</span><strong>{datasets.data.processed_files.filter(f => !f.startsWith('.')).join(', ')}</strong></div></div>
           )}
         </Panel>
         <Panel title="Import a lap table" icon={<Upload size={17} />}>
@@ -65,10 +65,11 @@ export default function Datasets() {
       <Panel title="Source registry (dataset_manifest.json)" icon={<Database size={17} />}>
         {datasets.data && (
           <div className="wide-table sources-table">
-            <div className="wide-head"><span>Source</span><span>Role</span><span>Coverage</span><span>Local policy</span></div>
+            <div className="wide-head"><span>Source</span><span>Status</span><span>Role</span><span>Coverage</span><span>Local policy</span></div>
             {datasets.data.sources.map(s => (
               <div className="wide-row" key={s.name}>
                 <span><strong><a href={s.url} target="_blank" rel="noreferrer">{s.name}</a></strong></span>
+                <span>{s.status === 'used' ? <SourceBadge kind="real" text="Used in results" /> : <SourceBadge kind="fixture" text="Planned, not read" />}</span>
                 <span>{s.role}</span>
                 <span>{s.coverage_note}</span>
                 <span>{s.local_policy}</span>

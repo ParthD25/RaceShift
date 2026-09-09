@@ -183,6 +183,12 @@ are close and both trail the tree model.
 - Pit-in, pit-out, safety-car, VSC, red-flag, deleted and inaccurate laps are never
   training rows or targets, and every lag or rolling statistic is scoped to the current run
   of consecutive valid laps (`docs/FEATURE_CONTRACT.md`).
+- Lap-validity rules v2 also exclude the **restart lap** after a red flag. Under v1 the
+  first timed lap after a stoppage (pit-lane exit, formation lap, standing restart) carried a
+  clear track status and an "accurate" marker, passed every rule, and produced 40-56 s
+  errors that dominated RMSE on the Monza holdout. The 370 such laps in 2018-2026 are 0.2%
+  of laps but were the largest single source of error. Every result in the README was
+  re-run under v2; the version is recorded in every `metrics.json`.
 - Lap-time-scale features are relative to the current rolling pace; the first real run with
   absolute features had ridge extrapolating to −9 s residuals on unseen seasons.
 - Features observed in under 5% of training rows are dropped; weather-matched priors were
@@ -190,17 +196,48 @@ are close and both trail the tree model.
 - The training residual target is winsorized to ±6 s; the raw target ranges from −54 s to
   +18 s on real races and least-squares fits were dominated by the tails.
 
+## What "Forward-Forward" means here, and what it does not
+
+RaceShift FFR trains each layer with its own objective: hidden units are split into ordered
+groups, the mean squared activation of each group is its "goodness", and a softmax over group
+goodness is trained by cross entropy against a soft ordinal target derived from the scaled
+residual. The gradient of that loss with respect to the layer's weight and bias is derived by
+hand (`_FFLocalLayer.local_gradient`) and applied with a local Adam step. Layer *k*+1 receives
+the normalised output of layer *k* as a plain array; no quantity computed in layer *k*+1 ever
+reaches layer *k*. Two tests make this concrete: the analytic gradient is compared with finite
+differences entry by entry, and a layer's gradient and update are asserted to be bit-identical
+when every later layer's weights are replaced with random values.
+
+This is **greedy layer-wise supervised training with local objectives**. It shares with
+Hinton's Forward-Forward algorithm the absence of a backward pass across layers and the use of
+a per-layer goodness measure, but it does **not** use positive and negative data passes. Calling
+it "Forward-Forward regression" is a shorthand for the family (local goodness objectives,
+forward-only training), not a claim to reproduce the original algorithm.
+
+The 80% interval is the 80th percentile of |validation residual|, computed on the clipped (±6 s)
+validation target. Clipping only affects residuals beyond ±6 s, which are far outside the
+80th percentile (about 0.6 s), so the interval is unaffected; the coverage reported in the tables
+is always evaluated on the raw, unclipped target.
+
+## Seed sensitivity
+
+Every headline row is one run with seed 42. Where `scripts/seed_sweep.py` has been run, the
+resulting `reports/<name>/seeds.md` gives the mean and standard deviation of test MAE across
+seeds for FFR-S, which is the yardstick for deciding whether a difference between two FFR
+variants is an effect or noise.
+
 ## Known gaps
 
 - The 2018 Italian Grand Prix race is missing from the FastF1 tier: the live-timing archive
   fails to load timing data for that session (`Failed to load timing data!`), so the
   collector records it as a failure and every other 2018-2026 round is present.
 - Race-control messages are not yet used to flag laps affected by incidents that are not
-  encoded in the track status string. The visible cost: laps immediately around a red-flag
-  stoppage (2020 and 2026 Italian Grands Prix in the Monza holdout) carry status 1 or 2, pass
-  the validity rules, and produce 40-56 s errors for every model. They are under 1% of laps
-  but dominate RMSE; flagging the laps before and after a red flag from race-control messages
-  is the planned fix.
+  encoded in the track status string. The red-flag restart lap is now handled by the
+  lap-validity rules (v2), but a slow lap caused by debris, a local yellow that never became
+  a full-course status, or a driver pitting for damage under green still passes every rule.
+  Across 2018-2026, 41 laps out of 174k valid ones are more than 1.4× their driver's race
+  median without any flag; most are 2020 Austrian Grand Prix laps where the status string
+  lags the safety-car deployment.
 - Historical priors are medians over earlier events; a nearest-neighbour similarity
   retrieval over normalised conditions is the planned replacement.
 - `scripts/eval_chronos2_zeroshot.py` expects the light table from `scripts/build_lap_dataset.py`

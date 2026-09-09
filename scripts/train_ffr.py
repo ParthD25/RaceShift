@@ -24,6 +24,7 @@ from raceshift import __version__  # noqa: E402
 from raceshift.data.provenance import infer_data_source, is_synthetic_source  # noqa: E402
 from raceshift.data.splits import split_from_args  # noqa: E402
 from raceshift.features.full_context import (  # noqa: E402
+    LAP_VALIDITY_VERSION,
     RAW_TARGET_COLUMN,
     TARGET_COLUMN,
     assert_no_target_leakage,
@@ -227,13 +228,24 @@ def main() -> None:
         "data_source": data_source,
         "is_synthetic": is_synthetic_source(data_source),
         "input_file": Path(args.input).name,
+        "lap_validity_version": LAP_VALIDITY_VERSION,
         "created_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
     (out / "metrics.json").write_text(json.dumps(metrics, indent=2))
     if args.wandb:
         log_to_wandb(run_name, cfg, metrics, model.training_history)
     (out / "feature_contract.json").write_text(
-        json.dumps({"history": history, "numeric": numeric, "categorical": categorical, "dropped_groups": list(args.drop_feature_group), "dropped_sparse": sparse_dropped}, indent=2)
+        json.dumps(
+            {
+                "history": history,
+                "numeric": numeric,
+                "categorical": categorical,
+                "dropped_groups": list(args.drop_feature_group),
+                "dropped_sparse": sparse_dropped,
+                "lap_validity_version": LAP_VALIDITY_VERSION,
+            },
+            indent=2,
+        )
     )
     print(json.dumps({k: metrics[k] for k in ["name", "validation", "test", "rows", "resources"]}, indent=2))
 

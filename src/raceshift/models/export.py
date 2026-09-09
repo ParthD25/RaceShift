@@ -271,7 +271,7 @@ def model_card(artifact: Path, metrics: dict, config: dict, contract: dict, expo
         lines.append(f"- `{key}`: {note}")
     lines += [
         "", "## Limitations", "",
-        "- Laps around red-flag stoppages can pass the validity rules and produce very large errors (documented gap).",
+        "- Red-flag stoppage laps and the restart lap after them are excluded from training and evaluation (lap-validity rules v2); incidents not encoded in the track status string still reach the model.",
         "- Intervals are calibrated on the validation season; under regulation change (2026) coverage drops below the nominal 80%.",
         "- Historical priors need earlier events in the same table; a single-race file yields missing priors, which the model treats as their own category.",
         "- The model is a research artifact for comparing local Forward-Forward learning against baselines; the gradient-boosted tree baseline is more accurate on the same data.",
@@ -290,13 +290,21 @@ def model_card(artifact: Path, metrics: dict, config: dict, contract: dict, expo
     return "\n".join(lines) + "\n"
 
 
-def export_artifact(artifact_dir: str | Path, verify_rows: np.ndarray | None = None, bundle_dir: str | Path | None = None, verify_table=None) -> dict:
-    """Export one artifact. Writes into ``<artifact>/export/`` and optionally a zip bundle.
+def export_artifact(
+    artifact_dir: str | Path,
+    verify_rows: np.ndarray | None = None,
+    bundle_dir: str | Path | None = None,
+    verify_table=None,
+    export_dir: str | Path | None = None,
+) -> dict:
+    """Export one artifact. Writes into ``export_dir`` (default ``<artifact>/export/``) and
+    optionally a zip bundle.
 
     ``verify_rows`` are preprocessed feature rows used to check the ONNX core against NumPy;
     when omitted, random rows in the standardized range are used. ``verify_table`` is an
     optional raw frame of contract columns used to check the JSON preprocessor spec against
-    the sklearn preprocessor.
+    the sklearn preprocessor. Pass an ``export_dir`` outside the artifact (the API does) so a
+    read-only download never rewrites files tracked in git.
     """
     import onnx
 
@@ -306,7 +314,7 @@ def export_artifact(artifact_dir: str | Path, verify_rows: np.ndarray | None = N
     contract = json.loads((artifact / "feature_contract.json").read_text())
     model = ForwardForwardRegressor.load(artifact)
     stem = str(metrics.get("name", artifact.name)).lower().replace(" ", "_")
-    out = artifact / "export"
+    out = Path(export_dir) if export_dir is not None else artifact / "export"
     out.mkdir(parents=True, exist_ok=True)
 
     core = build_ffr_onnx(model)
@@ -365,9 +373,17 @@ def export_artifact(artifact_dir: str | Path, verify_rows: np.ndarray | None = N
         bundle_root.mkdir(parents=True, exist_ok=True)
         bundle = bundle_root / f"{artifact.name}.zip"
         with zipfile.ZipFile(bundle, "w", zipfile.ZIP_DEFLATED) as zf:
+            written: set[str] = set()
             for path in sorted(artifact.rglob("*")):
+                if path.is_file() and path.suffix != ".zip" and "export" not in path.relative_to(artifact).parts:
+                    arcname = str(Path(artifact.name) / path.relative_to(artifact))
+                    zf.write(path, arcname=arcname)
+                    written.add(arcname)
+            for path in sorted(out.rglob("*")):
                 if path.is_file() and path.suffix != ".zip":
-                    zf.write(path, arcname=str(Path(artifact.name) / path.relative_to(artifact)))
+                    arcname = str(Path(artifact.name) / "export" / path.relative_to(out))
+                    if arcname not in written:
+                        zf.write(path, arcname=arcname)
     return {"export_dir": out, "ffr_onnx": ffr_path, "preprocessor_onnx": prep_path if reason is None else None, "end_to_end_onnx": end_to_end, "bundle": bundle, "notes": notes, "verification": diffs}
 
 

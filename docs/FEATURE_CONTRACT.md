@@ -17,15 +17,27 @@ outliers cannot dominate the fit. Evaluation always uses the raw next lap time.
 ## Which laps are training rows
 
 A lap is a **valid racing lap** when it has a lap time, FastF1 marks it accurate, it is not
-deleted, and it is not a pit-in, pit-out, safety-car, virtual-safety-car or red-flag lap
-(FastF1 track status codes 4, 5, 6, 7). A row enters training only when the lap itself
-**and** the adjacent next lap are valid racing laps. Yellow-flag laps (code 2) stay in and
-are flagged.
+deleted, it is not a pit-in, pit-out, safety-car, virtual-safety-car or red-flag lap
+(FastF1 track status codes 4, 5, 6, 7), and it is not the **restart lap** after a red flag.
+A row enters training only when the lap itself **and** the adjacent next lap are valid
+racing laps. Yellow-flag laps (code 2) stay in and are flagged.
+
+The restart lap is the first timed lap of a driver's session after a lap carrying status 5.
+FastF1 records it with a clear status and an "accurate" marker although it covers the
+pit-lane exit, the formation lap and the standing restart: across 2018-2026 those 370 laps
+run 0.96-1.9× the driver's race median (median 1.28×). They are flagged
+`is_red_flag_restart` and treated like a pit lap: never a training row or target, and they
+break temporal context. The lap after the restart lap is normal racing pace (median 1.02×)
+and stays valid.
+
+The rule set has a version, `LAP_VALIDITY_VERSION` in `raceshift.features.full_context`,
+recorded as `lap_validity_version` in every `metrics.json` and `feature_contract.json`.
+Version 1 had no restart rule; every number in the README was produced under version 2.
 
 The lap-state columns are kept on the table for analysis but are **not** model inputs:
 
 ```text
-lap_valid  is_safety_car  is_vsc  is_yellow  is_red_flag  is_pit_in  is_pit_out  is_deleted
+lap_valid  is_safety_car  is_vsc  is_yellow  is_red_flag  is_red_flag_restart  is_pit_in  is_pit_out  is_deleted
 ```
 
 ## Segments: how temporal context is scoped

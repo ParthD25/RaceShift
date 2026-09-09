@@ -62,7 +62,7 @@ export type ArtifactEntry = {
 export type BaselineEntry = { id: string; name: string; role: string; training: string; ready: boolean };
 export type ModelsResponse = { default_artifact: string; artifacts: ArtifactEntry[]; baselines: BaselineEntry[] };
 
-export type DatasetSource = { name: string; url: string; role: string; coverage_note: string; local_policy: string };
+export type DatasetSource = { name: string; url: string; status?: 'used' | 'planned'; role: string; coverage_note: string; local_policy: string };
 export type ImportFile = { name: string; bytes: number; modified_utc: string };
 export type DatasetsResponse = { sources: DatasetSource[]; imports: ImportFile[]; processed_files: string[]; import_dir: string };
 
@@ -138,6 +138,70 @@ export type ForecastResult = {
   file: string;
 };
 
+export type BacktestRequest = ForecastRequest & { laps?: number };
+
+export type BacktestLap = {
+  lap_number_completed: number;
+  next_lap_number: number;
+  actual_next_lap_s: number;
+  predicted_next_lap_s: number;
+  lower_80_s: number;
+  upper_80_s: number;
+  rolling5_baseline_s: number;
+  previous_lap_s: number;
+  error_s: number;
+  abs_error_s: number;
+  within_interval: boolean;
+  compound: string | null;
+  tyre_life: number | null;
+  position: number | null;
+};
+
+export type BacktestSummary = {
+  rows: number;
+  mae_s: number;
+  rmse_s: number;
+  p90_ae_s: number;
+  signed_bias_s: number;
+  within_0_5s_share: number;
+  within_1s_share: number;
+  interval80_coverage: number;
+  previous_lap_mae_s: number;
+  rolling5_mae_s: number;
+};
+
+export type BacktestResult = {
+  season: number;
+  event: string;
+  session: string;
+  driver: string;
+  available_drivers: string[];
+  laps_driven: number;
+  usable_lap_pairs: number;
+  skipped_laps: number;
+  laps: BacktestLap[];
+  summary: BacktestSummary;
+  artifact: string;
+  data_source: string;
+  is_synthetic: boolean;
+  file: string;
+};
+
+export type BreakdownRow = { rows: number } & Record<string, number>;
+export type ReportEntry = {
+  name: string;
+  title: string | null;
+  models: string[];
+  rows: number | null;
+  breakdowns: Record<string, Record<string, BreakdownRow>> | null;
+  has_summary: boolean;
+};
+export type ReportsResponse = { reports: ReportEntry[] };
+
+export type DriverMetrics = Record<string, Metrics>;
+export type DriverReportEntry = { artifact: string; name: string; is_synthetic: boolean; split: Split; test_by_driver: DriverMetrics };
+export type DriversReportResponse = { artifacts: DriverReportEntry[] };
+
 export type RunResources = {
   training?: { wall_seconds?: number; peak_rss_mb?: number; peak_traced_mb?: number };
   inference_batch_ms_per_row?: number;
@@ -197,6 +261,10 @@ export const api = {
   importSummary: (file: string) => getJson<ImportSummary>(`/api/imports/${encodeURIComponent(file)}/summary`),
   forecastLatest: (body: ForecastRequest) =>
     fetch('/api/forecast/latest', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(parse<ForecastResult>),
+  backtest: (body: BacktestRequest) =>
+    fetch('/api/forecast/backtest', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(parse<BacktestResult>),
+  reports: () => getJson<ReportsResponse>('/api/reports'),
+  driverReports: () => getJson<DriversReportResponse>('/api/reports/drivers'),
   importFile: (file: File, overwrite: boolean) => {
     const form = new FormData();
     form.append('file', file, file.name);

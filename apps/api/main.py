@@ -7,6 +7,7 @@ connection when it is serving fixture or historical data.
 from __future__ import annotations
 
 import json
+import os
 import platform
 import re
 import shutil
@@ -32,7 +33,13 @@ ARTIFACTS = ROOT / "artifacts"
 DATA = ROOT / "data"
 IMPORTS = DATA / "imports"
 PROCESSED = DATA / "processed"
-DEFAULT_ARTIFACT_ID = "raceshift_ffr_demo"
+DEMO_ARTIFACT_ID = "raceshift_ffr_demo"           # synthetic fixture model, always present (CI smoke path)
+REAL_ARTIFACT_ID = "f1_2025h2_ffr-m"             # committed real-data FFR-M; preferred default when complete
+
+
+def default_artifact_id() -> str:
+    """The real-data artifact when its files are all present, otherwise the synthetic demo."""
+    return REAL_ARTIFACT_ID if not missing_artifact_files(ARTIFACTS / REAL_ARTIFACT_ID) else DEMO_ARTIFACT_ID
 ALLOWED_SUFFIXES = {".csv", ".parquet"}
 MAX_IMPORT_BYTES = 200 * 1024 * 1024
 MAX_IMPORT_ROWS = 2_000_000
@@ -127,7 +134,7 @@ def _artifact_entry(path: Path) -> dict[str, Any]:
         "path": _relative(path),
         "ready": not missing,
         "missing_files": missing,
-        "is_default": path.name == DEFAULT_ARTIFACT_ID,
+        "is_default": path.name == default_artifact_id(),
         "is_synthetic": bool(metrics.get("is_synthetic", False)),
         "data_source": metrics.get("data_source", "unknown"),
         "architecture": config.get("architecture") or metrics.get("architecture"),
@@ -146,7 +153,7 @@ def _package_version(name: str) -> str | None:
 
 
 def _default_artifact_ready() -> bool:
-    return not missing_artifact_files(ARTIFACTS / DEFAULT_ARTIFACT_ID)
+    return not missing_artifact_files(ARTIFACTS / DEMO_ARTIFACT_ID)
 
 
 def _import_files() -> list[dict[str, Any]]:
@@ -183,7 +190,7 @@ def _table_summary(frame: pd.DataFrame, name: str) -> dict[str, Any]:
 
 
 def _forecast(file: str, driver: str | None, artifact_id: str | None) -> dict[str, Any]:
-    artifact_dir = _safe_artifact_path(artifact_id or DEFAULT_ARTIFACT_ID)
+    artifact_dir = _safe_artifact_path(artifact_id or default_artifact_id())
     path = _safe_import_path(file)
     try:
         frame = _load_table(path)
@@ -224,7 +231,7 @@ def health() -> dict[str, Any]:
 
 @app.get("/api/runtime")
 def runtime() -> dict[str, Any]:
-    default_dir = ARTIFACTS / DEFAULT_ARTIFACT_ID
+    default_dir = ARTIFACTS / default_artifact_id()
     default_metrics = _read_json(default_dir / "metrics.json") or {}
     return {
         "raceshift_version": __version__,
@@ -235,13 +242,13 @@ def runtime() -> dict[str, Any]:
         "live_connected": False,
         "live_note": "RaceShift renders local files and historical data. No live timing connection is configured.",
         "default_artifact": {
-            "id": DEFAULT_ARTIFACT_ID,
+            "id": default_artifact_id(),
             "ready": _default_artifact_ready(),
             "is_synthetic": bool(default_metrics.get("is_synthetic", False)),
             "data_source": default_metrics.get("data_source", "unknown"),
         },
         "project_root": ROOT.name,
-        "api_bind": "127.0.0.1:8000",
+        "api_bind": f"{os.environ.get('API_HOST', '127.0.0.1')}:{os.environ.get('API_PORT', '8000')}",
         "ui_origins": UI_ORIGINS,
     }
 
@@ -251,13 +258,13 @@ def setup() -> dict[str, Any]:
     checks: list[dict[str, Any]] = []
     missing_pkgs = [n for n in ["numpy", "pandas", "scikit-learn", "joblib", "pyarrow", "fastapi"] if _package_version(n) is None]
     checks.append({"item": "Python dependencies", "ok": not missing_pkgs, "detail": "all installed" if not missing_pkgs else f"missing: {missing_pkgs}"})
-    default_missing = missing_artifact_files(ARTIFACTS / DEFAULT_ARTIFACT_ID)
-    checks.append({"item": "Demo model artifact", "ok": not default_missing, "detail": f"artifacts/{DEFAULT_ARTIFACT_ID}" + ("" if not default_missing else f" missing {default_missing}")})
+    default_missing = missing_artifact_files(ARTIFACTS / DEMO_ARTIFACT_ID)
+    checks.append({"item": "Demo model artifact", "ok": not default_missing, "detail": f"artifacts/{DEMO_ARTIFACT_ID}" + ("" if not default_missing else f" missing {default_missing}")})
     real = [p.name for p in _artifact_dirs() if not missing_artifact_files(p) and not (_read_json(p / "metrics.json") or {}).get("is_synthetic", False) and (_read_json(p / "model_config.json") or {}).get("model_type") == "RaceShiftFFR"]
     checks.append({"item": "Real (non-synthetic) FFR artifact", "ok": bool(real), "detail": ", ".join(real) if real else "none yet. Train in Colab and copy the folder into artifacts/"})
     imports = _import_files()
     checks.append({"item": "Local datasets in data/imports", "ok": bool(imports), "detail": ", ".join(i["name"] for i in imports) if imports else "none"})
-    processed = sorted(p.name for p in PROCESSED.glob("*") if p.is_file()) if PROCESSED.is_dir() else []
+    processed = sorted(p.name for p in PROCESSED.glob("*") if p.is_file() and not p.name.startswith(".")) if PROCESSED.is_dir() else []
     checks.append({"item": "Processed tables in data/processed", "ok": True, "detail": ", ".join(processed) if processed else "none (optional)"})
     checks.append({"item": "Secrets", "ok": True, "detail": "The API reads no credentials and returns none. Live data is not configured."})
     return {"checks": checks, "all_required_ok": all(c["ok"] for c in checks if c["item"] in {"Python dependencies", "Demo model artifact"})}
@@ -273,13 +280,13 @@ def models() -> dict[str, Any]:
         {"id": "hist_gradient_boosting", "name": "Gradient-boosted trees", "role": "required-baseline", "training": "scikit-learn HistGradientBoosting", "ready": True},
         {"id": "frozen-tsfm", "name": "Frozen time-series foundation models", "role": "optional-zero-shot-benchmark", "training": "none", "ready": False},
     ]
-    return {"default_artifact": DEFAULT_ARTIFACT_ID, "artifacts": artifacts, "baselines": registry}
+    return {"default_artifact": default_artifact_id(), "artifacts": artifacts, "baselines": registry}
 
 
 @app.get("/api/datasets")
 def datasets() -> dict[str, Any]:
     manifest = _read_json(ROOT / "dataset_manifest.json") or {"sources": []}
-    processed = sorted(_relative(p) for p in PROCESSED.glob("*") if p.is_file()) if PROCESSED.is_dir() else []
+    processed = sorted(_relative(p) for p in PROCESSED.glob("*") if p.is_file() and not p.name.startswith(".")) if PROCESSED.is_dir() else []
     return {"sources": manifest.get("sources", []), "imports": _import_files(), "processed_files": processed, "import_dir": _relative(IMPORTS)}
 
 
@@ -347,13 +354,16 @@ def export_model(artifact_id: str) -> FileResponse:
     """
     artifact_dir = _safe_artifact_path(artifact_id)
     bundle = EXPORTS / f"{artifact_dir.name}.zip"
-    manifest = artifact_dir / "export" / "export_manifest.json"
+    # The API never writes inside artifacts/ (those files are tracked in git); the export is
+    # staged under exports/<artifact>/ and zipped from there.
+    export_dir = EXPORTS / artifact_dir.name
+    manifest = export_dir / "export_manifest.json"
     stale = not bundle.is_file() or not manifest.is_file() or manifest.stat().st_mtime < (artifact_dir / "metrics.json").stat().st_mtime
     if stale:
         try:
             from raceshift.models.export import export_artifact
 
-            export_artifact(artifact_dir, bundle_dir=EXPORTS)
+            export_artifact(artifact_dir, bundle_dir=EXPORTS, export_dir=export_dir)
         except ImportError as exc:
             raise HTTPException(503, f"Model export needs the export extras (pip install -e '.[export]'): {exc}") from exc
         except Exception as exc:  # noqa: BLE001
@@ -374,6 +384,84 @@ def forecast(
 ) -> dict[str, Any]:
     """Query-string alias of POST /api/forecast/latest kept for curl convenience."""
     return _forecast(file, driver, artifact)
+
+
+class BacktestRequest(ForecastRequest):
+    laps: int = Field(default=10, ge=1, le=100, description="How many of the driver's last completed lap pairs to score")
+
+
+@app.post("/api/forecast/backtest")
+def forecast_backtest(request: BacktestRequest) -> dict[str, Any]:
+    """Predicted vs actual for the last N lap pairs of one driver in the file's latest session.
+
+    This is how a user checks the model on laps that were really driven. The rows are the
+    training-style rows (lap N valid, lap N+1 valid and adjacent); the model never sees lap N+1.
+    """
+    artifact_dir = _safe_artifact_path(request.artifact or default_artifact_id())
+    path = _safe_import_path(request.file)
+    try:
+        frame = _load_table(path)
+        artifact = _load_artifact(str(artifact_dir))
+        result = artifact.backtest_session(frame, driver=request.driver, laps=request.laps)
+    except HTTPException:
+        raise
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    except Exception as exc:  # pragma: no cover - defensive
+        raise HTTPException(500, f"Local backtest failed: {type(exc).__name__}") from exc
+    result["file"] = path.name
+    return result
+
+
+# --------------------------------------------------------------------------- reports
+
+REPORTS = ROOT / "reports"
+REPORT_TITLES = {
+    "f1_2025h2": "Season-round split, 2018-2025 FastF1 tier",
+    "f1_2025h2_legacy_ext": "Training extended to 2000 with the legacy tier",
+    "holdout_monza": "Circuit holdout (Monza)",
+    "domain_shift_2026": "2026 domain shift, no retraining",
+}
+
+
+@app.get("/api/reports")
+def reports() -> dict[str, Any]:
+    """Committed experiment reports (reports/<name>/breakdowns.json): MAE by circuit, team, compound, ..."""
+    out: list[dict[str, Any]] = []
+    if REPORTS.is_dir():
+        for path in sorted(p for p in REPORTS.iterdir() if p.is_dir()):
+            breakdowns = _read_json(path / "breakdowns.json") or {}
+            out.append(
+                {
+                    "name": path.name,
+                    "title": REPORT_TITLES.get(path.name),
+                    "models": breakdowns.get("models", []),
+                    "rows": breakdowns.get("rows"),
+                    "breakdowns": breakdowns.get("breakdowns"),
+                    "has_summary": (path / "summary.md").is_file(),
+                }
+            )
+    return {"reports": out}
+
+
+@app.get("/api/reports/drivers")
+def driver_reports() -> dict[str, Any]:
+    """Per-driver test error of every complete artifact, straight from its metrics.json."""
+    out: list[dict[str, Any]] = []
+    for path in _artifact_dirs():
+        metrics = _read_json(path / "metrics.json")
+        if not metrics or not isinstance(metrics.get("test_by_driver"), dict):
+            continue
+        out.append(
+            {
+                "artifact": path.name,
+                "name": metrics.get("name", path.name),
+                "is_synthetic": bool(metrics.get("is_synthetic", False)),
+                "split": metrics.get("split"),
+                "test_by_driver": metrics["test_by_driver"],
+            }
+        )
+    return {"artifacts": out}
 
 
 @app.get("/api/experiments")

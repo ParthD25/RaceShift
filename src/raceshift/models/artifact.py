@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 from raceshift.data.schema import REQUIRED_FORECAST_COLUMNS
-from raceshift.features.full_context import build_full_context_table
+from raceshift.features.full_context import RAW_TARGET_COLUMN, build_full_context_table
 from raceshift.models.forward_forward_regressor import ForwardForwardRegressor
 
 ARTIFACT_FILES = (
@@ -194,6 +194,123 @@ class RaceShiftArtifact:
             "layer_disagreement_s": float(pred["layer_disagreement"][0]),
             "rolling5_baseline_s": baseline,
             "last_lap_time_s": float(latest["lap_time_s"]),
+            "artifact": self.directory.name,
+            "data_source": self.data_source,
+            "is_synthetic": self.is_synthetic,
+        }
+
+    def backtest_session(self, raw: pd.DataFrame, driver: str | None = None, laps: int = 10) -> dict:
+        """Score the model on the last ``laps`` completed lap pairs of one driver in the latest session.
+
+        Every row is a lap N whose next lap N+1 was actually driven, so predicted and actual
+        can be compared. Only pairs where both laps are valid racing laps count (pit, safety-car,
+        red-flag and deleted laps are skipped, exactly as in training). Nothing here looks past
+        lap N when predicting lap N+1: the feature table is the same leakage-safe table used for
+        training and the model never sees the actual next lap.
+        """
+        if laps < 1:
+            raise ValueError("laps must be >= 1")
+        missing = [c for c in REQUIRED_FORECAST_COLUMNS if c not in raw.columns]
+        if missing:
+            raise ValueError(f"Missing required columns: {missing}")
+        data = raw.copy()
+        data = data[pd.to_numeric(data["lap_time_s"], errors="coerce").notna()]
+        if data.empty:
+            raise ValueError("No rows with a lap time available for a backtest")
+
+        scope, key = self.latest_session(data)
+        scope = scope.copy()
+        scope["driver"] = scope["driver"].astype(str)
+        available_drivers = sorted(scope["driver"].unique().tolist())
+        if driver is None:
+            laps_by_driver = scope.groupby("driver")["lap_number"].max().sort_values(ascending=False, kind="stable")
+            driver = str(laps_by_driver.index[0])
+        driver = str(driver)
+        if driver not in available_drivers:
+            raise ValueError(f"Driver {driver!r} not found in the latest session. Available: {available_drivers}")
+        driven = int((scope["driver"] == driver).sum())
+
+        history_laps = int(self.contract.get("history", 5))
+        table = build_full_context_table(data, history=history_laps)
+        rows = table[
+            (table["season"] == key["season"])
+            & (table["event"] == key["event"])
+            & (table["session"] == key["session"])
+            & (table["driver"].astype(str) == driver)
+        ].sort_values("lap_number")
+        rows = rows[pd.to_numeric(rows[RAW_TARGET_COLUMN], errors="coerce").notna()]
+        usable = int(len(rows))
+        if rows.empty:
+            raise ValueError(
+                "No completed lap pairs for this driver where both laps are valid racing laps "
+                "(pit, safety-car, red-flag and deleted laps are excluded, as in training)."
+            )
+        rows = rows.tail(int(laps))
+
+        features = self.contract["numeric"] + self.contract["categorical"]
+        x = np.asarray(self.preprocessor.transform(rows[features]), dtype=np.float32)
+        pred = self.model.predict_with_uncertainty(x)
+        baseline = rows["rolling_median_5"].to_numpy(dtype=float)
+        predicted = baseline + np.asarray(pred["prediction"], dtype=float)
+        lower = baseline + np.asarray(pred["lower_80"], dtype=float)
+        upper = baseline + np.asarray(pred["upper_80"], dtype=float)
+        actual = rows[RAW_TARGET_COLUMN].to_numpy(dtype=float)
+        current = rows["lap_time_s"].to_numpy(dtype=float)
+        error = predicted - actual
+        abs_error = np.abs(error)
+        inside = (actual >= lower) & (actual <= upper)
+
+        def _opt(value):
+            try:
+                value = float(value)
+            except (TypeError, ValueError):
+                return None
+            return value if np.isfinite(value) else None
+
+        lap_rows = []
+        for i in range(len(rows)):
+            r = rows.iloc[i]
+            lap_rows.append(
+                {
+                    "lap_number_completed": int(r["lap_number"]),
+                    "next_lap_number": int(r["lap_number"]) + 1,
+                    "actual_next_lap_s": float(actual[i]),
+                    "predicted_next_lap_s": float(predicted[i]),
+                    "lower_80_s": float(lower[i]),
+                    "upper_80_s": float(upper[i]),
+                    "rolling5_baseline_s": float(baseline[i]),
+                    "previous_lap_s": float(current[i]),
+                    "error_s": float(error[i]),
+                    "abs_error_s": float(abs_error[i]),
+                    "within_interval": bool(inside[i]),
+                    "compound": None if pd.isna(r.get("compound")) else str(r.get("compound")),
+                    "tyre_life": _opt(r.get("tyre_life")),
+                    "position": _opt(r.get("position")),
+                }
+            )
+        summary = {
+            "rows": int(len(rows)),
+            "mae_s": float(abs_error.mean()),
+            "rmse_s": float(np.sqrt(np.mean(error**2))),
+            "p90_ae_s": float(np.quantile(abs_error, 0.9)),
+            "signed_bias_s": float(error.mean()),
+            "within_0_5s_share": float((abs_error <= 0.5).mean()),
+            "within_1s_share": float((abs_error <= 1.0).mean()),
+            "interval80_coverage": float(inside.mean()),
+            "previous_lap_mae_s": float(np.abs(current - actual).mean()),
+            "rolling5_mae_s": float(np.abs(baseline - actual).mean()),
+        }
+        return {
+            "season": int(key["season"]),
+            "event": str(key["event"]),
+            "session": str(key["session"]),
+            "driver": driver,
+            "available_drivers": available_drivers,
+            "laps_driven": driven,
+            "usable_lap_pairs": usable,
+            "skipped_laps": max(driven - usable, 0),
+            "laps": lap_rows,
+            "summary": summary,
             "artifact": self.directory.name,
             "data_source": self.data_source,
             "is_synthetic": self.is_synthetic,

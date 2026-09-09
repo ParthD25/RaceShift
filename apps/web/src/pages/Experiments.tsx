@@ -6,7 +6,9 @@ import { useApi } from '../lib/useApi';
 
 export default function Experiments() {
   const experiments = useApi(() => api.experiments());
-  const runs = experiments.data?.experiments ?? [];
+  // Real-data runs first, synthetic smoke runs last: the synthetic fixture is easier than any
+  // real race and its lower error must never sit above the real numbers.
+  const runs = [...(experiments.data?.experiments ?? [])].sort((a, b) => Number(a.is_synthetic) - Number(b.is_synthetic));
   return (
     <div className="page-stack">
       <div className="page-heading">

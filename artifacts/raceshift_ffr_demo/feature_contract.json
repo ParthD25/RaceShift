@@ -109,5 +109,6 @@
     "data_tier"
   ],
   "dropped_groups": [],
-  "dropped_sparse": []
+  "dropped_sparse": [],
+  "lap_validity_version": 2
 }
