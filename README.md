@@ -82,6 +82,19 @@ anything a fan could not do with a stopwatch.
 
 Full table with validation metrics, interval widths and latency: `reports/f1_2025h2/summary.md`. Error by circuit, constructor, compound, tyre age, conditions, race phase and position: `reports/f1_2025h2/breakdowns.md`.
 
+**Same split, training extended to 2000 with the legacy tier** — train ≤ 2024 · validation 2025 rounds ≤ 12 · test 2025 rounds > 12. Rows: train 429546, validation 10248, test 10994. Data: fastf1_timing+legacy_timing.
+
+| Model | Test MAE (s) | Test RMSE (s) | p90 (s) | Laps within 0.5 s | 80% coverage | Train time (s) | Peak RSS (MB) | Traced train peak (MB) | Artifact (MB) |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| previous_lap | 0.357 | 0.645 | 0.822 | 80.6% | — | — | — | — | — |
+| rolling_median_5 | 0.394 | 0.675 | 0.889 | 76.9% | — | — | — | — | — |
+| ridge | 0.368 | 0.614 | 0.781 | 78.7% | — | 128.4 | 9240 | 4859 | — |
+| **hist_gradient_boosting** | 0.315 | 0.570 | 0.679 | 83.6% | — | 279.6 | 11138 | 5667 | — |
+| FFR-M | 0.351 | 0.595 | 0.740 | 80.2% | 0.856 | 7958.8 | 8953 | 4762 | 3.99 |
+| FFR-S | 0.348 | 0.592 | 0.739 | 80.7% | 0.858 | 1775.8 | 7403 | 2570 | 2.21 |
+
+Full table with validation metrics, interval widths and latency: `reports/f1_2025h2_legacy_ext/summary.md`. Error by circuit, constructor, compound, tyre age, conditions, race phase and position: `reports/f1_2025h2_legacy_ext/breakdowns.md`.
+
 **Circuit holdout (Monza)** — every season of **Italian Grand Prix** held out; train ≤ 2024, validation 2025. Rows: train 123362, validation 20404, test 6133. Data: fastf1_timing.
 
 | Model | Test MAE (s) | Test RMSE (s) | p90 (s) | Laps within 0.5 s | 80% coverage | Train time (s) | Peak RSS (MB) | Traced train peak (MB) | Artifact (MB) |
@@ -127,8 +140,7 @@ fixture numbers are never reported as Formula 1 results.
   objective and no gradient flowing between layers. There is no positive/negative data pass as
   in Hinton's original formulation; `docs/TRAINING_AND_RESEARCH.md` spells out the difference.
 - Lap-validity rules are versioned (`lap_validity_version` in every metrics file). Version 2
-  excludes the restart lap after a red flag. Every table above was produced under version 2;
-  the legacy-tier extension is being regenerated and returns to the tables when it finishes.
+  excludes the restart lap after a red flag, and every table above was produced under it.
 
 **What the numbers say so far** (2018-2024 training, 128k clean laps; test = 2025 rounds 13-24; lap-validity rules v2):
 
@@ -165,10 +177,12 @@ fixture numbers are never reported as Formula 1 results.
   0.457 s, previous lap 0.472 s. FFR-M has the best p90 (0.96 s) and degrades no worse than the
   tree, but its 80% intervals, calibrated on 2025, cover only 77% of 2026 laps: the shift is
   visible in calibration before it is visible in MAE.
-- **Training extended to 2000 with the legacy tier (same 2025 test rows).** Being regenerated
-  under the version 2 rules; the version 1 result was a small gain for every learned model
-  (ridge 0.393 → 0.372 s, trees 0.317 → 0.314 s, FFR-M 0.352 → 0.347 s, FFR-S 0.357 → 0.342 s)
-  at three to five times the training cost.
+- **Training extended to 2000 with the legacy tier (429,546 laps, same 2025 test rows).** The
+  extra eighteen seasons of lap-time-only history help the linear model most (ridge 0.392 →
+  0.368 s) and the others barely: trees 0.316 → 0.315 s, FFR-S 0.350 → 0.348 s, FFR-M 0.350 →
+  0.351 s. Training cost grows with the data: the tree needs 5 minutes and 5.7 GB traced,
+  FFR-S 30 minutes and 2.6 GB, FFR-M over two hours. Under the version 1 rules the same
+  extension had looked worth 0.005-0.015 s for every model; most of that was the restart laps.
 
 ## Architecture
 

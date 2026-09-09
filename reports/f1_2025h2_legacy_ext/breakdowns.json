@@ -1,0 +1,405 @@
+{
+  "models": [
+    "previous_lap",
+    "rolling_median_5",
+    "ridge",
+    "hist_gradient_boosting",
+    "FFR-M",
+    "FFR-S"
+  ],
+  "rows": 10994,
+  "breakdowns": {
+    "circuit": {
+      "Austin": {
+        "rows": 850,
+        "previous_lap": 0.3661,
+        "rolling_median_5": 0.3736,
+        "ridge": 0.348,
+        "hist_gradient_boosting": 0.3289,
+        "FFR-M": 0.353,
+        "FFR-S": 0.3409
+      },
+      "Baku": {
+        "rows": 816,
+        "previous_lap": 0.4216,
+        "rolling_median_5": 0.4914,
+        "ridge": 0.3803,
+        "hist_gradient_boosting": 0.3239,
+        "FFR-M": 0.3862,
+        "FFR-S": 0.3974
+      },
+      "Budapest": {
+        "rows": 1214,
+        "previous_lap": 0.369,
+        "rolling_median_5": 0.3914,
+        "ridge": 0.3501,
+        "hist_gradient_boosting": 0.3115,
+        "FFR-M": 0.3419,
+        "FFR-S": 0.3492
+      },
+      "Las Vegas": {
+        "rows": 712,
+        "previous_lap": 0.2963,
+        "rolling_median_5": 0.3504,
+        "ridge": 0.3349,
+        "hist_gradient_boosting": 0.2899,
+        "FFR-M": 0.3434,
+        "FFR-S": 0.3389
+      },
+      "Lusail": {
+        "rows": 830,
+        "previous_lap": 0.2534,
+        "rolling_median_5": 0.2911,
+        "ridge": 0.2611,
+        "hist_gradient_boosting": 0.2187,
+        "FFR-M": 0.2739,
+        "FFR-S": 0.2813
+      },
+      "Marina Bay": {
+        "rows": 1086,
+        "previous_lap": 0.5216,
+        "rolling_median_5": 0.5759,
+        "ridge": 0.5774,
+        "hist_gradient_boosting": 0.4449,
+        "FFR-M": 0.4785,
+        "FFR-S": 0.474
+      },
+      "Mexico City": {
+        "rows": 1090,
+        "previous_lap": 0.3863,
+        "rolling_median_5": 0.3732,
+        "ridge": 0.3571,
+        "hist_gradient_boosting": 0.3192,
+        "FFR-M": 0.3479,
+        "FFR-S": 0.3392
+      },
+      "Monza": {
+        "rows": 838,
+        "previous_lap": 0.2453,
+        "rolling_median_5": 0.2629,
+        "ridge": 0.2844,
+        "hist_gradient_boosting": 0.2183,
+        "FFR-M": 0.2672,
+        "FFR-S": 0.2351
+      },
+      "Spa-Francorchamps": {
+        "rows": 681,
+        "previous_lap": 0.4625,
+        "rolling_median_5": 0.596,
+        "ridge": 0.5759,
+        "hist_gradient_boosting": 0.4766,
+        "FFR-M": 0.5361,
+        "FFR-S": 0.5333
+      },
+      "S\u00e3o Paulo": {
+        "rows": 981,
+        "previous_lap": 0.3015,
+        "rolling_median_5": 0.326,
+        "ridge": 0.3069,
+        "hist_gradient_boosting": 0.2705,
+        "FFR-M": 0.2983,
+        "FFR-S": 0.2975
+      },
+      "Yas Island": {
+        "rows": 964,
+        "previous_lap": 0.3171,
+        "rolling_median_5": 0.3426,
+        "ridge": 0.335,
+        "hist_gradient_boosting": 0.2883,
+        "FFR-M": 0.3144,
+        "FFR-S": 0.3092
+      },
+      "Zandvoort": {
+        "rows": 932,
+        "previous_lap": 0.3126,
+        "rolling_median_5": 0.3582,
+        "ridge": 0.3095,
+        "hist_gradient_boosting": 0.2874,
+        "FFR-M": 0.2986,
+        "FFR-S": 0.2956
+      }
+    },
+    "team": {
+      "Alpine": {
+        "rows": 1130,
+        "previous_lap": 0.4338,
+        "rolling_median_5": 0.4396,
+        "ridge": 0.4015,
+        "hist_gradient_boosting": 0.3552,
+        "FFR-M": 0.3945,
+        "FFR-S": 0.3887
+      },
+      "Aston Martin": {
+        "rows": 1074,
+        "previous_lap": 0.3729,
+        "rolling_median_5": 0.413,
+        "ridge": 0.3917,
+        "hist_gradient_boosting": 0.3246,
+        "FFR-M": 0.3658,
+        "FFR-S": 0.3611
+      },
+      "Ferrari": {
+        "rows": 1033,
+        "previous_lap": 0.336,
+        "rolling_median_5": 0.3668,
+        "ridge": 0.3459,
+        "hist_gradient_boosting": 0.2932,
+        "FFR-M": 0.3226,
+        "FFR-S": 0.3201
+      },
+      "Haas F1 Team": {
+        "rows": 1145,
+        "previous_lap": 0.3837,
+        "rolling_median_5": 0.4267,
+        "ridge": 0.3995,
+        "hist_gradient_boosting": 0.3397,
+        "FFR-M": 0.3846,
+        "FFR-S": 0.3778
+      },
+      "Kick Sauber": {
+        "rows": 937,
+        "previous_lap": 0.4385,
+        "rolling_median_5": 0.4615,
+        "ridge": 0.4191,
+        "hist_gradient_boosting": 0.3784,
+        "FFR-M": 0.4081,
+        "FFR-S": 0.4043
+      },
+      "McLaren": {
+        "rows": 1128,
+        "previous_lap": 0.2827,
+        "rolling_median_5": 0.3332,
+        "ridge": 0.3214,
+        "hist_gradient_boosting": 0.2637,
+        "FFR-M": 0.2877,
+        "FFR-S": 0.2834
+      },
+      "Mercedes": {
+        "rows": 1157,
+        "previous_lap": 0.3398,
+        "rolling_median_5": 0.3714,
+        "ridge": 0.3567,
+        "hist_gradient_boosting": 0.3123,
+        "FFR-M": 0.3466,
+        "FFR-S": 0.3457
+      },
+      "Racing Bulls": {
+        "rows": 1116,
+        "previous_lap": 0.3488,
+        "rolling_median_5": 0.3818,
+        "ridge": 0.3519,
+        "hist_gradient_boosting": 0.3069,
+        "FFR-M": 0.3513,
+        "FFR-S": 0.3535
+      },
+      "Red Bull Racing": {
+        "rows": 1183,
+        "previous_lap": 0.2925,
+        "rolling_median_5": 0.3418,
+        "ridge": 0.324,
+        "hist_gradient_boosting": 0.266,
+        "FFR-M": 0.3046,
+        "FFR-S": 0.2972
+      },
+      "Williams": {
+        "rows": 1091,
+        "previous_lap": 0.3574,
+        "rolling_median_5": 0.4132,
+        "ridge": 0.3781,
+        "hist_gradient_boosting": 0.3184,
+        "FFR-M": 0.3586,
+        "FFR-S": 0.3556
+      }
+    },
+    "compound": {
+      "HARD": {
+        "rows": 4171,
+        "previous_lap": 0.3668,
+        "rolling_median_5": 0.3988,
+        "ridge": 0.3747,
+        "hist_gradient_boosting": 0.3181,
+        "FFR-M": 0.3635,
+        "FFR-S": 0.3589
+      },
+      "INTERMEDIATE": {
+        "rows": 107,
+        "previous_lap": 0.9874,
+        "rolling_median_5": 1.3152,
+        "ridge": 1.2967,
+        "hist_gradient_boosting": 1.1156,
+        "FFR-M": 1.2147,
+        "FFR-S": 1.1883
+      },
+      "MEDIUM": {
+        "rows": 5050,
+        "previous_lap": 0.3288,
+        "rolling_median_5": 0.3635,
+        "ridge": 0.3401,
+        "hist_gradient_boosting": 0.2879,
+        "FFR-M": 0.3216,
+        "FFR-S": 0.3198
+      },
+      "None": {
+        "rows": 49,
+        "previous_lap": 0.4289,
+        "rolling_median_5": 0.467,
+        "ridge": 0.473,
+        "hist_gradient_boosting": 0.5013,
+        "FFR-M": 0.4889,
+        "FFR-S": 0.5009
+      },
+      "SOFT": {
+        "rows": 1617,
+        "previous_lap": 0.3764,
+        "rolling_median_5": 0.4108,
+        "ridge": 0.3729,
+        "hist_gradient_boosting": 0.331,
+        "FFR-M": 0.3524,
+        "FFR-S": 0.346
+      }
+    },
+    "tyre_age": {
+      "1-5 laps": {
+        "rows": 1532,
+        "previous_lap": 0.4921,
+        "rolling_median_5": 0.5786,
+        "ridge": 0.485,
+        "hist_gradient_boosting": 0.413,
+        "FFR-M": 0.4415,
+        "FFR-S": 0.4421
+      },
+      "16-30 laps": {
+        "rows": 4155,
+        "previous_lap": 0.3185,
+        "rolling_median_5": 0.3227,
+        "ridge": 0.3291,
+        "hist_gradient_boosting": 0.2794,
+        "FFR-M": 0.3266,
+        "FFR-S": 0.3208
+      },
+      "31+ laps": {
+        "rows": 869,
+        "previous_lap": 0.4296,
+        "rolling_median_5": 0.4327,
+        "ridge": 0.4451,
+        "hist_gradient_boosting": 0.3646,
+        "FFR-M": 0.4112,
+        "FFR-S": 0.4027
+      },
+      "6-15 laps": {
+        "rows": 4373,
+        "previous_lap": 0.3315,
+        "rolling_median_5": 0.3879,
+        "ridge": 0.3478,
+        "hist_gradient_boosting": 0.3021,
+        "FFR-M": 0.3303,
+        "FFR-S": 0.3277
+      },
+      "unknown": {
+        "rows": 65,
+        "previous_lap": 0.3878,
+        "rolling_median_5": 0.4258,
+        "ridge": 0.4213,
+        "hist_gradient_boosting": 0.4395,
+        "FFR-M": 0.4468,
+        "FFR-S": 0.4567
+      }
+    },
+    "race_phase": {
+      "final third": {
+        "rows": 3978,
+        "previous_lap": 0.3859,
+        "rolling_median_5": 0.3989,
+        "ridge": 0.3932,
+        "hist_gradient_boosting": 0.3374,
+        "FFR-M": 0.3857,
+        "FFR-S": 0.3819
+      },
+      "middle third": {
+        "rows": 3723,
+        "previous_lap": 0.3169,
+        "rolling_median_5": 0.3448,
+        "ridge": 0.3346,
+        "hist_gradient_boosting": 0.2851,
+        "FFR-M": 0.3198,
+        "FFR-S": 0.3142
+      },
+      "opening third": {
+        "rows": 3293,
+        "previous_lap": 0.3675,
+        "rolling_median_5": 0.4423,
+        "ridge": 0.3752,
+        "hist_gradient_boosting": 0.3207,
+        "FFR-M": 0.3459,
+        "FFR-S": 0.3443
+      }
+    },
+    "running_position": {
+      "P1-P3": {
+        "rows": 1771,
+        "previous_lap": 0.2459,
+        "rolling_median_5": 0.2964,
+        "ridge": 0.2866,
+        "hist_gradient_boosting": 0.231,
+        "FFR-M": 0.2541,
+        "FFR-S": 0.2496
+      },
+      "P11+": {
+        "rows": 5131,
+        "previous_lap": 0.4202,
+        "rolling_median_5": 0.4563,
+        "ridge": 0.416,
+        "hist_gradient_boosting": 0.3617,
+        "FFR-M": 0.4023,
+        "FFR-S": 0.3988
+      },
+      "P4-P10": {
+        "rows": 4092,
+        "previous_lap": 0.326,
+        "rolling_median_5": 0.357,
+        "ridge": 0.343,
+        "hist_gradient_boosting": 0.2919,
+        "FFR-M": 0.3298,
+        "FFR-S": 0.3261
+      }
+    },
+    "clean_lap_depth": {
+      "1 (first clean lap)": {
+        "rows": 730,
+        "previous_lap": 0.7357,
+        "rolling_median_5": 0.7357,
+        "ridge": 0.7038,
+        "hist_gradient_boosting": 0.5883,
+        "FFR-M": 0.6673,
+        "FFR-S": 0.6646
+      },
+      "11+": {
+        "rows": 5155,
+        "previous_lap": 0.3237,
+        "rolling_median_5": 0.3302,
+        "ridge": 0.3373,
+        "hist_gradient_boosting": 0.2817,
+        "FFR-M": 0.3305,
+        "FFR-S": 0.3236
+      },
+      "2-4": {
+        "rows": 1995,
+        "previous_lap": 0.379,
+        "rolling_median_5": 0.4946,
+        "ridge": 0.4093,
+        "hist_gradient_boosting": 0.3564,
+        "FFR-M": 0.3723,
+        "FFR-S": 0.3714
+      },
+      "5-10": {
+        "rows": 3114,
+        "previous_lap": 0.3094,
+        "rolling_median_5": 0.3536,
+        "ridge": 0.3135,
+        "hist_gradient_boosting": 0.2784,
+        "FFR-M": 0.2988,
+        "FFR-S": 0.2982
+      }
+    }
+  }
+}
