@@ -1,6 +1,6 @@
 {
   "name": "holdout_monza",
-  "created_utc": "2026-09-09T00:58:11+00:00",
+  "created_utc": "2026-09-09T13:13:54+00:00",
   "input_file": "f1_laps_fastf1.parquet",
   "data_source": "fastf1_timing",
   "is_synthetic": false,

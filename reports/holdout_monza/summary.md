@@ -1,6 +1,6 @@
 # RaceShift experiment: holdout_monza
 
-Generated 2026-09-09T00:58:11+00:00 from `f1_laps_fastf1.parquet` (data source: fastf1_timing).
+Generated 2026-09-09T13:13:54+00:00 from `f1_laps_fastf1.parquet` (data source: fastf1_timing).
 Split: circuit_holdout · train ≤ 2024 · validation 2025 · test 2025 · holdout Italian Grand Prix
 Rows: train 123362 · validation 20404 · test 6133
 
