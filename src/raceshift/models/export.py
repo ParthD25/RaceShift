@@ -180,9 +180,13 @@ def preprocessor_spec(prep, contract: dict) -> dict:
     categorical = []
     infrequent_all = getattr(onehot, "infrequent_categories_", [None] * len(cat_cols))
     for j, col in enumerate(cat_cols):
-        infrequent = set() if infrequent_all[j] is None else {str(v) for v in infrequent_all[j]}
-        frequent = [str(v) for v in onehot.categories_[j] if str(v) not in infrequent]
-        categorical.append({"column": col, "frequent": frequent, "infrequent": sorted(infrequent)})
+        # A Python None (legacy-tier rows with no compound) is a category of its own in
+        # sklearn, distinct from the string "None"; it is stored as JSON null so the two never
+        # collide.
+        key = lambda v: None if v is None else str(v)  # noqa: E731
+        infrequent = set() if infrequent_all[j] is None else {key(v) for v in infrequent_all[j]}
+        frequent = [key(v) for v in onehot.categories_[j] if key(v) not in infrequent]
+        categorical.append({"column": col, "frequent": frequent, "infrequent": sorted(infrequent, key=lambda v: (v is None, str(v)))})
     return {
         "format": "raceshift-preprocessor-v1",
         "numeric_columns": list(num_cols),
@@ -210,13 +214,15 @@ def apply_preprocessor_spec(spec: dict, frame) -> np.ndarray:
     numeric = (numeric - np.asarray(spec["scale_mean"])[None, :]) / np.asarray(spec["scale_std"])[None, :]
     cat_blocks = []
     for entry in spec["categorical"]:
-        # Mirror sklearn exactly: only float NaN counts as missing for object columns, so a
-        # Python None is a category of its own (its string form "None"), as it was in training.
+        # Mirror sklearn exactly: only float NaN counts as missing for object columns; a Python
+        # None stays None (its own category, stored as JSON null) and everything else is its
+        # string form, as it was in training.
         fill = spec["categorical_fill"]
-        text = np.array([fill if (isinstance(v, float) and np.isnan(v)) else str(v) for v in frame[entry["column"]].to_numpy()], dtype=object)
-        cols = [(text == cat).astype(np.float64) for cat in entry["frequent"]]
+        keys = [fill if (isinstance(v, float) and np.isnan(v)) else (None if v is None else str(v)) for v in frame[entry["column"]].to_numpy()]
+        cols = [np.array([k == cat for k in keys], dtype=np.float64) for cat in entry["frequent"]]
         if entry["infrequent"]:
-            cols.append(np.isin(text, entry["infrequent"]).astype(np.float64))
+            infrequent = set(entry["infrequent"])
+            cols.append(np.array([k in infrequent for k in keys], dtype=np.float64))
         if cols:
             cat_blocks.append(np.stack(cols, axis=1))
     out = np.concatenate([numeric] + cat_blocks, axis=1) if cat_blocks else numeric
