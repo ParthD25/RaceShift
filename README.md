@@ -127,20 +127,11 @@ fixture numbers are never reported as Formula 1 results.
 
 **Protocol notes that matter when reading the tables.**
 
-- Every row is a single run with seed 42. Differences of a few thousandths of a second between
-  FFR variants (depth, group ladders, ablations that "change nothing") are within what a
-  different seed could produce and are not claimed as effects; `reports/<name>/seeds.md`
-  records the seed spread where it has been measured.
-- The learned baselines (ridge, gradient-boosted trees) report validation metrics from a
-  train-only fit and test metrics from a refit on train + validation, the usual practice for
-  models with no early stopping. FFR is trained on the training seasons only and uses the
-  validation rounds to calibrate its interval. The asymmetry favours the baselines slightly;
-  `reports/f1_2025h2/generalization.md` shows the train-only tree at 0.316 s vs 0.317 s.
-- "Forward-Forward" here means greedy layer-wise training with a local ordinal-goodness
-  objective and no gradient flowing between layers. There is no positive/negative data pass as
-  in Hinton's original formulation; `docs/TRAINING_AND_RESEARCH.md` spells out the difference.
-- Lap-validity rules are versioned (`lap_validity_version` in every metrics file). Version 2
-  excludes the restart lap after a red flag, and every table above was produced under it.
+- Every row is a single run with seed 42. Three extra seeds of FFR-S on the season split give a
+  test MAE of 0.350 ± 0.002 s (`reports/f1_2025h2/seeds.md`), so differences of a few
+  thousandths of a second between FFR variants (depth, group ladders, ablations that "change
+  nothing") are noise, not effects. Only the temporal-features ablation (+0.025 s) clears
+  that bar.
 
 **What the numbers say so far** (2018-2024 training, 128k clean laps; test = 2025 rounds 13-24; lap-validity rules v2):
 
