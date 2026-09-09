@@ -110,5 +110,6 @@
     "brake_fraction_lag2",
     "brake_fraction_lag3",
     "brake_fraction_lag4"
-  ]
+  ],
+  "lap_validity_version": 2
 }

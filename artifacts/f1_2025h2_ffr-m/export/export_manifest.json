@@ -2,17 +2,17 @@
   "artifact": "f1_2025h2_ffr-m",
   "name": "FFR-M",
   "files": {
-    "ffr-m_ffr.onnx": "Forward-Forward core, opset 13; verified against NumPy on 2000 rows, max |\u0394| 1.12e-05 s",
+    "ffr-m_ffr.onnx": "Forward-Forward core, opset 13; verified against NumPy on 2000 rows, max |\u0394| 9.54e-06 s",
     "preprocessor.joblib": "fitted sklearn preprocessor (joblib). skl2onnx cannot convert SimpleImputer(add_indicator=True), so there is no preprocessor ONNX; use ffr-m_preprocessor.json with raceshift.models.export.apply_preprocessor_spec for pickle-free inference",
     "ffr-m_preprocessor.json": "fitted preprocessor as plain JSON (medians, indicators, scaling, one-hot vocabularies) for pickle-free inference via raceshift.models.export.apply_preprocessor_spec; verified against sklearn on 2000 rows, max |\u0394| 0.00e+00",
     "feature_contract.json": "exact input columns, history length, dropped features",
     "metrics.json": "all measured numbers for this run"
   },
   "onnx_verification_max_abs_diff_s": {
-    "residual_s": 1.1205673217773438e-05,
-    "lower_80_residual_s": 1.1205673217773438e-05,
-    "upper_80_residual_s": 1.1205673217773438e-05,
-    "layer_disagreement_s": 2.2351741790771484e-07
+    "residual_s": 9.5367431640625e-06,
+    "lower_80_residual_s": 9.5367431640625e-06,
+    "upper_80_residual_s": 9.5367431640625e-06,
+    "layer_disagreement_s": 4.172325134277344e-07
   },
   "skl2onnx_error": "RuntimeError: Unable Mismatch between expected shape [None, 64] and model (., 107) in operator Operator(type='SklearnScaler', onnx_name='SklearnScaler', inputs='variable', outputs='variable1', raw_operator=StandardScaler())."
 }

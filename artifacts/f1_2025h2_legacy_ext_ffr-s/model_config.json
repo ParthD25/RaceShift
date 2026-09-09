@@ -21,8 +21,8 @@
     "clip_update_norm": 5.0
   },
   "target_center": -0.08799999952316284,
-  "target_scale": 3.0320000052452087,
-  "interval_q80": 0.5946155190467834,
+  "target_scale": 3.0329999327659607,
+  "interval_q80": 0.6011826395988464,
   "architecture": [
     {
       "layer": 1,
