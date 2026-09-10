@@ -128,6 +128,7 @@ LAP_STATE_COLUMNS = [
     "is_yellow",
     "is_red_flag",
     "is_red_flag_restart",
+    "is_safety_car_restart",
     "is_pit_in",
     "is_pit_out",
     "is_deleted",
@@ -137,7 +138,14 @@ LAP_STATE_COLUMNS = [
 # results produced under different rules are never compared silently.
 #   1  accurate, timed, not deleted, not pit-in/out, not SC/VSC/red-flag lap
 #   2  v1 plus: the first timed lap after a red-flag stoppage (restart lap) is invalid
-LAP_VALIDITY_VERSION = 2
+#   3  v2 plus: yellow-flag laps (status code 2) are invalid, and so is the first timed lap
+#      after a safety-car period (the SC restart lap). Measured on 2018-2026 races before the
+#      change: yellow laps were 3.6% of valid laps with 8.7% of them more than 5% slower than
+#      the driver's race median (1.9% for all laps) and 4.1% more than 15% slower; the lap
+#      after a safety car was 2.2% slower at the median and 17% of them more than 5% slower.
+#      The lap after a VSC (median ratio 1.000) and the second lap after a safety car
+#      (median 1.010) stay valid.
+LAP_VALIDITY_VERSION = 3
 
 LEAKAGE_BLOCKLIST = {
     RAW_TARGET_COLUMN,
@@ -215,6 +223,27 @@ def _flag(series: pd.Series) -> pd.Series:
     return series.map(lambda v: bool(v) if v is not None and not (isinstance(v, float) and np.isnan(v)) else False).astype(bool)
 
 
+def _restart_lap_after(df: pd.DataFrame, flagged: pd.Series, has_time: pd.Series) -> pd.Series:
+    """Flag the first timed, unflagged lap after one or more ``flagged`` laps within each
+    driver/session: the lap on which racing resumes after a stoppage or a safety-car period."""
+    if not all(c in df for c in GROUP_COLUMNS) or "lap_number" not in df:
+        return pd.Series(False, index=df.index)
+    order = df.assign(_lap=pd.to_numeric(df["lap_number"], errors="coerce")).sort_values(
+        GROUP_COLUMNS + ["_lap"], kind="stable"
+    ).index
+    flag = flagged.loc[order]
+    timed = has_time.loc[order]
+    keys = [df.loc[order, c] for c in GROUP_COLUMNS]
+    count = flag.groupby(keys, dropna=False, sort=False).cumsum()
+    candidate = timed & ~flag
+    # Flag count seen by the previous timed, unflagged lap of the same driver/session.
+    previous = count.where(candidate).groupby(keys, dropna=False, sort=False).transform(
+        lambda s: s.ffill().shift(1)
+    ).fillna(0)
+    restart = candidate & (count > previous)
+    return restart.reindex(df.index).astype(bool)
+
+
 def _red_flag_restart(df: pd.DataFrame, is_red_flag: pd.Series, has_time: pd.Series) -> pd.Series:
     """Flag the first timed lap after a red-flag stoppage within each driver/session.
 
@@ -223,22 +252,18 @@ def _red_flag_restart(df: pd.DataFrame, is_red_flag: pd.Series, has_time: pd.Ser
     or 12 and an "accurate" marker while being 30-90 s slower than racing pace. It is not a
     pace lap: it is excluded from training rows and targets, and it breaks temporal context.
     """
-    if not all(c in df for c in GROUP_COLUMNS) or "lap_number" not in df:
-        return pd.Series(False, index=df.index)
-    order = df.assign(_lap=pd.to_numeric(df["lap_number"], errors="coerce")).sort_values(
-        GROUP_COLUMNS + ["_lap"], kind="stable"
-    ).index
-    red = is_red_flag.loc[order]
-    timed = has_time.loc[order]
-    keys = [df.loc[order, c] for c in GROUP_COLUMNS]
-    red_count = red.groupby(keys, dropna=False, sort=False).cumsum()
-    candidate = timed & ~red
-    # Red-flag count seen by the previous timed, non-red lap of the same driver/session.
-    previous = red_count.where(candidate).groupby(keys, dropna=False, sort=False).transform(
-        lambda s: s.ffill().shift(1)
-    ).fillna(0)
-    restart = candidate & (red_count > previous)
-    return restart.reindex(df.index).astype(bool)
+    return _restart_lap_after(df, is_red_flag, has_time)
+
+
+def _safety_car_restart(df: pd.DataFrame, is_safety_car: pd.Series, has_time: pd.Series) -> pd.Series:
+    """Flag the first timed lap after a safety-car period (status 4) within each driver/session.
+
+    The safety car peels in at the end of its last lap, so the following lap starts from a
+    bunched, slow restart and is 2.2% slower than the driver's race median at the median
+    (17% of them more than 5% slower). The second lap after the safety car and the lap after
+    a VSC are at racing pace and stay valid.
+    """
+    return _restart_lap_after(df, is_safety_car, has_time)
 
 
 def lap_state_flags(df: pd.DataFrame) -> pd.DataFrame:
@@ -246,8 +271,9 @@ def lap_state_flags(df: pd.DataFrame) -> pd.DataFrame:
 
     FastF1 track status is a string of digit codes: 1 clear, 2 yellow, 4 safety car,
     5 red flag, 6 VSC deployed, 7 VSC ending. Several codes can be concatenated.
-    The first timed lap after a red flag (the restart lap) is flagged separately, see
-    ``_red_flag_restart``. Bump ``LAP_VALIDITY_VERSION`` whenever these rules change.
+    The first timed lap after a red flag and after a safety-car period (restart laps) are
+    flagged separately, see ``_red_flag_restart`` and ``_safety_car_restart``. Bump
+    ``LAP_VALIDITY_VERSION`` whenever these rules change.
     """
     status = df["track_status"].astype("string").fillna("1").astype(str)
     status = status.where(~status.isin(["None", "nan", "<NA>", ""]), "1")
@@ -262,13 +288,16 @@ def lap_state_flags(df: pd.DataFrame) -> pd.DataFrame:
     accurate = _flag(df["is_accurate"])
     has_time = pd.to_numeric(df["lap_time_s"], errors="coerce").notna()
     out["is_red_flag_restart"] = _red_flag_restart(df, out["is_red_flag"], has_time)
+    out["is_safety_car_restart"] = _safety_car_restart(df, out["is_safety_car"], has_time)
     out["lap_valid"] = (
         accurate
         & has_time
         & ~out["is_deleted"]
         & ~out["is_pit_in"]
         & ~out["is_pit_out"]
+        & ~out["is_yellow"]
         & ~out["is_safety_car"]
+        & ~out["is_safety_car_restart"]
         & ~out["is_vsc"]
         & ~out["is_red_flag"]
         & ~out["is_red_flag_restart"]

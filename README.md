@@ -165,7 +165,7 @@ fixture numbers are never reported as Formula 1 results.
   nothing") are noise, not effects. Only the temporal-features ablation (+0.025 s) clears
   that bar.
 
-**What the numbers say so far** (2018-2024 training, 128k clean laps; test = 2025 rounds 13-24; lap-validity rules v2):
+**What the numbers say so far** (2018-2024 training, 128k clean laps; test = 2025 rounds 13-24; lap-validity rules v3):
 
 - Gradient-boosted trees are the most accurate model and train in under a minute. Forward-Forward
   regression does not beat them on this task (0.316 s vs 0.348-0.350 s test MAE).
@@ -288,8 +288,8 @@ either appears in the model source.
 
 - **Target.** Residual of lap N+1 against the rolling five-lap median at lap N; forecast =
   baseline + residual. Training winsorizes the residual to ±6 s; evaluation never does.
-- **Valid laps.** Pit-in, pit-out, safety-car, VSC, red-flag, red-flag restart, deleted and
-  inaccurate laps are never rows or targets, and every lag or rolling statistic is scoped to
+- **Valid laps.** Pit-in, pit-out, yellow-flag, safety-car, VSC, red-flag, red-flag restart,
+  safety-car restart, deleted and inaccurate laps are never rows or targets, and every lag or rolling statistic is scoped to
   the current run of consecutive clean laps, so a pit stop resets the temporal context. The
   rule set is versioned (`lap_validity_version` in every metrics file).
 - **Relative pace features.** Lap-time-scale inputs are relative to the current rolling pace
