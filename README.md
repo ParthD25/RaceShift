@@ -1,7 +1,10 @@
 # RaceShift
 
 **Forward-only motorsport pace forecasting.** RaceShift predicts a Formula 1 driver's next lap
-from what is known at the end of the current lap:
+from what is known at the end of the current lap, and uses that task to test a Forward-Forward-
+style model: layers trained one at a time on a local objective, with no gradient flowing
+between them (see the protocol notes for what that does and does not share with Hinton's
+Forward-Forward). Inputs:
 
 - driver, constructor and circuit identity
 - tyre compound, age and stint
@@ -33,15 +36,19 @@ npm run dev
 
 UI at <http://127.0.0.1:5173>, API at <http://127.0.0.1:8000/api/health>. Open **Forecast** and
 press **Run forecast**: the repository ships the whole 2025 season of FastF1 race timing
-(`data/imports/f1_2025_season.parquet`, 640 KB) and the real-data FFR-M model, so the first
-forecast is a real driver's next lap at the 2025 Abu Dhabi Grand Prix, followed by a backtest of
-that driver's last ten laps (predicted vs actual). Nothing needs to be trained or downloaded.
-Also included: a synthetic fixture and a small demo model trained on it, both badged
-*Synthetic* wherever they appear.
+(`data/imports/f1_2025_season.parquet`, 640 KB) and the real-data FFR-M model. The first run
+takes about 10 s to build features for the season (repeat runs on the same file are instant)
+and shows two things for the 2025 Abu Dhabi race winner: how the model did on their last ten
+laps that were actually driven (predicted vs actual, next to the "repeat the last lap"
+stopwatch baseline), and a forecast for the lap after the last one in the file, which is
+hypothetical when the race has ended. Nothing needs to be trained or downloaded. Also
+included: a synthetic fixture and a small demo model trained on it, both badged *Synthetic*
+wherever they appear. Drivers are identified by their FIA three-letter codes.
 
 ```bash
 npm run test:py     # Python tests: leakage, feature availability, lap adjacency, gradients, splits, artifact, API
 npm run build       # TypeScript check + Vite build
+npm run test:e2e    # Chromium walk through the running UI (needs `npx playwright install chromium` once)
 API_PORT=8010 WEB_PORT=5180 npm run dev                # if 8000 or 5173 is taken
 python scripts/fetch_fastf1.py --year 2025 --event "Abu Dhabi" --session R \
     --output data/imports/abu_dhabi_2025.parquet       # one more race in about 15 s; the UI lists it
@@ -49,16 +56,24 @@ npm run demo:data && npm run demo:model                # regenerate the syntheti
 ```
 
 A step-by-step walkthrough with expected output is in `docs/LOCAL_SETUP.md`. There is no
-live-timing connection; RaceShift reads local files only.
+live-timing connection; RaceShift reads local files only. If a port is taken, the API prints
+two ports that are free at that moment and the exact command to use them. `npm install`
+reports two moderate advisories in react-router's server-side rendering paths, which this
+client-only app does not use; the dependency audit in CI fails only on high severity.
 
 **How to read the numbers.** This is regression, not classification, so there is no
 "accuracy" percentage. MAE is the average distance in seconds between the predicted and the
 true next lap, and lower is better. Read the results as: the model is typically within about a
 third of a second of the real next lap on laps of about 90 s, predicts 8 in 10 laps within
 half a second and 19 in 20 within one second, and its "80% interval" contains the true lap
-about 86% of the time. Every table also reports the two zero-parameter baselines (repeat the
+about 86% of the time on the 2025 test rounds (it is a single width per model, set on the
+validation rounds, so it is slightly too wide in 2025 and too narrow after the 2026 rule
+change). All of that is measured on laps whose *next* lap was also a clean racing lap: pit
+laps, safety cars and red flags are excluded from the score, which a live forecaster could
+not know in advance. Every table also reports the two zero-parameter baselines (repeat the
 last lap, take the five-lap median): a model that does not clearly beat them has not learned
-anything a fan could not do with a stopwatch.
+anything a fan could not do with a stopwatch. FFR-S, FFR-M and FFR-L are the same model at
+three widths (256→128, 512→384→256→192 and 1024→768→512→384 hidden units; `configs/`).
 
 ## Results
 
@@ -225,6 +240,12 @@ either appears in the model source.
 - **Baselines first.** Previous lap, rolling-five median, ridge, gradient-boosted trees on the
   same table, split, sparse-feature filter and clipped target (learned baselines refit on
   train + validation for the test score; see the protocol notes under Results).
+- **Resource numbers.** Training wall time and memory are measured around the `fit` call only,
+  for FFR and for the baselines alike; preprocessing is shared work and sits outside both.
+  All runs were on the same 4-vCPU, 16 GB Linux container (recorded per run under `hardware`
+  in `metrics.json`). The NumPy FFR materialises each layer's full-batch activations before
+  training the next layer, which is where FFR-M and FFR-L spend their memory; a streaming
+  implementation would trade training time for memory and has not been built.
 - **Local learning, tested.** Each layer's analytic gradient is checked against finite
   differences, and a test asserts that a layer's update does not change when the weights of
   any later layer change: nothing flows backwards between layers.
@@ -239,6 +260,9 @@ Details: `docs/FEATURE_CONTRACT.md`, `docs/TRAINING_AND_RESEARCH.md`, `RACESHIFT
 | `fastf1_timing` | 2018 → today | FastF1 live-timing archive | lap and sector times, tyre compound/age/stint, position, track status, pit markers, weather |
 | `legacy_timing` | 2000 → 2017 | Jolpica (Ergast schema) | lap time, position, constructor, pit stops from 2011; no sectors, tyres, track status or weather |
 
+`data/imports/f1_2025_season.parquet` is derived from the FastF1 archive of the public F1
+live-timing feed and is included only so the demo runs on real laps; it is not a redistribution
+licence for the underlying timing data, see FastF1's notice on data usage before reusing it.
 Timing data older than 2018 exists only in the Ergast schema, so the legacy tier is
 deliberately thinner: missing columns stay missing, lap validity uses a documented heuristic
 (opening lap, recorded pit laps and any lap slower than 1.12 × the driver's race median are
@@ -262,7 +286,8 @@ Drive. Copy any finished artifact folder into `artifacts/` and the UI lists it.
 python scripts/export_model.py artifacts/f1_2025h2_ffr-m --verify-input data/imports/f1_2025_season.parquet
 ```
 
-Writes `artifacts/<name>/export/` with the Forward-Forward core as ONNX (verified against the
+Writes `exports/<name>/` (untracked; `--into-artifact` refreshes the committed snapshot under
+`artifacts/<name>/export/`) with the Forward-Forward core as ONNX (verified against the
 NumPy implementation with onnxruntime before it is saved), the fitted preprocessor as plain
 JSON with a pure-NumPy implementation (`raceshift.models.export.apply_preprocessor_spec`, no
 pickle needed), a generated model card (data, split, metrics, resources, limitations,

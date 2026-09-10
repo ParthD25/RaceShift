@@ -648,14 +648,14 @@
   {
    "column": "manufacturer",
    "frequent": [
-    "None"
+    null
    ],
    "infrequent": []
   },
   {
    "column": "car_class",
    "frequent": [
-    "None"
+    null
    ],
    "infrequent": []
   },

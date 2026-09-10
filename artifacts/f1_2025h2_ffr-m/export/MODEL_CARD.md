@@ -36,7 +36,7 @@ also returns an 80% interval (validation-residual quantile widened by cross-laye
 
 ## Files in this export
 
-- `ffr-m_ffr.onnx`: Forward-Forward core, opset 13; verified against NumPy on 2000 rows, max |Δ| 9.54e-06 s
+- `ffr-m_ffr.onnx`: Forward-Forward core, opset 13; verified against NumPy on 2000 rows, max |Δ| 7.09e-06 s
 - `preprocessor.joblib`: fitted sklearn preprocessor (joblib). skl2onnx cannot convert SimpleImputer(add_indicator=True), so there is no preprocessor ONNX; use ffr-m_preprocessor.json with raceshift.models.export.apply_preprocessor_spec for pickle-free inference
 - `ffr-m_preprocessor.json`: fitted preprocessor as plain JSON (medians, indicators, scaling, one-hot vocabularies) for pickle-free inference via raceshift.models.export.apply_preprocessor_spec; verified against sklearn on 2000 rows, max |Δ| 0.00e+00
 - `feature_contract.json`: exact input columns, history length, dropped features

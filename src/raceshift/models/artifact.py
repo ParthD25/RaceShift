@@ -63,52 +63,55 @@ class RaceShiftArtifact:
         )
         return raw[mask], key
 
-    def forecast_last_available(self, raw: pd.DataFrame, driver: str | None = None) -> dict:
+    @staticmethod
+    def _pick_driver(scope: pd.DataFrame, driver: str | None) -> tuple[str, list[str]]:
+        """Default driver: most completed laps, then best position on the last lap (the race
+        winner when the whole field finished), then code order. Explicit choices are validated."""
+        available = sorted(scope["driver"].unique().tolist())
+        if driver is not None:
+            driver = str(driver)
+            if driver not in available:
+                raise ValueError(f"Driver {driver!r} not found in the latest session. Available: {available}")
+            return driver, available
+        last = scope.sort_values("lap_number").groupby("driver").tail(1)
+        position = pd.to_numeric(last.get("position"), errors="coerce") if "position" in last else pd.Series(np.nan, index=last.index)
+        ranked = pd.DataFrame({"driver": last["driver"].to_numpy(), "laps": last["lap_number"].to_numpy(dtype=float), "position": position.fillna(99).to_numpy()})
+        ranked = ranked.sort_values(["laps", "position", "driver"], ascending=[False, True, True], kind="stable")
+        return str(ranked.iloc[0]["driver"]), available
+
+    def inference_table(self, raw: pd.DataFrame) -> pd.DataFrame:
+        """The leakage-safe feature table for inference: every valid lap, targets only where a
+        usable next lap exists. The API caches this per file so repeated calls are cheap."""
+        data = raw[pd.to_numeric(raw["lap_time_s"], errors="coerce").notna()]
+        return build_full_context_table(data, history=int(self.contract.get("history", 5)), require_target=False)
+
+    def forecast_last_available(self, raw: pd.DataFrame, driver: str | None = None, table: pd.DataFrame | None = None) -> dict:
         """Forecast the next lap for the latest completed lap in the supplied history.
 
-        Scope is the chronologically latest session in the file. When `driver` is not
-        given, the driver who has completed the most laps in that session is used.
-        Historical priors still see the whole file because earlier events feed them.
-
-        The training target requires lap N+1, so a temporary sentinel copy of the final
-        lap is appended to make feature generation emit that lap as an inference row.
-        The sentinel target is discarded and never reaches the model.
+        Scope is the chronologically latest session in the file. When `driver` is not given,
+        the driver who finished best with the most completed laps is used. Historical priors
+        still see the whole file because earlier events feed them. ``table`` may be a
+        precomputed :meth:`inference_table` for the same ``raw`` frame.
         """
         missing = [c for c in REQUIRED_FORECAST_COLUMNS if c not in raw.columns]
         if missing:
             raise ValueError(f"Missing required columns: {missing}")
-        data = raw.copy()
-        data = data[pd.to_numeric(data["lap_time_s"], errors="coerce").notna()]
+        data = raw[pd.to_numeric(raw["lap_time_s"], errors="coerce").notna()]
         if data.empty:
             raise ValueError("No rows with a lap time available for forecast")
 
         scope, key = self.latest_session(data)
         scope = scope.copy()
         scope["driver"] = scope["driver"].astype(str)
-        available_drivers = sorted(scope["driver"].unique().tolist())
-        if driver is None:
-            laps_by_driver = scope.groupby("driver")["lap_number"].max().sort_values(ascending=False, kind="stable")
-            driver = str(laps_by_driver.index[0])
-        driver = str(driver)
-        if driver not in available_drivers:
-            raise ValueError(f"Driver {driver!r} not found in the latest session. Available: {available_drivers}")
+        driver, available_drivers = self._pick_driver(scope, driver)
 
         history = scope[scope["driver"] == driver].sort_values("lap_number")
         if len(history) < 2:
             raise ValueError("Need at least two completed laps for the selected driver to forecast the next one")
         latest = history.iloc[-1].copy()
 
-        sentinel = latest.copy()
-        sentinel["lap_number"] = float(latest["lap_number"]) + 1
-        for c in ["pit_in", "pit_out", "deleted"]:
-            if c in sentinel.index:
-                sentinel[c] = False
-        if "is_accurate" in sentinel.index:
-            sentinel["is_accurate"] = True
-        augmented = pd.concat([data, pd.DataFrame([sentinel])], ignore_index=True)
-
         history_laps = int(self.contract.get("history", 5))
-        table = build_full_context_table(augmented, history=history_laps)
+        table = self.inference_table(data) if table is None else table
         candidates = table[
             (table["season"] == key["season"])
             & (table["event"] == key["event"])
@@ -199,7 +202,7 @@ class RaceShiftArtifact:
             "is_synthetic": self.is_synthetic,
         }
 
-    def backtest_session(self, raw: pd.DataFrame, driver: str | None = None, laps: int = 10) -> dict:
+    def backtest_session(self, raw: pd.DataFrame, driver: str | None = None, laps: int = 10, table: pd.DataFrame | None = None) -> dict:
         """Score the model on the last ``laps`` completed lap pairs of one driver in the latest session.
 
         Every row is a lap N whose next lap N+1 was actually driven, so predicted and actual
@@ -221,17 +224,10 @@ class RaceShiftArtifact:
         scope, key = self.latest_session(data)
         scope = scope.copy()
         scope["driver"] = scope["driver"].astype(str)
-        available_drivers = sorted(scope["driver"].unique().tolist())
-        if driver is None:
-            laps_by_driver = scope.groupby("driver")["lap_number"].max().sort_values(ascending=False, kind="stable")
-            driver = str(laps_by_driver.index[0])
-        driver = str(driver)
-        if driver not in available_drivers:
-            raise ValueError(f"Driver {driver!r} not found in the latest session. Available: {available_drivers}")
+        driver, available_drivers = self._pick_driver(scope, driver)
         driven = int((scope["driver"] == driver).sum())
 
-        history_laps = int(self.contract.get("history", 5))
-        table = build_full_context_table(data, history=history_laps)
+        table = self.inference_table(data) if table is None else table
         rows = table[
             (table["season"] == key["season"])
             & (table["event"] == key["event"])

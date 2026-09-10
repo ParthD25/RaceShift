@@ -79,7 +79,7 @@ export default function Overview() {
               {(['circuit', 'team', 'compound'] as const).map(d => <button key={d} className={d === dimension ? 'selected' : ''} onClick={() => setDimension(d)}>{d}</button>)}
             </div>
             {breakdownRows.map(([label, row]) => (
-              <div className="bar-row" key={label} title={`${row.rows} test laps`}>
+              <div className="bar-row" key={label} title={`${label}: ${ffrModel ? `${ffrModel} ${fmtNumber(row[ffrModel])} s` : ''}${treeModel ? `, trees ${fmtNumber(row[treeModel])} s` : ''}${naiveModel ? `, previous lap ${fmtNumber(row[naiveModel])} s` : ''} over ${row.rows} test laps`}>
                 <span>{label}</span>
                 <div>
                   {ffrModel && <div className="bar-track" title={`${ffrModel} ${fmtNumber(row[ffrModel])} s`}><span style={{ width: `${(row[ffrModel] / maxMae) * 100}%` }} /></div>}

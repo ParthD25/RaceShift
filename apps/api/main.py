@@ -24,7 +24,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from raceshift import __version__
-from raceshift.data.provenance import infer_data_source
+from raceshift.data.provenance import infer_data_source, is_synthetic_source
 from raceshift.data.schema import REQUIRED_FORECAST_COLUMNS
 from raceshift.models.artifact import ARTIFACT_FILES, RaceShiftArtifact, missing_artifact_files
 
@@ -116,6 +116,24 @@ def _load_artifact(directory: str) -> RaceShiftArtifact:
     return RaceShiftArtifact(Path(directory))
 
 
+@lru_cache(maxsize=16)
+def _cached_inference_table(directory: str, path_str: str, mtime_ns: int, size: int) -> pd.DataFrame:
+    """Feature table for one import file and artifact, built once per file version. Building
+    the table is the slow part of a forecast (about 10 s for a season); every forecast,
+    backtest and comparison on the same file reuses it."""
+    return _load_artifact(directory).inference_table(_load_table(Path(path_str)))
+
+
+def _inference_table(artifact_dir: Path, path: Path) -> pd.DataFrame:
+    stat = path.stat()
+    return _cached_inference_table(str(artifact_dir), str(path), stat.st_mtime_ns, stat.st_size)
+
+
+def _data_provenance(frame: pd.DataFrame) -> dict[str, Any]:
+    source = infer_data_source(frame)
+    return {"data_file_source": source, "data_is_synthetic": is_synthetic_source(source)}
+
+
 def _artifact_dirs() -> list[Path]:
     if not ARTIFACTS.is_dir():
         return []
@@ -125,14 +143,20 @@ def _artifact_dirs() -> list[Path]:
 def _artifact_entry(path: Path) -> dict[str, Any]:
     metrics = _read_json(path / "metrics.json") or {}
     config = _read_json(path / "model_config.json") or {}
-    missing = missing_artifact_files(path)
+    is_report = isinstance(metrics.get("models"), dict)  # a baselines folder: metrics only, no weights
+    missing = [] if is_report else missing_artifact_files(path)
+    split = metrics.get("split") or {}
+    label = metrics.get("name") or ("Baseline report" if is_report else path.name)
+    if split.get("train_end"):
+        label = f"{label} (trained \u2264 {split['train_end']})"
     return {
         "id": path.name,
         "name": "RaceShift FFR" if config.get("model_type") == "RaceShiftFFR" else metrics.get("model", path.name),
+        "label": label,
         "role": "primary-trainable" if config.get("model_type") == "RaceShiftFFR" else "baseline-report",
         "training": config.get("training_policy", metrics.get("training_policy")),
         "path": _relative(path),
-        "ready": not missing,
+        "ready": not missing and bool(metrics),
         "missing_files": missing,
         "is_default": path.name == default_artifact_id(),
         "is_synthetic": bool(metrics.get("is_synthetic", False)),
@@ -195,7 +219,7 @@ def _forecast(file: str, driver: str | None, artifact_id: str | None) -> dict[st
     try:
         frame = _load_table(path)
         artifact = _load_artifact(str(artifact_dir))
-        result = artifact.forecast_last_available(frame, driver=driver)
+        result = artifact.forecast_last_available(frame, driver=driver, table=_inference_table(artifact_dir, path))
     except HTTPException:
         raise
     except ValueError as exc:
@@ -203,6 +227,7 @@ def _forecast(file: str, driver: str | None, artifact_id: str | None) -> dict[st
     except Exception as exc:  # pragma: no cover - defensive, keeps internals out of the response
         raise HTTPException(500, f"Local forecast failed: {type(exc).__name__}") from exc
     result["file"] = path.name
+    result.update(_data_provenance(frame))
     return result
 
 
@@ -367,7 +392,7 @@ def export_model(artifact_id: str) -> FileResponse:
         except ImportError as exc:
             raise HTTPException(503, f"Model export needs the export extras (pip install -e '.[export]'): {exc}") from exc
         except Exception as exc:  # noqa: BLE001
-            raise HTTPException(500, f"Export failed: {type(exc).__name__}: {exc}") from exc
+            raise HTTPException(500, f"Export failed: {type(exc).__name__}") from exc
     return FileResponse(bundle, media_type="application/zip", filename=bundle.name)
 
 
@@ -402,7 +427,7 @@ def forecast_backtest(request: BacktestRequest) -> dict[str, Any]:
     try:
         frame = _load_table(path)
         artifact = _load_artifact(str(artifact_dir))
-        result = artifact.backtest_session(frame, driver=request.driver, laps=request.laps)
+        result = artifact.backtest_session(frame, driver=request.driver, laps=request.laps, table=_inference_table(artifact_dir, path))
     except HTTPException:
         raise
     except ValueError as exc:
@@ -410,6 +435,7 @@ def forecast_backtest(request: BacktestRequest) -> dict[str, Any]:
     except Exception as exc:  # pragma: no cover - defensive
         raise HTTPException(500, f"Local backtest failed: {type(exc).__name__}") from exc
     result["file"] = path.name
+    result.update(_data_provenance(frame))
     return result
 
 

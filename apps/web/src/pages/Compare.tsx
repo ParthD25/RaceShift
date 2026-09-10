@@ -69,7 +69,7 @@ export default function Compare() {
   return (
     <div className="page-stack">
       <div className="page-heading">
-        <div><h1>Compare Drivers</h1><p>Same session, same model, two drivers: how the next-lap forecast performed on laps that were actually driven, and each model's per-driver error on the 2025 test rounds.</p></div>
+        <div><h1>Compare Drivers</h1><p>Same session, two drivers: their actual pace over the last laps side by side, how the next-lap forecast did on each, and every model's per-driver error on the 2025 test rounds.</p></div>
         <button className="primary-btn" onClick={run} disabled={!canRun}><Play size={15} />{running ? 'Running…' : 'Backtest both'}</button>
       </div>
 
@@ -101,6 +101,11 @@ export default function Compare() {
           {results.map(r => (
             <Panel key={r.driver} title={`${r.driver} · ${r.event} ${r.season}`} icon={<GitCompareArrows size={17} />} action={<SourceBadge kind={sourceKindFor(r.is_synthetic)} text={`${r.summary.rows} lap pairs`} />}>
               <div className="forecast-meta">
+                <div><strong>{fmtLap(r.laps.reduce((acc, l) => acc + l.actual_next_lap_s, 0) / Math.max(1, r.laps.length))}</strong><span>Average actual lap, these {r.laps.length} laps</span></div>
+                <div><strong>{fmtLap(Math.min(...r.laps.map(l => l.actual_next_lap_s)))}</strong><span>Best actual lap</span></div>
+                <div><strong>{r.laps[r.laps.length - 1]?.position != null ? `P${r.laps[r.laps.length - 1].position!.toFixed(0)}` : '—'}</strong><span>Position at the last of these laps</span></div>
+              </div>
+              <div className="forecast-meta" style={{ marginTop: 8 }}>
                 <div><strong>{fmtNumber(r.summary.mae_s)} s</strong><span>Model MAE</span></div>
                 <div><strong>{fmtNumber(r.summary.previous_lap_mae_s)} s</strong><span>Repeat-last-lap MAE</span></div>
                 <div><strong>{(r.summary.interval80_coverage * 100).toFixed(0)}%</strong><span>Inside 80% interval</span></div>
