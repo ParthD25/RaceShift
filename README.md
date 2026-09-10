@@ -23,6 +23,23 @@ peak memory, inference latency and artifact size next to naive, linear and tree 
 
 ![RaceShift forecast page](docs/images/forecast.png)
 
+<details>
+<summary><strong>More screenshots</strong> (real 2025 data, real FFR-M model, captured from the shipped setup)</summary>
+
+| Overview: forecast, backtest, where the models struggle | Compare Drivers: VER vs NOR, pace and model error side by side |
+| --- | --- |
+| ![Overview](docs/images/overview.png) | ![Compare Drivers](docs/images/compare.png) |
+
+| Experiments: every run under artifacts/ | Models: artifacts, baselines and exports |
+| --- | --- |
+| ![Experiments](docs/images/experiments.png) | ![Models](docs/images/models.png) |
+
+| Datasets: local imports and source registry | Settings: setup checklist and runtime |
+| --- | --- |
+| ![Datasets](docs/images/datasets.png) | ![Settings](docs/images/settings.png) |
+
+</details>
+
 ## Run it
 
 Python 3.11+ and Node.js 20+.
@@ -344,3 +361,8 @@ tests/                     Python tests (see `npm run test:py`)
 Foundation and real-data pipeline complete; Forward-Forward is evaluated against baselines on
 real races with chronological splits. Not yet done: wet-weather analysis in isolation,
 similarity-retrieval priors, endurance-series adapters, corner-telemetry Forward-Forward.
+
+## License
+
+MIT, see `LICENSE`. The shipped 2025 lap table is derived from the public F1 live-timing feed via
+FastF1 and is included for evaluating this project only; the licence does not extend to that data.
