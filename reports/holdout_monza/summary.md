@@ -1,6 +1,6 @@
 # RaceShift experiment: holdout_monza
 
-Generated 2026-09-09T13:13:54+00:00 from `f1_laps_fastf1.parquet` (data source: fastf1_timing).
+Generated 2026-09-10T02:42:18+00:00 from `f1_laps_fastf1.parquet` (data source: fastf1_timing).
 Split: circuit_holdout · train ≤ 2024 · validation 2025 · test 2025 · holdout Italian Grand Prix
 Rows: train 123362 · validation 20404 · test 6133
 
@@ -8,8 +8,8 @@ Rows: train 123362 · validation 20404 · test 6133
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | previous_lap | 0.400 | 0.346 | 0.615 | 0.809 | 81.0% | 93.1% | — | — | 0.0 | 0 | 0 | — |
 | rolling_median_5 | 0.464 | 0.356 | 0.572 | 0.806 | 78.7% | 93.3% | — | — | 0.0 | 0 | 0 | — |
-| ridge | 0.459 | 0.345 | 0.552 | 0.735 | 80.2% | 94.9% | — | — | 23.4 | 2575 | 830 | — |
-| hist_gradient_boosting | 0.360 | 0.298 | 0.512 | 0.664 | 84.7% | 95.5% | — | — | 50.4 | 2921 | 854 | — |
+| ridge | 0.459 | 0.345 | 0.552 | 0.735 | 80.2% | 94.9% | — | — | 0.6 | 1935 | 376 | — |
+| hist_gradient_boosting | 0.360 | 0.298 | 0.512 | 0.664 | 84.7% | 95.5% | — | — | 38.6 | 2327 | 480 | — |
 | FFR-M | 0.394 | 0.347 | 0.538 | 0.694 | 80.0% | 95.4% | 0.838 | 1.105 | 2237.8 | 2761 | 1371 | 2.72 |
 | FFR-S | 0.394 | 0.350 | 0.540 | 0.707 | 79.6% | 95.5% | 0.830 | 1.106 | 369.6 | 1996 | 614 | 1.24 |
 

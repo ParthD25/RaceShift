@@ -18,6 +18,7 @@ export default function Forecast() {
   const [summary, setSummary] = useState<ImportSummary | null>(null);
   const [summaryError, setSummaryError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
+  const [backtesting, setBacktesting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const imports: ImportFile[] = datasets.data?.imports ?? [];
@@ -46,7 +47,7 @@ export default function Forecast() {
   // A real-data model scoring the synthetic fixture (or the synthetic demo scoring real laps)
   // produces numbers, not evidence. Say so before and after the run.
   const domainMismatch = Boolean(summary && selectedArtifact && summary.is_synthetic !== selectedArtifact.is_synthetic);
-  const resultMismatch = Boolean(result && summary && result.file === summary.file && result.is_synthetic !== summary.is_synthetic);
+  const resultMismatch = Boolean(result && result.is_synthetic !== (result.data_is_synthetic ?? summary?.is_synthetic ?? result.is_synthetic));
   const noPriors = Boolean(result && Object.entries(result.historical_context).every(([k, v]) => k === 'note' || v == null));
   const canRun = Boolean(file && artifact) && !running && (summary?.missing_required_columns.length ?? 0) === 0;
 
@@ -59,11 +60,14 @@ export default function Forecast() {
       setResult(forecast);
       // Score the same driver's last completed laps so the forecast can be judged against
       // laps that were really driven, not only against a lap that has not happened yet.
+      setBacktesting(true);
       try {
         setBacktest(await api.backtest({ file, driver: forecast.driver, artifact: artifact || null, laps: 10 }));
       } catch (err) {
         setBacktest(null);
         setBacktestError(errorMessage(err));
+      } finally {
+        setBacktesting(false);
       }
     } catch (err) {
       setError(errorMessage(err));
@@ -79,7 +83,7 @@ export default function Forecast() {
     <div className="page-stack">
       <div className="page-heading">
         <div><h1>Forecast</h1><p>Predict lap N+1 from information available at the end of lap N, using the local API and a saved artifact.</p></div>
-        <button className="primary-btn" onClick={run} disabled={!canRun}><Play size={15} />{running ? 'Running…' : 'Run forecast'}</button>
+        <button className="primary-btn" onClick={run} disabled={!canRun}><Play size={15} />{backtesting ? 'Backtesting the last 10 laps…' : running ? 'Building features… (about 10 s the first time per file)' : 'Run forecast'}</button>
       </div>
 
       <div className="two-col">
@@ -94,14 +98,14 @@ export default function Forecast() {
             </label>
             <label className="field"><span>Driver (latest session)</span>
               <select value={driver} onChange={e => setDriver(e.target.value)} disabled={!drivers.length}>
-                <option value="">Auto: most completed laps</option>
+                <option value="">Auto: best-placed driver with the most laps (the winner)</option>
                 {drivers.map(d => <option key={d} value={d}>{d}</option>)}
               </select>
             </label>
             <label className="field"><span>Model artifact</span>
               <select value={artifact} onChange={e => setArtifact(e.target.value)} disabled={!artifacts.length}>
                 {!artifacts.length && <option value="">No complete FFR artifact in artifacts/</option>}
-                {artifacts.map(a => <option key={a.id} value={a.id}>{a.id}{a.is_synthetic ? ' (synthetic demo)' : ''}</option>)}
+                {artifacts.map(a => <option key={a.id} value={a.id}>{a.label ?? a.id}{a.is_synthetic ? ' · synthetic demo' : ''} · {a.id}</option>)}
               </select>
             </label>
           </div>
@@ -145,49 +149,12 @@ export default function Forecast() {
         </Panel>
       </div>
 
-      <Panel title="Next-lap result" icon={<Target size={17} />} action={result ? <SourceBadge kind={resultMismatch ? 'fixture' : sourceKindFor(result.is_synthetic)} text={resultMismatch ? (result.is_synthetic ? 'Synthetic model · real laps' : 'Real model · synthetic laps') : undefined} /> : null}>
-        {error && <div className="error-box">{error}</div>}
-        {resultMismatch && <div className="warn-box">Model and data come from different sources ({result?.is_synthetic ? 'synthetic model on real laps' : 'real model on the synthetic fixture'}). Treat this number as a workflow check only.</div>}
-        {!result && !error && <div className="empty-inline">No forecast has been run yet. Choose a dataset and press <strong>Run forecast</strong>.</div>}
-        {result && (
-          <div className="result-layout">
-            <div>
-              <div className="forecast-main">
-                <div>
-                  <div className="forecast-time">{fmtLap(result.predicted_next_lap_s)}</div>
-                  <div className="forecast-vs"><span className={deltaVsLast != null && deltaVsLast <= 0 ? 'good' : 'bad'}>{deltaVsLast != null && deltaVsLast <= 0 ? '▼' : '▲'} {fmtDelta(deltaVsLast)}</span><small>vs. lap {result.lap_number_completed} ({fmtLap(result.last_lap_time_s)})</small></div>
-                </div>
-                <div className="confidence-chip">80% interval ±{fmtNumber((result.upper_80_s - result.lower_80_s) / 2)}s</div>
-              </div>
-              <div className="interval-label"><span>{fmtLap(result.lower_80_s)}</span><span>80% prediction interval</span><span>{fmtLap(result.upper_80_s)}</span></div>
-              <div className="interval-bar">
-                <span className="interval-range" style={intervalPct ? { left: `${intervalPct.left}%`, right: `${intervalPct.right}%` } : undefined} />
-                <span className="interval-marker" style={intervalPct ? { left: `${intervalPct.marker}%` } : undefined} title="Predicted next lap" />
-                {intervalPct && <span className="interval-last" style={{ left: `${intervalPct.last}%` }} title="Last completed lap" />}
-              </div>
-              <div className="chart-legend small"><span className="marker-legend">Predicted next lap</span><span className="last-legend">Last completed lap</span><span className="range-legend">80% interval: 8 of 10 validation laps landed inside a band this wide</span></div>
-              {result.short_history && <div className="warn-box">Only {result.completed_laps_in_session} completed laps available; the model expects {result.history_laps_used}. Missing lags were imputed with training medians.</div>}
-              <div className="prose small">This is the forecast for lap {result.lap_number_completed + 1}, the lap after the last one recorded in the file. If the session had already ended, that lap never happened and the number is hypothetical. Use <strong>Backtest</strong> below to see how the model did on laps that were actually driven.</div>
-            </div>
-            <div className="detail-list compact">
-              <div><span>Session</span><strong>{result.season} · {result.event} · {result.session}</strong></div>
-              <div><span>Driver</span><strong>{result.driver}</strong></div>
-              <div><span>Laps completed</span><strong>{result.lap_number_completed} (forecast for lap {result.lap_number_completed + 1})</strong></div>
-              <div title="Median of the last five clean laps. The model predicts how far the next lap will be from this number."><span>Rolling-5 baseline ⓘ</span><strong>{fmtLap(result.rolling5_baseline_s)}</strong></div>
-              <div title="What the model adds to the rolling-5 baseline. Forecast = baseline + residual. It differs from the change versus the last lap because the last lap is usually not equal to the five-lap median."><span>Model residual ⓘ</span><strong>{fmtDelta(result.predicted_next_lap_s - result.rolling5_baseline_s)}</strong></div>
-              <div title="Spread between the per-layer predictions of the Forward-Forward network. Each layer is trained on its own, so when they disagree the interval is widened."><span>Layer disagreement ⓘ</span><strong>{fmtNumber(result.layer_disagreement_s)}s</strong></div>
-              <div><span>Artifact</span><strong>{result.artifact}</strong></div>
-              <div><span>Data file</span><strong>{result.file}</strong></div>
-            </div>
-          </div>
-        )}
-      </Panel>
-
       {result && (
-        <Panel title={`Backtest: last ${backtest?.summary.rows ?? 10} completed laps of ${result.driver}`} icon={<Target size={17} />} action={backtest ? <SourceBadge kind={sourceKindFor(backtest.is_synthetic)} text="Laps actually driven" /> : null}>
+        <Panel title={`How did it do on ${result.driver}'s last ${backtest?.summary.rows ?? 10} real laps?`} icon={<Target size={17} />} action={backtest ? <SourceBadge kind={sourceKindFor(backtest.is_synthetic)} text="Laps actually driven" /> : null}>
           {backtestError && <div className="error-box">{backtestError}</div>}
           {backtest && (
             <>
+              <p className="prose">On {backtest.driver}'s last {backtest.summary.rows} real laps this model was within <strong>{fmtNumber(backtest.summary.mae_s)} s</strong> of the true next lap on average; simply repeating the last lap was within <strong>{fmtNumber(backtest.summary.previous_lap_mae_s)} s</strong>. {backtest.summary.mae_s <= backtest.summary.previous_lap_mae_s ? 'The model beat the stopwatch here.' : 'The stopwatch won on these laps; over the full 2025 test rounds the model is ahead by a few thousandths of a second, which is the honest size of its edge.'}</p>
               <div className="forecast-meta">
                 <div><strong>{fmtNumber(backtest.summary.mae_s)} s</strong><span>Mean abs. error, this model</span></div>
                 <div><strong>{fmtNumber(backtest.summary.previous_lap_mae_s)} s</strong><span>Mean abs. error, repeat the last lap</span></div>
@@ -212,6 +179,44 @@ export default function Forecast() {
         </Panel>
       )}
 
+      <Panel title={`Next lap forecast (lap ${result ? result.lap_number_completed + 1 : "N+1"})`} icon={<Target size={17} />} action={result ? <SourceBadge kind={resultMismatch ? 'fixture' : sourceKindFor(result.is_synthetic)} text={resultMismatch ? (result.is_synthetic ? 'Synthetic model · real laps' : 'Real model · synthetic laps') : undefined} /> : null}>
+        {error && <div className="error-box">{error}</div>}
+        {resultMismatch && <div className="warn-box">Model and data come from different sources ({result?.is_synthetic ? 'synthetic model on real laps' : 'real model on the synthetic fixture'}). Treat this number as a workflow check only.</div>}
+        {!result && !error && <div className="empty-inline">No forecast has been run yet. Choose a dataset and press <strong>Run forecast</strong>.</div>}
+        {result && (
+          <div className="result-layout">
+            <div>
+              <div className="forecast-main">
+                <div>
+                  <div className="forecast-time">{fmtLap(result.predicted_next_lap_s)}</div>
+                  <div className="forecast-vs"><span className={deltaVsLast != null && deltaVsLast <= 0 ? 'good' : 'bad'}>{deltaVsLast != null && deltaVsLast <= 0 ? '▼' : '▲'} {fmtDelta(deltaVsLast)}</span><small>vs. lap {result.lap_number_completed} ({fmtLap(result.last_lap_time_s)})</small></div>
+                </div>
+                <div className="confidence-chip">80% interval ±{fmtNumber((result.upper_80_s - result.lower_80_s) / 2)}s</div>
+              </div>
+              <div className="interval-label"><span>{fmtLap(result.lower_80_s)}</span><span>80% prediction interval</span><span>{fmtLap(result.upper_80_s)}</span></div>
+              <div className="interval-bar">
+                <span className="interval-range" style={intervalPct ? { left: `${intervalPct.left}%`, right: `${intervalPct.right}%` } : undefined} />
+                <span className="interval-marker" style={intervalPct ? { left: `${intervalPct.marker}%` } : undefined} title="Predicted next lap" />
+                {intervalPct && <span className="interval-last" style={{ left: `${intervalPct.last}%` }} title="Last completed lap" />}
+              </div>
+              <div className="chart-legend small"><span className="marker-legend">Predicted next lap</span><span className="last-legend">Last completed lap</span><span className="range-legend">80% interval: sized so 8 of 10 validation laps fall inside{selectedArtifact?.test?.interval80_coverage != null ? `; on the held-out test laps it contained ${(selectedArtifact.test.interval80_coverage * 100).toFixed(0)}%` : ''}. The width is fixed per model unless the layers disagree.</span></div>
+              {result.short_history && <div className="warn-box">Only {result.completed_laps_in_session} completed laps available; the model expects {result.history_laps_used}. Missing lags were imputed with training medians.</div>}
+              <div className="prose small">This is the forecast for lap {result.lap_number_completed + 1}, the lap after the last one recorded in the file. If the session had already ended, that lap never happened and the number is hypothetical. Use <strong>Backtest</strong> below to see how the model did on laps that were actually driven.</div>
+            </div>
+            <div className="detail-list compact">
+              <div><span>Session</span><strong>{result.season} · {result.event} · {result.session}</strong></div>
+              <div><span>Driver</span><strong>{result.driver}</strong></div>
+              <div><span>Laps completed</span><strong>{result.lap_number_completed} (forecast for lap {result.lap_number_completed + 1})</strong></div>
+              <div title="Median of the last five clean laps. The model predicts how far the next lap will be from this number."><span>Rolling-5 baseline ⓘ</span><strong>{fmtLap(result.rolling5_baseline_s)}</strong></div>
+              <div title="What the model adds to the rolling-5 baseline. Forecast = baseline + residual. It differs from the change versus the last lap because the last lap is usually not equal to the five-lap median."><span>Model residual ⓘ</span><strong>{fmtDelta(result.predicted_next_lap_s - result.rolling5_baseline_s)}</strong></div>
+              <div title="Spread between the per-layer predictions of the Forward-Forward network. Each layer is trained on its own, so when they disagree the interval is widened."><span>Layer disagreement ⓘ</span><strong>{fmtNumber(result.layer_disagreement_s)}s</strong></div>
+              <div><span>Artifact</span><strong>{result.artifact}</strong></div>
+              <div><span>Data file</span><strong>{result.file}</strong></div>
+            </div>
+          </div>
+        )}
+      </Panel>
+
       {result && (
         <div className="two-col">
           <Panel title="Input context at end of lap" icon={<Target size={17} />} action={<SourceBadge kind="local" />}>
@@ -229,16 +234,17 @@ export default function Forecast() {
           </Panel>
           <Panel title="Historical context (earlier events only)" icon={<BrainCircuit size={17} />} action={<SourceBadge kind="local" text="Prior events" />}>
             <div className="detail-list compact">
-              <div><span>Driver at this circuit</span><strong>{fmtLap(result.historical_context.driver_circuit_pace_s)}</strong></div>
-              <div><span>Team at this circuit</span><strong>{fmtLap(result.historical_context.team_circuit_pace_s)}</strong></div>
-              <div><span>Compound at this circuit</span><strong>{fmtLap(result.historical_context.compound_circuit_pace_s)}</strong></div>
-              <div><span>Driver · circuit · compound</span><strong>{fmtLap(result.historical_context.driver_circuit_compound_pace_s)}</strong></div>
-              <div><span>Matched weather · compound</span><strong>{fmtLap(result.historical_context.matched_weather_compound_pace_s)}</strong></div>
-              <div><span>Driver · matched weather</span><strong>{fmtLap(result.historical_context.driver_matched_weather_pace_s)}</strong></div>
-              <div><span>Driver · all earlier events</span><strong>{fmtLap(result.historical_context.driver_overall_pace_s)}</strong></div>
-              <div><span>Team · all earlier events</span><strong>{fmtLap(result.historical_context.team_overall_pace_s)}</strong></div>
+              <div><span>Driver at this circuit</span><strong className={result.historical_context.driver_circuit_pace_s == null ? "muted" : undefined}>{result.historical_context.driver_circuit_pace_s == null ? "no earlier event in this file" : fmtLap(result.historical_context.driver_circuit_pace_s)}</strong></div>
+              <div><span>Team at this circuit</span><strong className={result.historical_context.team_circuit_pace_s == null ? "muted" : undefined}>{result.historical_context.team_circuit_pace_s == null ? "no earlier event in this file" : fmtLap(result.historical_context.team_circuit_pace_s)}</strong></div>
+              <div><span>Compound at this circuit</span><strong className={result.historical_context.compound_circuit_pace_s == null ? "muted" : undefined}>{result.historical_context.compound_circuit_pace_s == null ? "no earlier event in this file" : fmtLap(result.historical_context.compound_circuit_pace_s)}</strong></div>
+              <div><span>Driver · circuit · compound</span><strong className={result.historical_context.driver_circuit_compound_pace_s == null ? "muted" : undefined}>{result.historical_context.driver_circuit_compound_pace_s == null ? "no earlier event in this file" : fmtLap(result.historical_context.driver_circuit_compound_pace_s)}</strong></div>
+              <div><span>Matched weather · compound</span><strong className={result.historical_context.matched_weather_compound_pace_s == null ? "muted" : undefined}>{result.historical_context.matched_weather_compound_pace_s == null ? "no earlier event in this file" : fmtLap(result.historical_context.matched_weather_compound_pace_s)}</strong></div>
+              <div><span>Driver · matched weather</span><strong className={result.historical_context.driver_matched_weather_pace_s == null ? "muted" : undefined}>{result.historical_context.driver_matched_weather_pace_s == null ? "no earlier event in this file" : fmtLap(result.historical_context.driver_matched_weather_pace_s)}</strong></div>
+              <div><span>Driver · all earlier events</span><strong className={result.historical_context.driver_overall_pace_s == null ? "muted" : undefined}>{result.historical_context.driver_overall_pace_s == null ? "no earlier event in this file" : fmtLap(result.historical_context.driver_overall_pace_s)}</strong></div>
+              <div><span>Team · all earlier events</span><strong className={result.historical_context.team_overall_pace_s == null ? "muted" : undefined}>{result.historical_context.team_overall_pace_s == null ? "no earlier event in this file" : fmtLap(result.historical_context.team_overall_pace_s)}</strong></div>
             </div>
             {noPriors && <div className="warn-box">No earlier events for this driver, team or circuit exist in this file, so every prior is empty and the model falls back to training medians. Load a table with earlier rounds (the shipped f1_2025_season.parquet has the whole season) to populate them.</div>}
+            {!noPriors && <p className="prose small">Priors marked "no earlier event in this file" (for example this circuit) were imputed with training medians; the published metrics were measured with 2018-2024 history present, so a single-season file runs the model with less context than it was tested with.</p>}
             <p className="prose small">{result.historical_context.note} Values are median lap times from previous events; the model uses them relative to the current rolling pace.</p>
           </Panel>
         </div>

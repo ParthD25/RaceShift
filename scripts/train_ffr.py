@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import platform
 import sys
 import time
 from datetime import datetime, timezone
@@ -229,6 +231,7 @@ def main() -> None:
         "is_synthetic": is_synthetic_source(data_source),
         "input_file": Path(args.input).name,
         "lap_validity_version": LAP_VALIDITY_VERSION,
+        "hardware": {"cpu_count": os.cpu_count(), "machine": platform.machine(), "python": platform.python_version()},
         "created_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
     (out / "metrics.json").write_text(json.dumps(metrics, indent=2))

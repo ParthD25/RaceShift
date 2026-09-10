@@ -44,6 +44,7 @@ export type ArchitectureLayer = { layer: number; input_nodes: number; hidden_nod
 export type ArtifactEntry = {
   id: string;
   name: string;
+  label?: string;
   role: string;
   training: string | null;
   path: string;
@@ -135,6 +136,8 @@ export type ForecastResult = {
   artifact: string;
   data_source: string;
   is_synthetic: boolean;
+  data_file_source?: string;
+  data_is_synthetic?: boolean;
   file: string;
 };
 
@@ -184,6 +187,8 @@ export type BacktestResult = {
   artifact: string;
   data_source: string;
   is_synthetic: boolean;
+  data_file_source?: string;
+  data_is_synthetic?: boolean;
   file: string;
 };
 

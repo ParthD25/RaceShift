@@ -1,6 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import {
-  Activity, BrainCircuit, Database, FlaskConical, Gauge, GitCompareArrows, Settings, Sparkles, Target
+  BrainCircuit, Database, FlaskConical, Gauge, GitCompareArrows, Settings, Target
 } from 'lucide-react';
 import { Logo } from './Logo';
 import { SourceBadge, sourceKindFor } from './SourceBadge';
@@ -16,12 +16,6 @@ const nav = [
   ['/experiments', 'Experiments', FlaskConical],
   ['/datasets', 'Datasets', Database],
   ['/models', 'Models', BrainCircuit]
-] as const;
-
-// Pages that show fixtures or are intentionally empty until the underlying model exists.
-const planned = [
-  ['/telemetry', 'Telemetry', Activity, 'Fixture trace: no telemetry endpoint yet'],
-  ['/strategy', 'Strategy Insights', Sparkles, 'Empty until a pit-loss model exists']
 ] as const;
 
 function ContextBox({ label, value, wide = false }: { label: string; value: string; wide?: boolean }) {
@@ -47,16 +41,6 @@ export function AppShell() {
         <nav className="nav-list" aria-label="Primary navigation">
           {nav.map(([to, label, Icon]) => (
             <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-              <Icon size={18} strokeWidth={1.8} />
-              <span>{label}</span>
-            </NavLink>
-          ))}
-        </nav>
-        <div className="nav-divider" />
-        <div className="nav-group-label" title="These pages are not backed by a validated model yet">Planned</div>
-        <nav className="nav-list secondary" aria-label="Planned pages">
-          {planned.map(([to, label, Icon, note]) => (
-            <NavLink key={to} to={to} title={note} className={({ isActive }) => `nav-item planned ${isActive ? 'active' : ''}`}>
               <Icon size={18} strokeWidth={1.8} />
               <span>{label}</span>
             </NavLink>
@@ -90,7 +74,7 @@ export function AppShell() {
               <span className={online ? 'status-dot' : 'off-dot'} />
               <span><small>Model</small><strong>{result ? result.artifact : runtime.data?.default_artifact.id ?? '—'}</strong></span>
               {result
-                ? <SourceBadge kind={sourceKindFor(result.is_synthetic)} text={result.is_synthetic ? 'Synthetic' : 'Real'} />
+                ? <SourceBadge kind={sourceKindFor(result.is_synthetic || Boolean(result.data_is_synthetic))} text={result.data_is_synthetic ? (result.is_synthetic ? 'Synthetic' : 'Real model · synthetic laps') : (result.is_synthetic ? 'Synthetic model · real laps' : 'Real')} />
                 : runtime.data
                   ? <SourceBadge kind={sourceKindFor(runtime.data.default_artifact.is_synthetic)} text={runtime.data.default_artifact.is_synthetic ? 'Synthetic demo' : 'Real data'} />
                   : null}

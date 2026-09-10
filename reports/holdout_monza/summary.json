@@ -1,6 +1,6 @@
 {
   "name": "holdout_monza",
-  "created_utc": "2026-09-09T13:13:54+00:00",
+  "created_utc": "2026-09-10T02:42:18+00:00",
   "input_file": "f1_laps_fastf1.parquet",
   "data_source": "fastf1_timing",
   "is_synthetic": false,
@@ -121,11 +121,11 @@
       },
       "resources": {
         "training": {
-          "wall_seconds": 23.429,
-          "peak_rss_mb": 2574.6,
-          "peak_traced_mb": 829.6
+          "wall_seconds": 0.614,
+          "peak_rss_mb": 1935.1,
+          "peak_traced_mb": 376.1
         },
-        "inference_batch_ms_per_row": 0.0004
+        "inference_batch_ms_per_row": 0.0007
       },
       "artifact": "holdout_monza_baselines"
     },
@@ -158,11 +158,11 @@
       },
       "resources": {
         "training": {
-          "wall_seconds": 50.364,
-          "peak_rss_mb": 2921.1,
-          "peak_traced_mb": 853.5
+          "wall_seconds": 38.634,
+          "peak_rss_mb": 2326.7,
+          "peak_traced_mb": 479.5
         },
-        "inference_batch_ms_per_row": 0.0048
+        "inference_batch_ms_per_row": 0.0099
       },
       "artifact": "holdout_monza_baselines"
     },

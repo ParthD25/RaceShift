@@ -345,16 +345,26 @@ def _weather_bins(df: pd.DataFrame) -> pd.DataFrame:
 CHRONOLOGY_COLUMNS = ("event_date", "round_number")
 
 
-def build_full_context_table(raw: pd.DataFrame, history: int = 5, require_chronology: bool = True) -> pd.DataFrame:
-    """Build the leakage-safe feature table. See ``_build_full_context_table`` for the steps."""
+def build_full_context_table(
+    raw: pd.DataFrame, history: int = 5, require_chronology: bool = True, require_target: bool = True
+) -> pd.DataFrame:
+    """Build the leakage-safe feature table. See ``_build_full_context_table`` for the steps.
+
+    ``require_target=True`` (training and evaluation) keeps only rows whose adjacent next lap
+    is a valid racing lap, so every row has a target. ``require_target=False`` (inference)
+    keeps every valid lap and leaves the target columns NaN where no usable next lap exists;
+    the features of a row never depend on the next lap either way.
+    """
     with warnings.catch_warnings():
         # ~60 derived columns are appended one at a time; pandas warns about block
         # fragmentation on every build, which drowns test output without changing results.
         warnings.simplefilter("ignore", pd.errors.PerformanceWarning)
-        return _build_full_context_table(raw, history=history, require_chronology=require_chronology)
+        return _build_full_context_table(raw, history=history, require_chronology=require_chronology, require_target=require_target)
 
 
-def _build_full_context_table(raw: pd.DataFrame, history: int = 5, require_chronology: bool = True) -> pd.DataFrame:
+def _build_full_context_table(
+    raw: pd.DataFrame, history: int = 5, require_chronology: bool = True, require_target: bool = True
+) -> pd.DataFrame:
     """Build the canonical leakage-safe lap-N -> lap-(N+1) forecasting table.
 
     Returned rows are valid racing laps whose *next* lap is also a valid, adjacent racing
@@ -472,14 +482,17 @@ def _build_full_context_table(raw: pd.DataFrame, history: int = 5, require_chron
     df[RAW_TARGET_COLUMN] = group["lap_time_s"].shift(-1)
     df["next_lap_number"] = group["lap_number"].shift(-1)
     df["next_lap_valid"] = group["lap_valid"].shift(-1)
-    keep = (
-        df["lap_valid"]
-        & ((df["next_lap_number"] - df["lap_number"]) == 1)
+    has_target = (
+        ((df["next_lap_number"] - df["lap_number"]) == 1)
         & (df["next_lap_valid"] == True)  # noqa: E712 - shifted bools are object dtype
         & df[RAW_TARGET_COLUMN].notna()
     )
+    keep = df["lap_valid"] & has_target if require_target else df["lap_valid"].astype(bool)
     df = df[keep].copy()
-    df[TARGET_COLUMN] = df[RAW_TARGET_COLUMN] - df["rolling_median_5"]
+    has_target = has_target[keep]
+    df[TARGET_COLUMN] = np.where(has_target, df[RAW_TARGET_COLUMN] - df["rolling_median_5"], np.nan)
+    if not require_target:
+        df.loc[~has_target, RAW_TARGET_COLUMN] = np.nan
     return df.drop(columns=["_segment"]).reset_index(drop=True)
 
 

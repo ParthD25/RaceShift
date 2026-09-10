@@ -31,6 +31,12 @@ def main() -> None:
     p.add_argument("artifact", help="artifact directory, e.g. artifacts/f1_2025h2_ffr-m")
     p.add_argument("--verify-input", help="lap table used to verify the ONNX graph on real preprocessed rows (default: random rows)")
     p.add_argument("--bundle-dir", default=str(ROOT / "exports"), help="where to write <artifact>.zip; pass '' to skip")
+    p.add_argument(
+        "--into-artifact",
+        action="store_true",
+        help="write into <artifact>/export/ (the committed snapshot) instead of exports/<artifact>/; "
+        "only for refreshing what is tracked in git",
+    )
     args = p.parse_args()
 
     artifact = Path(args.artifact)
@@ -44,7 +50,9 @@ def main() -> None:
         verify_table = table[contract["numeric"] + contract["categorical"]].head(2000)
         verify_rows = np.asarray(prep.transform(verify_table), dtype=np.float32)
 
-    result = export_artifact(artifact, verify_rows=verify_rows, bundle_dir=args.bundle_dir or None, verify_table=verify_table)
+    export_dir = artifact / "export" if args.into_artifact else ROOT / "exports" / artifact.name
+    result = export_artifact(artifact, verify_rows=verify_rows, bundle_dir=args.bundle_dir or None, verify_table=verify_table, export_dir=export_dir)
+    print(f"export dir: {export_dir}")
     for key, note in result["notes"].items():
         print(f"{key}: {note}")
     if result["bundle"]:

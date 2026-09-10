@@ -1,6 +1,6 @@
 {
   "name": "f1_2025h2",
-  "created_utc": "2026-09-09T14:32:44+00:00",
+  "created_utc": "2026-09-10T02:42:18+00:00",
   "input_file": "f1_laps_fastf1.parquet",
   "data_source": "fastf1_timing",
   "is_synthetic": false,
@@ -121,11 +121,11 @@
       },
       "resources": {
         "training": {
-          "wall_seconds": 22.677,
-          "peak_rss_mb": 2477.7,
-          "peak_traced_mb": 803.2
+          "wall_seconds": 0.628,
+          "peak_rss_mb": 1753.2,
+          "peak_traced_mb": 364.6
         },
-        "inference_batch_ms_per_row": 0.0006
+        "inference_batch_ms_per_row": 0.0005
       },
       "artifact": "f1_2025h2_baselines"
     },
@@ -158,11 +158,11 @@
       },
       "resources": {
         "training": {
-          "wall_seconds": 49.894,
-          "peak_rss_mb": 2887.1,
-          "peak_traced_mb": 829.5
+          "wall_seconds": 56.016,
+          "peak_rss_mb": 2162.5,
+          "peak_traced_mb": 467.1
         },
-        "inference_batch_ms_per_row": 0.0054
+        "inference_batch_ms_per_row": 0.0123
       },
       "artifact": "f1_2025h2_baselines"
     },

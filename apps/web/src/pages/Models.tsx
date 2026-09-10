@@ -14,16 +14,20 @@ export default function Models() {
       {models.error && <div className="error-box">{models.error}</div>}
       <div className="model-grid">
         {artifacts.map(a => (
-          <Panel key={a.id} title={a.id} icon={<Cpu size={17} />} action={<SourceBadge kind={a.ready ? sourceKindFor(a.is_synthetic) : 'offline'} text={a.ready ? undefined : 'Incomplete'} />}>
-            <div className="model-role">{a.name}{a.is_default ? ' · default' : ''}</div>
+          <Panel key={a.id} title={a.label ?? a.id} icon={<Cpu size={17} />} action={<SourceBadge kind={a.ready ? sourceKindFor(a.is_synthetic) : 'offline'} text={a.role === 'baseline-report' ? 'Metrics only' : a.ready ? undefined : 'Incomplete'} />}>
+            <div className="model-role">{a.role === 'baseline-report' ? 'Baseline report' : a.name}{a.is_default ? ' · default' : ''}</div>
             <div className="detail-list compact">
-              <div><span>Role</span><strong>{a.role}</strong></div>
-              <div><span>Nodes</span><strong>{architectureLabel(a.architecture)}</strong></div>
-              <div><span>Ordinal groups</span><strong>{a.architecture?.map(l => l.ordinal_groups).join(' / ') ?? '—'}</strong></div>
-              <div><span>Test MAE</span><strong>{fmtNumber(a.test?.mae_s)} s</strong></div>
+              <div><span>Folder</span><strong>{a.id}</strong></div>
+              {a.role === 'baseline-report'
+                ? <div><span>Contents</span><strong>previous lap, rolling median, ridge and tree baselines scored on this split; no weights to load, see Experiments</strong></div>
+                : <>
+                    <div><span>Nodes</span><strong>{architectureLabel(a.architecture)}</strong></div>
+                    <div><span>Ordinal groups</span><strong>{a.architecture?.map(l => l.ordinal_groups).join(' / ') ?? '—'}</strong></div>
+                    <div><span>Test MAE</span><strong>{fmtNumber(a.test?.mae_s)} s</strong></div>
+                  </>}
               <div><span>Data</span><strong>{a.data_source}</strong></div>
-              {!a.ready && <div><span>Missing</span><strong className="bad">{a.missing_files.join(', ')}</strong></div>}
-              {a.ready && <div><span>Export</span><strong><a href={api.modelExportUrl(a.id)} download>{a.id}.zip</a> · ONNX core, JSON preprocessor, model card</strong></div>}
+              {!a.ready && a.role !== 'baseline-report' && <div><span>Missing</span><strong className="bad">{a.missing_files.join(', ')}</strong></div>}
+              {a.ready && a.role !== 'baseline-report' && <div><span>Export</span><strong><a href={api.modelExportUrl(a.id)} download>{a.id}.zip</a> · ONNX core, JSON preprocessor, model card</strong></div>}
             </div>
           </Panel>
         ))}

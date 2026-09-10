@@ -1,6 +1,6 @@
 {
   "name": "domain_shift_2026",
-  "created_utc": "2026-09-09T13:13:54+00:00",
+  "created_utc": "2026-09-10T02:42:18+00:00",
   "input_file": "f1_laps_fastf1.parquet",
   "data_source": "fastf1_timing",
   "is_synthetic": false,
@@ -121,11 +121,11 @@
       },
       "resources": {
         "training": {
-          "wall_seconds": 25.07,
-          "peak_rss_mb": 2575.3,
-          "peak_traced_mb": 867.2
+          "wall_seconds": 0.548,
+          "peak_rss_mb": 1974.3,
+          "peak_traced_mb": 393.5
         },
-        "inference_batch_ms_per_row": 0.0006
+        "inference_batch_ms_per_row": 0.0004
       },
       "artifact": "domain_shift_2026_baselines"
     },
@@ -158,11 +158,11 @@
       },
       "resources": {
         "training": {
-          "wall_seconds": 51.529,
-          "peak_rss_mb": 2960.3,
-          "peak_traced_mb": 890.7
+          "wall_seconds": 41.011,
+          "peak_rss_mb": 2400.8,
+          "peak_traced_mb": 499.3
         },
-        "inference_batch_ms_per_row": 0.0051
+        "inference_batch_ms_per_row": 0.0125
       },
       "artifact": "domain_shift_2026_baselines"
     },

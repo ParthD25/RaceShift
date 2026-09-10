@@ -12,7 +12,9 @@ export default defineConfig({
   server: {
     host: '127.0.0.1',
     port: webPort,
-    strictPort: true,
+    // If the port is taken Vite moves to the next free one and prints the URL it chose;
+    // the API port stays fixed because the /api proxy targets it.
+    strictPort: false,
     proxy: {
       '/api': `http://127.0.0.1:${apiPort}`
     }

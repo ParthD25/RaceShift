@@ -1,6 +1,6 @@
 {
   "name": "f1_2025h2_legacy_ext",
-  "created_utc": "2026-09-09T17:52:55+00:00",
+  "created_utc": "2026-09-10T02:42:19+00:00",
   "input_file": "f1_laps_all_tiers.parquet",
   "data_source": "fastf1_timing+legacy_timing",
   "is_synthetic": false,
@@ -121,11 +121,11 @@
       },
       "resources": {
         "training": {
-          "wall_seconds": 128.367,
-          "peak_rss_mb": 9239.9,
-          "peak_traced_mb": 4858.6
+          "wall_seconds": 4.467,
+          "peak_rss_mb": 7171.4,
+          "peak_traced_mb": 2305.8
         },
-        "inference_batch_ms_per_row": 0.0007
+        "inference_batch_ms_per_row": 0.0009
       },
       "artifact": "f1_2025h2_legacy_ext_baselines"
     },
@@ -158,11 +158,11 @@
       },
       "resources": {
         "training": {
-          "wall_seconds": 279.563,
-          "peak_rss_mb": 11137.6,
-          "peak_traced_mb": 5667.1
+          "wall_seconds": 175.136,
+          "peak_rss_mb": 10157.1,
+          "peak_traced_mb": 3369.4
         },
-        "inference_batch_ms_per_row": 0.0091
+        "inference_batch_ms_per_row": 0.015
       },
       "artifact": "f1_2025h2_legacy_ext_baselines"
     },

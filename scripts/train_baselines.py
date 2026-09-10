@@ -11,6 +11,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import platform
 import sys
 import time
 from datetime import datetime, timezone
@@ -115,9 +117,11 @@ def main() -> None:
 
         prep_full = make_preprocessor(numeric, categorical)
         model_full = make_model()
+        # Preprocessing is shared work and happens outside the measured block, exactly as it
+        # does for FFR in scripts/train_ffr.py, so the two resource columns are comparable.
+        x_full = prep_full.fit_transform(trainval[features])
         report = ResourceReport()
         with measure(report):
-            x_full = prep_full.fit_transform(trainval[features])
             model_full.fit(x_full, y_trainval)
         x_test = prep_full.transform(test[features])
         t0 = time.perf_counter()
@@ -151,6 +155,7 @@ def main() -> None:
         "is_synthetic": is_synthetic_source(data_source),
         "input_file": Path(args.input).name,
         "lap_validity_version": LAP_VALIDITY_VERSION,
+        "hardware": {"cpu_count": os.cpu_count(), "machine": platform.machine(), "python": platform.python_version()},
         "created_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
     out = Path(args.output)

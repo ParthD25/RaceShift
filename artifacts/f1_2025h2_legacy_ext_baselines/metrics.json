@@ -135,11 +135,11 @@
       },
       "resources": {
         "training": {
-          "wall_seconds": 128.367,
-          "peak_rss_mb": 9239.9,
-          "peak_traced_mb": 4858.6
+          "wall_seconds": 4.467,
+          "peak_rss_mb": 7171.4,
+          "peak_traced_mb": 2305.8
         },
-        "inference_batch_ms_per_row": 0.0007
+        "inference_batch_ms_per_row": 0.0009
       }
     },
     "hist_gradient_boosting": {
@@ -181,11 +181,11 @@
       },
       "resources": {
         "training": {
-          "wall_seconds": 279.563,
-          "peak_rss_mb": 11137.6,
-          "peak_traced_mb": 5667.1
+          "wall_seconds": 175.136,
+          "peak_rss_mb": 10157.1,
+          "peak_traced_mb": 3369.4
         },
-        "inference_batch_ms_per_row": 0.0091
+        "inference_batch_ms_per_row": 0.015
       }
     }
   },
@@ -241,5 +241,10 @@
   "is_synthetic": false,
   "input_file": "f1_laps_all_tiers.parquet",
   "lap_validity_version": 2,
-  "created_utc": "2026-09-09T14:52:01+00:00"
+  "hardware": {
+    "cpu_count": 4,
+    "machine": "x86_64",
+    "python": "3.11.15"
+  },
+  "created_utc": "2026-09-10T02:41:46+00:00"
 }

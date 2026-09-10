@@ -826,7 +826,7 @@ Implemented:
 Validated on real F1 so far: see `reports/` for the measured tables. Not yet validated:
 
 - wet-race performance in isolation
-- 2026 domain shift
+- 2026 domain shift beyond the single no-retraining test in `reports/domain_shift_2026`
 - live-stream reliability
 - endurance-series generalization
 - corner telemetry Forward-Forward learning

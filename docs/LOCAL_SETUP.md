@@ -32,9 +32,11 @@ npm run dev
 ```
 
 `concurrently` starts the local FastAPI server (127.0.0.1:8000) and the React/Vite development
-server (127.0.0.1:5173) together. If either port is taken you get `Address already in use`;
-pick other ports for both with environment variables, which the API, the Vite proxy and the
-sidebar status all read:
+server (127.0.0.1:5173) together. If the API port is taken, the API prints `RaceShift API:
+127.0.0.1:8000 is already in use` followed by two ports that are free at that moment and the
+exact command to run; if only the web port is taken, Vite moves to the next free one and
+prints the URL it chose. The API, the Vite proxy and the sidebar status all read the same
+variables:
 
 ```bash
 API_PORT=8010 WEB_PORT=5180 npm run dev
@@ -78,8 +80,9 @@ curl -s -X POST http://127.0.0.1:8000/api/forecast/backtest \
   -d '{"file": "f1_2025_season.parquet", "driver": "VER", "laps": 10}'
 ```
 
-The forecast uses the chronologically latest session in the file. Omit `driver` to use the driver
-with the most completed laps in that session. The response carries the lap's input context
+The forecast uses the chronologically latest session in the file. Omit `driver` to use the
+best-placed driver with the most completed laps in that session (the race winner when the
+whole field finished). The response carries the lap's input context
 (tyre, weather, gaps) and the historical priors from earlier events that fed the model.
 
 ## Real model artifact
@@ -115,13 +118,13 @@ python scripts/fetch_fastf1_seasons.py --years 2022-2025 --session R --events Ba
 python scripts/build_lap_dataset.py --input data/raw/fastf1 --output data/processed/next_lap.parquet   # light table
 python - <<'PY'
 import glob, pandas as pd
-pd.concat([pd.read_parquet(f) for f in sorted(glob.glob('data/raw/fastf1/*.parquet'))]).to_parquet('data/processed/f1_laps.parquet', index=False)
+pd.concat([pd.read_parquet(f) for f in sorted(glob.glob('data/raw/fastf1/*.parquet'))]).to_parquet('data/processed/f1_laps_fastf1.parquet', index=False)
 PY
-python scripts/run_experiments.py --input data/processed/f1_laps.parquet --name f1_2025 \
-  --train-end 2023 --val-year 2024 --test-year 2025 --ffr configs/ffr_small.json configs/ffr_production.json
+python scripts/run_experiments.py --input data/processed/f1_laps_fastf1.parquet --name f1_2025 \
+  --train-end 2024 --val-year 2025 --test-year 2025 --split-round 12 --ffr configs/ffr_small.json configs/ffr_production.json
 ```
 
-Results land in `reports/f1_2025/summary.md` and every run's `metrics.json` is listed by the API.
+Results land in `reports/f1_2025h2/summary.md` and every run's `metrics.json` is listed by the API.
 
 ## Verify the install
 
