@@ -129,8 +129,8 @@ Results land in `reports/f1_2025h2/summary.md` and every run's `metrics.json` is
 ## Verify the install
 
 ```bash
-npm run test:py        # Python tests: leakage, availability, adjacency, gradients, splits, artifact, API (count printed by pytest)
 npm run build          # TypeScript check + Vite production build
+npm run demo:data && npm run demo:model   # synthetic fixture -> demo FFR artifact (about a minute)
 ```
 
 ## Optional historical data collection

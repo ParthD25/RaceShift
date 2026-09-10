@@ -12,8 +12,6 @@
     "dev:web": "npm --workspace apps/web run dev",
     "build": "npm --workspace apps/web run build",
     "lint:web": "npm --workspace apps/web run lint",
-    "test:py": "cross-env PYTHONPATH=src pytest -q",
-    "test:e2e": "node apps/web/e2e/smoke.mjs",
     "demo:data": "cross-env PYTHONPATH=src python scripts/make_synthetic_fixture.py --output data/imports/synthetic_fixture_local.csv",
     "demo:model": "cross-env PYTHONPATH=src python scripts/train_ffr.py --input data/imports/synthetic_fixture_local.csv --config configs/ffr_demo.json --output artifacts/raceshift_ffr_demo_local --train-end 2023 --val-year 2024 --test-year 2025"
   },

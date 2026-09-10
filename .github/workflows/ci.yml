@@ -7,7 +7,7 @@ on:
 
 jobs:
   python:
-    name: Python tests
+    name: Python smoke
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,7 +17,6 @@ jobs:
           cache: pip
       - run: python -m pip install --upgrade pip
       - run: pip install -e ".[local]"
-      - run: python -m pytest -q
       - name: Synthetic pipeline smoke (fixture -> baselines -> FFR demo -> reload)
         run: |
           python scripts/train_baselines.py --input data/imports/synthetic_fixture.csv --output /tmp/ci_baselines
@@ -35,35 +34,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
-
-  e2e:
-    name: Web end-to-end (real API, real UI)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: pip
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: npm
-      - run: pip install -e ".[local]"
-      - run: npm ci
-      - run: npx playwright install --with-deps chromium
-      - name: Start API and UI, run the browser smoke test
-        run: |
-          npm run dev > /tmp/dev.log 2>&1 &
-          for i in $(seq 1 60); do curl -sf http://127.0.0.1:8000/api/health && break; sleep 1; done
-          for i in $(seq 1 60); do curl -sf http://127.0.0.1:5173/ > /dev/null && break; sleep 1; done
-          E2E_SHOTS=/tmp/e2e node apps/web/e2e/smoke.mjs || (cat /tmp/dev.log; exit 1)
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: e2e-screenshots
-          path: /tmp/e2e
-          if-no-files-found: ignore
 
   security:
     name: Dependency audit

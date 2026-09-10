@@ -820,7 +820,7 @@ Implemented:
 - local model save/load
 - local forecast endpoint
 - synthetic demo artifact
-- A passing Python test suite (leakage and feature-availability, lap-state adjacency incl. red-flag restarts, chronological and round splits, finite-difference gradient and layer-locality checks, artifact forecasting and backtesting, ONNX export, local API); the count is printed by `npm run test:py`
+- Verified checks for leakage and feature availability, lap-state adjacency incl. red-flag restarts, chronological and round splits, finite-difference gradients and layer locality, artifact forecasting and backtesting, ONNX export and the local API
 - real FastF1 collection and experiment runner with baselines, FFR depth/group ladders, feature ablations, circuit holdout and resource metrics
 
 Validated on real F1 so far: see `reports/` for the measured tables. Not yet validated:

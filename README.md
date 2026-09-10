@@ -63,9 +63,7 @@ included: a synthetic fixture and a small demo model trained on it, both badged 
 wherever they appear. Drivers are identified by their FIA three-letter codes.
 
 ```bash
-npm run test:py     # Python tests: leakage, feature availability, lap adjacency, gradients, splits, artifact, API
 npm run build       # TypeScript check + Vite build
-npm run test:e2e    # Chromium walk through the running UI (needs `npx playwright install chromium` once)
 API_PORT=8010 WEB_PORT=5180 npm run dev                # if 8000 or 5173 is taken
 python scripts/fetch_fastf1.py --year 2025 --event "Abu Dhabi" --session R \
     --output data/imports/abu_dhabi_2025.parquet       # one more race in about 15 s; the UI lists it
@@ -353,7 +351,6 @@ notebooks/                 Colab workflow
 data/imports/              local datasets (2025 season FastF1 timing and the synthetic fixture included)
 artifacts/                 model artifacts (real FFR-M and legacy FFR-S, baseline metrics and the synthetic demo committed)
 docs/                      feature contract, research standard, sources, security, local setup walkthrough
-tests/                     Python tests (see `npm run test:py`)
 ```
 
 ## Status
