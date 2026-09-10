@@ -27,6 +27,7 @@ from pydantic import BaseModel, Field
 from raceshift import __version__
 from raceshift.data.provenance import infer_data_source, is_synthetic_source
 from raceshift.data.schema import REQUIRED_FORECAST_COLUMNS
+from raceshift.features.full_context import LAP_VALIDITY_VERSION
 from raceshift.models.artifact import ARTIFACT_FILES, RaceShiftArtifact, inference_table_for, missing_artifact_files
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -177,7 +178,18 @@ def _artifact_entry(path: Path) -> dict[str, Any]:
         "validation": metrics.get("validation"),
         "test": metrics.get("test"),
         "created_utc": metrics.get("created_utc"),
+        "lap_validity_version": metrics.get("lap_validity_version"),
+        "validity_rules_match": metrics.get("lap_validity_version") == LAP_VALIDITY_VERSION,
     }
+
+
+def _lap_validity(artifact_dir: Path) -> dict[str, Any]:
+    """Which lap-validity rules the runtime applies versus the rules the artifact was trained
+    and scored under. A mismatch means the forecast's inputs are built differently from the
+    laps the model learned on, so its published metrics do not describe this run."""
+    metrics = _read_json(artifact_dir / "metrics.json") or {}
+    trained = metrics.get("lap_validity_version")
+    return {"runtime": LAP_VALIDITY_VERSION, "artifact": trained, "match": trained == LAP_VALIDITY_VERSION}
 
 
 def _package_version(name: str) -> str | None:
@@ -254,6 +266,7 @@ def _forecast(file: str, driver: str | None, artifact_id: str | None) -> dict[st
         raise HTTPException(500, f"Local forecast failed: {type(exc).__name__}") from exc
     result["file"] = path.name
     result["session_warning"] = _session_warning(result.get("session"))
+    result["lap_validity"] = _lap_validity(artifact_dir)
     result.update(_data_provenance(frame))
     return result
 
@@ -304,6 +317,7 @@ def runtime() -> dict[str, Any]:
         "platform": platform.platform(),
         "packages": {name: _package_version(name) for name in ["numpy", "pandas", "scikit-learn", "fastapi", "joblib", "pyarrow"]},
         "data_mode": "offline-local",
+        "lap_validity_version": LAP_VALIDITY_VERSION,
         "live_connected": False,
         "live_note": "RaceShift renders local files and historical data. No live timing connection is configured.",
         "default_artifact": {
@@ -476,7 +490,9 @@ def forecast_backtest(request: BacktestRequest) -> dict[str, Any]:
     except Exception as exc:  # pragma: no cover - defensive
         raise HTTPException(500, f"Local backtest failed: {type(exc).__name__}") from exc
     result["file"] = path.name
+    result["lap_validity"] = _lap_validity(artifact_dir)
     result["session_warning"] = _session_warning(result.get("session"))
+    result["lap_validity"] = _lap_validity(artifact_dir)
     result.update(_data_provenance(frame))
     return result
 

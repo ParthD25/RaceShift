@@ -27,6 +27,7 @@ export default function Settings() {
             <div className="detail-list compact">
               <div><span>RaceShift</span><strong>v{runtime.data.raceshift_version}</strong></div>
               <div><span>Data mode</span><strong>{runtime.data.data_mode}</strong></div>
+              {runtime.data.lap_validity_version != null && <div><span>Lap-validity rules</span><strong>v{runtime.data.lap_validity_version}</strong></div>}
               <div><span>Live connection</span><strong>{runtime.data.live_connected ? 'connected' : 'not configured'}</strong></div>
               <div><span>Default artifact</span><strong>{runtime.data.default_artifact.id} {runtime.data.default_artifact.ready ? '' : '(missing)'} {runtime.data.default_artifact.is_synthetic ? '· synthetic' : ''}</strong></div>
               <div><span>Python</span><strong>{runtime.data.python}</strong></div>

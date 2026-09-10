@@ -250,9 +250,12 @@ mismatch above, a cold-cache stampede (feature table now built once under a lock
 across artifacts), two unhandled 500s (a filename with a null byte, a text `season` column),
 the Forecast page now backtests a race even when the driver's final lap cannot be forecast
 from (deleted or pit lap), qualifying and practice sessions carry a warning, and the fetch
-script reports an unrun or unknown event instead of a traceback. Still open, recorded in the
-report: yellow-flag laps count as clean (309 rows, 1.9 s error), the model does not follow a
-lap-on-lap trend, and value ranges are not validated on upload.
+script reports an unrun or unknown event instead of a traceback. The two lap-rule holes it
+found, yellow-flag laps counted as clean (309 rows, 1.9 s error) and the first lap after a
+safety car entering the rolling baseline, became lap-validity rules v3, under which every
+table in this README was re-run; the before/after table above is under the v2 rules the
+tester used. Still open: the model does not follow a lap-on-lap trend, and value ranges are
+not validated on upload.
 
 ## Architecture
 
