@@ -138,6 +138,7 @@ export type ForecastResult = {
   is_synthetic: boolean;
   data_file_source?: string;
   data_is_synthetic?: boolean;
+  session_warning?: string | null;
   file: string;
 };
 
