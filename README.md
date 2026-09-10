@@ -59,7 +59,9 @@ and shows two things for the 2025 Abu Dhabi race winner: how the model did on th
 laps that were actually driven (predicted vs actual, next to the "repeat the last lap"
 stopwatch baseline), and a forecast for the lap after the last one in the file, which is
 hypothetical when the race has ended. Nothing needs to be trained or downloaded. Also
-included: a synthetic fixture and a small demo model trained on it, both badged *Synthetic*
+included: `f1_2026_races.parquet`, the 13 races run so far in 2026, which no committed model
+has trained on (choose it in the dataset selector to backtest a race the model has never seen),
+and a synthetic fixture with a small demo model trained on it, both badged *Synthetic*
 wherever they appear. Drivers are identified by their FIA three-letter codes.
 
 ```bash
@@ -201,12 +203,56 @@ fixture numbers are never reported as Formula 1 results.
   0.457 s, previous lap 0.472 s. FFR-M has the best p90 (0.96 s) and degrades no worse than the
   tree, but its 80% intervals, calibrated on 2025, cover only 77% of 2026 laps: the shift is
   visible in calibration before it is visible in MAE.
+- **Independent blind test on the 2026 races through the shipped product (see below).** A
+  tester who was given only the repository link fetched the 13 races run so far in 2026 with
+  the repo's own loader and scored the committed FFR-M through the API's inference path:
+  0.435 s MAE, RMSE 0.78 s, 80% interval coverage 80%, previous lap 0.472 s. That matches the
+  experiment-script numbers above only after a bug the test exposed was fixed: the API had
+  dropped untimed laps before applying the lap-validity rules, which let red-flag restart laps
+  through and doubled the RMSE. The report, with every edge case tried, is in
+  `reports/blind_2026/REPORT.md`.
 - **Training extended to 2000 with the legacy tier (429,546 laps, same 2025 test rows).** The
   extra eighteen seasons of lap-time-only history help the linear model most (ridge 0.392 →
   0.368 s) and the others barely: trees 0.316 → 0.315 s, FFR-S 0.350 → 0.348 s, FFR-M 0.350 →
   0.351 s. Training cost grows with the data: the tree needs 5 minutes and 5.7 GB traced,
   FFR-S 30 minutes and 2.6 GB, FFR-M over two hours. Under the version 1 rules the same
   extension had looked worth 0.005-0.015 s for every model; most of that was the restart laps.
+
+### Blind test on unseen 2026 races
+
+Published numbers are only as good as the product that serves them, so an independent tester
+was given nothing but the repository link and asked to feed the product data it had never
+seen and check its outcomes against reality. The tester fetched every 2026 race run so far
+(13 rounds, Australia to Monza, 15,149 laps, new regulations, two new teams and four new
+drivers) with `scripts/fetch_fastf1.py`, scored the committed FFR-M through the API against
+the real next laps, simulated live use at laps 5 to 50, and tried malformed uploads, path
+traversal, leakage probes, concurrency and unseen categories. The 2026 table now ships as
+`data/imports/f1_2026_races.parquet`, so the same check runs from the Forecast page.
+
+| Unseen 2026 races, committed FFR-M | Before the fixes | After the fixes |
+| --- | ---: | ---: |
+| Scored lap pairs | 11,457 | 11,445 (same rows as the experiment scripts) |
+| FFR-M MAE / RMSE | 0.479 s / 1.48 s | 0.435 s / 0.78 s |
+| Previous-lap MAE / RMSE | 0.505 s / 1.48 s | 0.472 s / 0.86 s |
+| Largest single error | 57.1 s (restart lap) | 19.1 s (first lap after a safety car) |
+| 80% interval coverage | 79.6% | 79.8% |
+| Tsunoda, Monza 2026, whole-race backtest RMSE | 7.8 s | 0.23 s |
+| Five parallel first requests on a new file | 60 s each | 6.4 s each |
+
+What the test established: no leakage (truncating the file, editing later laps, editing other
+drivers' laps or shuffling rows changes a forecast by exactly 0.00 s); the model's edge over the
+stopwatch on unseen races is small (about 0.03 s per lap, ahead on 52% of laps) and it loses on
+fresh tyres, in the wet, at lap 5 and at Suzuka and Monza; unseen drivers cost nothing, unseen
+team Cadillac is at 0.95 s with no edge; the 80% interval is in practice a fixed ±0.6 s band
+because layer disagreement never exceeds its floor; and in live use 7% of "next laps" are pit or
+safety-car laps where every model is off by about 10 s. Fixed after the test: the validity
+mismatch above, a cold-cache stampede (feature table now built once under a lock and shared
+across artifacts), two unhandled 500s (a filename with a null byte, a text `season` column),
+the Forecast page now backtests a race even when the driver's final lap cannot be forecast
+from (deleted or pit lap), qualifying and practice sessions carry a warning, and the fetch
+script reports an unrun or unknown event instead of a traceback. Still open, recorded in the
+report: yellow-flag laps count as clean (309 rows, 1.9 s error), the model does not follow a
+lap-on-lap trend, and value ranges are not validated on upload.
 
 ## Architecture
 

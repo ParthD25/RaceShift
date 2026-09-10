@@ -53,27 +53,20 @@ export default function Forecast() {
 
   async function run() {
     setRunning(true);
+    setBacktesting(true);
     setError(null);
     setBacktestError(null);
-    try {
-      const forecast = await api.forecastLatest({ file, driver: driver || null, artifact: artifact || null });
-      setResult(forecast);
-      // Score the same driver's last completed laps so the forecast can be judged against
-      // laps that were really driven, not only against a lap that has not happened yet.
-      setBacktesting(true);
-      try {
-        setBacktest(await api.backtest({ file, driver: forecast.driver, artifact: artifact || null, laps: 10 }));
-      } catch (err) {
-        setBacktest(null);
-        setBacktestError(errorMessage(err));
-      } finally {
-        setBacktesting(false);
-      }
-    } catch (err) {
-      setError(errorMessage(err));
-    } finally {
-      setRunning(false);
-    }
+    // The backtest scores the driver's last completed laps against laps that were really
+    // driven; the forecast is for a lap that has not happened yet. They are independent: a
+    // driver whose final lap was deleted or a pit lap cannot be forecast from, but their
+    // race can still be backtested, so both run and each reports its own outcome. The API
+    // builds the feature table once and serves both calls from it.
+    const request = { file, driver: driver || null, artifact: artifact || null };
+    const [forecast, scored] = await Promise.allSettled([api.forecastLatest(request), api.backtest({ ...request, laps: 10 })]);
+    if (forecast.status === 'fulfilled') setResult(forecast.value); else { setResult(null); setError(errorMessage(forecast.reason)); }
+    if (scored.status === 'fulfilled') setBacktest(scored.value); else { setBacktest(null); setBacktestError(errorMessage(scored.reason)); }
+    setBacktesting(false);
+    setRunning(false);
   }
 
   const deltaVsLast = result ? result.predicted_next_lap_s - result.last_lap_time_s : null;
@@ -149,12 +142,12 @@ export default function Forecast() {
         </Panel>
       </div>
 
-      {result && (
-        <Panel title={`How did it do on ${result.driver}'s last ${backtest?.summary.rows ?? 10} real laps?`} icon={<Target size={17} />} action={backtest ? <SourceBadge kind={sourceKindFor(backtest.is_synthetic)} text="Laps actually driven" /> : null}>
+      {(backtest || backtestError) && (
+        <Panel title={`How did it do on ${backtest?.driver ?? result?.driver ?? 'this driver'}'s last ${backtest?.summary.rows ?? 10} real laps?`} icon={<Target size={17} />} action={backtest ? <SourceBadge kind={sourceKindFor(backtest.is_synthetic)} text="Laps actually driven" /> : null}>
           {backtestError && <div className="error-box">{backtestError}</div>}
           {backtest && (
             <>
-              <p className="prose">On {backtest.driver}'s last {backtest.summary.rows} real laps this model was within <strong>{fmtNumber(backtest.summary.mae_s)} s</strong> of the true next lap on average; simply repeating the last lap was within <strong>{fmtNumber(backtest.summary.previous_lap_mae_s)} s</strong>. {backtest.summary.mae_s <= backtest.summary.previous_lap_mae_s ? 'The model beat the stopwatch here.' : 'The stopwatch won on these laps; over the full 2025 test rounds the model is ahead by a few thousandths of a second, which is the honest size of its edge.'}</p>
+              <p className="prose">On {backtest.driver}'s last {backtest.summary.rows} real laps this model was within <strong>{fmtNumber(backtest.summary.mae_s)} s</strong> of the true next lap on average; simply repeating the last lap was within <strong>{fmtNumber(backtest.summary.previous_lap_mae_s)} s</strong>. {backtest.summary.mae_s <= backtest.summary.previous_lap_mae_s ? 'The model beat the stopwatch here.' : 'The stopwatch won on these laps. Over whole seasons the model is ahead of the stopwatch by a few hundredths of a second per lap and wins about half of all laps, which is the honest size of its edge.'}</p>
               <div className="forecast-meta">
                 <div><strong>{fmtNumber(backtest.summary.mae_s)} s</strong><span>Mean abs. error, this model</span></div>
                 <div><strong>{fmtNumber(backtest.summary.previous_lap_mae_s)} s</strong><span>Mean abs. error, repeat the last lap</span></div>
@@ -181,6 +174,7 @@ export default function Forecast() {
 
       <Panel title={`Next lap forecast (lap ${result ? result.lap_number_completed + 1 : "N+1"})`} icon={<Target size={17} />} action={result ? <SourceBadge kind={resultMismatch ? 'fixture' : sourceKindFor(result.is_synthetic)} text={resultMismatch ? (result.is_synthetic ? 'Synthetic model · real laps' : 'Real model · synthetic laps') : undefined} /> : null}>
         {error && <div className="error-box">{error}</div>}
+        {result?.session_warning && <div className="warn-box">{result.session_warning}</div>}
         {resultMismatch && <div className="warn-box">Model and data come from different sources ({result?.is_synthetic ? 'synthetic model on real laps' : 'real model on the synthetic fixture'}). Treat this number as a workflow check only.</div>}
         {!result && !error && <div className="empty-inline">No forecast has been run yet. Choose a dataset and press <strong>Run forecast</strong>.</div>}
         {result && (

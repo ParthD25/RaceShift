@@ -12,6 +12,7 @@ import platform
 import re
 import shutil
 import sys
+import threading
 from functools import lru_cache
 from importlib import metadata as importlib_metadata
 from pathlib import Path
@@ -26,7 +27,7 @@ from pydantic import BaseModel, Field
 from raceshift import __version__
 from raceshift.data.provenance import infer_data_source, is_synthetic_source
 from raceshift.data.schema import REQUIRED_FORECAST_COLUMNS
-from raceshift.models.artifact import ARTIFACT_FILES, RaceShiftArtifact, missing_artifact_files
+from raceshift.models.artifact import ARTIFACT_FILES, RaceShiftArtifact, inference_table_for, missing_artifact_files
 
 ROOT = Path(__file__).resolve().parents[2]
 ARTIFACTS = ROOT / "artifacts"
@@ -78,7 +79,7 @@ def _relative(path: Path) -> str:
 
 def _safe_child(base: Path, name: str, what: str) -> Path:
     """Resolve `name` strictly inside `base`. Rejects traversal, absolute paths and symlink escapes."""
-    if not name or name != Path(name).name or name in {".", ".."}:
+    if not name or "\x00" in name or any(ord(ch) < 32 for ch in name) or name != Path(name).name or name in {".", ".."}:
         raise HTTPException(400, f"Invalid {what} name")
     candidate = (base / name).resolve()
     root = base.resolve()
@@ -117,16 +118,26 @@ def _load_artifact(directory: str) -> RaceShiftArtifact:
 
 
 @lru_cache(maxsize=16)
-def _cached_inference_table(directory: str, path_str: str, mtime_ns: int, size: int) -> pd.DataFrame:
-    """Feature table for one import file and artifact, built once per file version. Building
-    the table is the slow part of a forecast (about 10 s for a season); every forecast,
-    backtest and comparison on the same file reuses it."""
-    return _load_artifact(directory).inference_table(_load_table(Path(path_str)))
+def _cached_inference_table(history: int, path_str: str, mtime_ns: int, size: int) -> pd.DataFrame:
+    """Feature table for one import file, built once per file version and history length.
+    Building the table is the slow part of a forecast (about 10 s for a season); every
+    forecast, backtest and comparison on the same file reuses it, whichever artifact runs."""
+    return inference_table_for(_load_table(Path(path_str)), history=history)
+
+
+_TABLE_LOCKS: dict[tuple, threading.Lock] = {}
+_TABLE_LOCKS_GUARD = threading.Lock()
 
 
 def _inference_table(artifact_dir: Path, path: Path) -> pd.DataFrame:
+    """Cached feature table with single-flight building: concurrent first requests for the
+    same file wait for one build instead of each rebuilding the table."""
     stat = path.stat()
-    return _cached_inference_table(str(artifact_dir), str(path), stat.st_mtime_ns, stat.st_size)
+    key = (_load_artifact(str(artifact_dir)).history_laps, str(path), stat.st_mtime_ns, stat.st_size)
+    with _TABLE_LOCKS_GUARD:
+        lock = _TABLE_LOCKS.setdefault(key, threading.Lock())
+    with lock:
+        return _cached_inference_table(*key)
 
 
 def _data_provenance(frame: pd.DataFrame) -> dict[str, Any]:
@@ -191,8 +202,22 @@ def _import_files() -> list[dict[str, Any]]:
     return rows
 
 
+def _check_frame_types(frame: pd.DataFrame) -> None:
+    """Reject tables whose identity columns cannot be interpreted, with a message that names
+    the column instead of a stack trace from deep inside pandas."""
+    for column in ("season", "lap_number"):
+        if column in frame.columns:
+            values = frame[column]
+            numeric = pd.to_numeric(values, errors="coerce")
+            bad = numeric.isna() & values.notna()
+            if bad.any():
+                example = str(values[bad].iloc[0])
+                raise HTTPException(400, f"Column '{column}' must be numeric; found {example!r}")
+
+
 def _table_summary(frame: pd.DataFrame, name: str) -> dict[str, Any]:
     missing = [c for c in REQUIRED_FORECAST_COLUMNS if c not in frame.columns]
+    _check_frame_types(frame)
     summary: dict[str, Any] = {
         "file": name,
         "rows": int(len(frame)),
@@ -218,6 +243,7 @@ def _forecast(file: str, driver: str | None, artifact_id: str | None) -> dict[st
     path = _safe_import_path(file)
     try:
         frame = _load_table(path)
+        _check_frame_types(frame)
         artifact = _load_artifact(str(artifact_dir))
         result = artifact.forecast_last_available(frame, driver=driver, table=_inference_table(artifact_dir, path))
     except HTTPException:
@@ -227,8 +253,22 @@ def _forecast(file: str, driver: str | None, artifact_id: str | None) -> dict[st
     except Exception as exc:  # pragma: no cover - defensive, keeps internals out of the response
         raise HTTPException(500, f"Local forecast failed: {type(exc).__name__}") from exc
     result["file"] = path.name
+    result["session_warning"] = _session_warning(result.get("session"))
     result.update(_data_provenance(frame))
     return result
+
+
+def _session_warning(session: object) -> str | None:
+    """The models are trained on race laps only. Qualifying and practice laps (push laps,
+    cool-down laps, fuel runs) follow a different process, so a forecast there is not
+    evidence of anything; say so rather than returning a bare number."""
+    code = str(session or "").strip().upper()
+    if code in {"R", "RACE", "S", "SPRINT"}:
+        return None
+    return (
+        f"This is a {code or 'non-race'} session. The model was trained on race laps only; "
+        "qualifying and practice laps alternate push and cool-down laps, so this forecast is not meaningful."
+    )
 
 
 # --------------------------------------------------------------------------- models
@@ -427,6 +467,7 @@ def forecast_backtest(request: BacktestRequest) -> dict[str, Any]:
     try:
         frame = _load_table(path)
         artifact = _load_artifact(str(artifact_dir))
+        _check_frame_types(frame)
         result = artifact.backtest_session(frame, driver=request.driver, laps=request.laps, table=_inference_table(artifact_dir, path))
     except HTTPException:
         raise
@@ -435,8 +476,22 @@ def forecast_backtest(request: BacktestRequest) -> dict[str, Any]:
     except Exception as exc:  # pragma: no cover - defensive
         raise HTTPException(500, f"Local backtest failed: {type(exc).__name__}") from exc
     result["file"] = path.name
+    result["session_warning"] = _session_warning(result.get("session"))
     result.update(_data_provenance(frame))
     return result
+
+
+def _session_warning(session: object) -> str | None:
+    """The models are trained on race laps only. Qualifying and practice laps (push laps,
+    cool-down laps, fuel runs) follow a different process, so a forecast there is not
+    evidence of anything; say so rather than returning a bare number."""
+    code = str(session or "").strip().upper()
+    if code in {"R", "RACE", "S", "SPRINT"}:
+        return None
+    return (
+        f"This is a {code or 'non-race'} session. The model was trained on race laps only; "
+        "qualifying and practice laps alternate push and cool-down laps, so this forecast is not meaningful."
+    )
 
 
 # --------------------------------------------------------------------------- reports

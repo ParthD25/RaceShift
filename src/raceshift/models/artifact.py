@@ -31,6 +31,15 @@ def _chronological_order(frame: pd.DataFrame) -> list[str]:
     return [c for c in ["season", "round_number", "event_date", "event", "session", "lap_number"] if c in frame.columns]
 
 
+def inference_table_for(raw: pd.DataFrame, history: int = 5) -> pd.DataFrame:
+    """Feature table for forecasting and backtesting, built with exactly the lap-validity rules
+    used in training. The *whole* raw frame goes in, untimed laps included: the red-flag
+    restart rule needs the (usually untimed) stoppage laps as evidence, so dropping rows
+    without a lap time first would let restart laps through as "clean" laps with 30-60 s
+    errors. Rows are every valid lap; the target is present only where a usable next lap exists."""
+    return build_full_context_table(raw, history=int(history), require_target=False)
+
+
 class RaceShiftArtifact:
     """A saved RaceShift FFR model plus its train-only preprocessor and feature contract."""
 
@@ -79,11 +88,14 @@ class RaceShiftArtifact:
         ranked = ranked.sort_values(["laps", "position", "driver"], ascending=[False, True, True], kind="stable")
         return str(ranked.iloc[0]["driver"]), available
 
+    @property
+    def history_laps(self) -> int:
+        return int(self.contract.get("history", 5))
+
     def inference_table(self, raw: pd.DataFrame) -> pd.DataFrame:
         """The leakage-safe feature table for inference: every valid lap, targets only where a
         usable next lap exists. The API caches this per file so repeated calls are cheap."""
-        data = raw[pd.to_numeric(raw["lap_time_s"], errors="coerce").notna()]
-        return build_full_context_table(data, history=int(self.contract.get("history", 5)), require_target=False)
+        return inference_table_for(raw, history=self.history_laps)
 
     def forecast_last_available(self, raw: pd.DataFrame, driver: str | None = None, table: pd.DataFrame | None = None) -> dict:
         """Forecast the next lap for the latest completed lap in the supplied history.
@@ -110,8 +122,8 @@ class RaceShiftArtifact:
             raise ValueError("Need at least two completed laps for the selected driver to forecast the next one")
         latest = history.iloc[-1].copy()
 
-        history_laps = int(self.contract.get("history", 5))
-        table = self.inference_table(data) if table is None else table
+        history_laps = self.history_laps
+        table = self.inference_table(raw) if table is None else table
         candidates = table[
             (table["season"] == key["season"])
             & (table["event"] == key["event"])
@@ -227,7 +239,7 @@ class RaceShiftArtifact:
         driver, available_drivers = self._pick_driver(scope, driver)
         driven = int((scope["driver"] == driver).sum())
 
-        table = self.inference_table(data) if table is None else table
+        table = self.inference_table(raw) if table is None else table
         rows = table[
             (table["season"] == key["season"])
             & (table["event"] == key["event"])

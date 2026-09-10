@@ -27,14 +27,21 @@ def main():
 
     event = int(args.event) if args.event.isdigit() else args.event
     target = Path(args.output)
-    if target.suffix.lower() == ".parquet":
-        target.parent.mkdir(parents=True, exist_ok=True)
-        produced = export_session(args.year, event, args.session, target.parent, args.cache)
-        if produced.resolve() != target.resolve():
-            produced.replace(target)
-        path = target
-    else:
-        path = export_session(args.year, event, args.session, target, args.cache)
+    try:
+        if target.suffix.lower() == ".parquet":
+            target.parent.mkdir(parents=True, exist_ok=True)
+            produced = export_session(args.year, event, args.session, target.parent, args.cache)
+            if produced.resolve() != target.resolve():
+                produced.replace(target)
+            path = target
+        else:
+            path = export_session(args.year, event, args.session, target, args.cache)
+    except Exception as exc:  # FastF1 raises several exception types for unknown or unrun sessions
+        raise SystemExit(
+            f"Could not load {args.year} {args.event!r} session {args.session}: {type(exc).__name__}: {exc}\n"
+            "Check the event name or round number, and that the session has already been run "
+            "(future rounds have no timing data yet)."
+        ) from exc
     print(path)
 
 
