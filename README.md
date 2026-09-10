@@ -84,8 +84,8 @@ three widths (256→128, 512→384→256→192 and 1024→768→512→384 hidden
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | previous_lap | 0.357 | 0.645 | 0.822 | 80.6% | — | — | — | — | — |
 | rolling_median_5 | 0.394 | 0.675 | 0.889 | 76.9% | — | — | — | — | — |
-| ridge | 0.392 | 0.622 | 0.801 | 74.8% | — | 22.7 | 2478 | 803 | — |
-| **hist_gradient_boosting** | 0.316 | 0.569 | 0.684 | 83.8% | — | 49.9 | 2887 | 830 | — |
+| ridge | 0.392 | 0.622 | 0.801 | 74.8% | — | 0.6 | 1753 | 365 | — |
+| **hist_gradient_boosting** | 0.316 | 0.569 | 0.684 | 83.8% | — | 56.0 | 2162 | 467 | — |
 | FFR-M | 0.350 | 0.593 | 0.729 | 80.6% | 0.862 | 2234.1 | 2868 | 1421 | 3.37 |
 | FFR-S | 0.350 | 0.590 | 0.729 | 80.5% | 0.858 | 390.3 | 2024 | 636 | 1.88 |
 | FFR-L | 0.348 | 0.595 | 0.731 | 80.5% | 0.861 | 9985.4 | 4154 | 2778 | 8.24 |
@@ -103,8 +103,8 @@ Full table with validation metrics, interval widths and latency: `reports/f1_202
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | previous_lap | 0.357 | 0.645 | 0.822 | 80.6% | — | — | — | — | — |
 | rolling_median_5 | 0.394 | 0.675 | 0.889 | 76.9% | — | — | — | — | — |
-| ridge | 0.368 | 0.614 | 0.781 | 78.7% | — | 128.4 | 9240 | 4859 | — |
-| **hist_gradient_boosting** | 0.315 | 0.570 | 0.679 | 83.6% | — | 279.6 | 11138 | 5667 | — |
+| ridge | 0.368 | 0.614 | 0.781 | 78.7% | — | 4.5 | 7171 | 2306 | — |
+| **hist_gradient_boosting** | 0.315 | 0.570 | 0.679 | 83.6% | — | 175.1 | 10157 | 3369 | — |
 | FFR-M | 0.351 | 0.595 | 0.740 | 80.2% | 0.856 | 7958.8 | 8953 | 4762 | 3.99 |
 | FFR-S | 0.348 | 0.592 | 0.739 | 80.7% | 0.858 | 1775.8 | 7403 | 2570 | 2.21 |
 
@@ -116,8 +116,8 @@ Full table with validation metrics, interval widths and latency: `reports/f1_202
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | previous_lap | 0.346 | 0.615 | 0.809 | 81.0% | — | — | — | — | — |
 | rolling_median_5 | 0.356 | 0.572 | 0.806 | 78.7% | — | — | — | — | — |
-| ridge | 0.345 | 0.552 | 0.735 | 80.2% | — | 23.4 | 2575 | 830 | — |
-| **hist_gradient_boosting** | 0.298 | 0.512 | 0.664 | 84.7% | — | 50.4 | 2921 | 854 | — |
+| ridge | 0.345 | 0.552 | 0.735 | 80.2% | — | 0.6 | 1935 | 376 | — |
+| **hist_gradient_boosting** | 0.298 | 0.512 | 0.664 | 84.7% | — | 38.6 | 2327 | 480 | — |
 | FFR-M | 0.347 | 0.538 | 0.694 | 80.0% | 0.838 | 2237.8 | 2761 | 1371 | 2.72 |
 | FFR-S | 0.350 | 0.540 | 0.707 | 79.6% | 0.830 | 369.6 | 1996 | 614 | 1.24 |
 
@@ -129,8 +129,8 @@ Full table with validation metrics, interval widths and latency: `reports/holdou
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | previous_lap | 0.472 | 0.858 | 1.129 | 72.7% | — | — | — | — | — |
 | rolling_median_5 | 0.501 | 0.882 | 1.168 | 69.3% | — | — | — | — | — |
-| ridge | 0.457 | 0.778 | 1.003 | 71.5% | — | 25.1 | 2575 | 867 | — |
-| **hist_gradient_boosting** | 0.432 | 0.755 | 0.972 | 74.5% | — | 51.5 | 2960 | 891 | — |
+| ridge | 0.457 | 0.778 | 1.003 | 71.5% | — | 0.5 | 1974 | 394 | — |
+| **hist_gradient_boosting** | 0.432 | 0.755 | 0.972 | 74.5% | — | 41.0 | 2401 | 499 | — |
 | FFR-M | 0.433 | 0.768 | 0.957 | 74.4% | 0.769 | 2233.3 | 2814 | 1421 | 3.39 |
 | FFR-S | 0.434 | 0.767 | 0.970 | 74.3% | 0.768 | 390.6 | 1995 | 636 | 1.91 |
 
@@ -158,10 +158,13 @@ fixture numbers are never reported as Formula 1 results.
 - Depth does not pay: FFR-S, FFR-M and FFR-L land at 0.350, 0.350 and 0.348 s for 6.5, 37 and
   166 minutes of training. The differences are inside seed noise (see the protocol notes).
 - Interval calibration works: the 80% intervals cover 85-86% of test laps.
-- Memory: FFR-S trains within 636 MB of traced allocations, below the tree's 830 MB, at equal
-  accuracy to FFR-M; FFR-M and FFR-L need more, not less. The training-memory advantage argued
-  for Forward-Forward appears only for the smallest network, and it does not come with an
-  accuracy advantage.
+- Memory, measured around the fit only for every model: the tree trains in 56 s within 467 MB of
+  traced allocations; FFR-S needs 636 MB and 6.5 minutes, FFR-M 1,421 MB and 37 minutes, FFR-L
+  2,778 MB and 166 minutes. The training-memory advantage argued for Forward-Forward does not
+  appear in this NumPy implementation at any size: the layers are trained one at a time, but each
+  layer's full-batch activations are materialised before the next layer is trained, and that
+  dominates. An earlier version of this table charged the baselines for preprocessing as well,
+  which made FFR-S look lighter than the tree; that measurement has been corrected.
 - Ablations: removing the temporal pace features costs 0.025 s MAE; removing historical priors
   or driver/team/circuit identity changes nothing measurable. Recent pace carries the signal.
 - Group-ladder variants (4/8/16/32, 8/16/32/64, 16/32/64/64) are indistinguishable.
