@@ -125,9 +125,13 @@ def test_lap_validity_version_is_recorded_in_artifacts():
     from raceshift.features.full_context import LAP_VALIDITY_VERSION
 
     assert LAP_VALIDITY_VERSION >= 3
-    demo = Path(__file__).resolve().parents[1] / "artifacts" / "raceshift_ffr_demo" / "metrics.json"
-    if demo.exists():
-        assert json.loads(demo.read_text()).get("lap_validity_version") == LAP_VALIDITY_VERSION
+    root = Path(__file__).resolve().parents[1] / "artifacts"
+    # Every committed artifact must have been produced under the rules the runtime applies.
+    committed = [root / "raceshift_ffr_demo", root / "f1_2025h2_ffr-m", root / "f1_2025h2_ffr-s", root / "f1_2025h2_legacy_ext_ffr-s"]
+    for artifact in committed:
+        metrics = artifact / "metrics.json"
+        assert metrics.exists(), f"missing committed artifact metrics: {metrics}"
+        assert json.loads(metrics.read_text()).get("lap_validity_version") == LAP_VALIDITY_VERSION, artifact.name
 
 
 def test_missing_lap_number_breaks_adjacency():
