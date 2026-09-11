@@ -59,6 +59,19 @@ def test_start_behind_the_safety_car_is_a_safety_car_period():
     assert lap_track_status(starts, starts + pd.Timedelta(seconds=170), intervals).tolist() == ["4", "4", "14", "1"]
 
 
+def test_session_abort_is_a_red_flag_that_closes_the_safety_car():
+    messages = [
+        {"date": _at(0), "category": "SessionStatus", "flag": None, "scope": None, "message": "SESSION STARTED"},
+        {"date": _at(200), "category": "SafetyCar", "flag": None, "scope": None, "message": "SAFETY CAR DEPLOYED"},
+        {"date": _at(260), "category": "SessionStatus", "flag": None, "scope": None, "message": "SESSION ABORTED"},
+        {"date": _at(2000), "category": "SessionStatus", "flag": None, "scope": None, "message": "SESSION STARTED"},
+    ]
+    intervals = sorted(track_status_intervals(messages, T0 + pd.Timedelta(seconds=5000)))
+    assert [(int((s - T0).total_seconds()), int((e - T0).total_seconds()), c) for s, e, c in intervals] == [(200, 260, "4"), (260, 2000, "5")]
+    starts = pd.Series([T0 + pd.Timedelta(seconds=s) for s in (100, 2100)])
+    assert lap_track_status(starts, starts + pd.Timedelta(seconds=180), intervals).tolist() == ["145", "1"]
+
+
 def test_deleted_lap_messages_match_time_or_lap_number():
     laps = pd.DataFrame({
         "driver_number": [1, 1, 22],

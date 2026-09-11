@@ -20,7 +20,9 @@ from lap 2 on, pit-in/pit-out laps and stint boundaries coincide):
 * ``position``: the last position update at or before the end of the lap.
 * ``weather``: the nearest sample to the start of the lap (within 10 minutes).
 * ``race_control``: rebuilt into FastF1's ``track_status`` codes for the interval a lap
-  was on track: ``1`` clear, ``2`` yellow (any sector), ``4`` safety car, ``5`` red flag,
+  was on track (safety car from DEPLOYED to the green after IN THIS LAP or a ROLLING START,
+  races started behind the safety car, VSC DEPLOYED/ENDING, red flags and session aborts
+  until the restart): ``1`` clear, ``2`` yellow (any sector), ``4`` safety car, ``5`` red flag,
   ``6`` virtual safety car, ``7`` VSC ending. Several codes concatenate as in FastF1
   (``"12"``, ``"45"``). Time-deletion messages set ``deleted``.
 * ``is_accurate`` mirrors FastF1's definition: a timed lap with all three sectors that sum
@@ -216,6 +218,30 @@ def track_status_intervals(race_control: list[dict], session_end: pd.Timestamp) 
                     red_start = None
             elif flag == "RED":
                 red_start = red_start or at
+                # A red flag ends any neutralisation in progress; the race restarts later
+                # under whatever procedure race control announces.
+                if sc_start is not None:
+                    intervals.append((sc_start, at, "4"))
+                    sc_start, sc_in_this_lap = None, False
+                if vsc_start is not None:
+                    intervals.append((vsc_start, at, "6"))
+                    vsc_start = None
+                if vsc_ending is not None:
+                    intervals.append((vsc_ending, at, "7"))
+                    vsc_ending = None
+        if category == "SessionStatus" and ("ABORTED" in message or "SUSPENDED" in message):
+            # The feed reports a stoppage as an aborted session, with or without a RED flag
+            # message; either way the race is red-flagged until it restarts.
+            red_start = red_start or at
+            if sc_start is not None:
+                intervals.append((sc_start, at, "4"))
+                sc_start, sc_in_this_lap = None, False
+            if vsc_start is not None:
+                intervals.append((vsc_start, at, "6"))
+                vsc_start = None
+            if vsc_ending is not None:
+                intervals.append((vsc_ending, at, "7"))
+                vsc_ending = None
         if category == "SessionStatus" and ("RESUMED" in message or "STARTED" in message) and red_start is not None:
             intervals.append((red_start, at, "5"))
             red_start = None
