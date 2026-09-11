@@ -134,3 +134,73 @@ fine-tuning variant improves on the untouched model with intervals that exclude 
 refitting the readout on sprint rows (with replay of race rows) does most of the work, and
 the extra local layer updates add nothing on 3,237 training laps. Against the stopwatch the
 best variant's 0.017 s edge is not distinguishable from sampling noise at 95%.
+
+## Adapting to a new season with forward-forward fine-tuning
+
+Setting: the 2026 domain-shift model (FFR-M trained on 2018-2024 races, validated on 2025)
+is fine-tuned on the first five 2026 races (3,591 training laps), rounds 6-7 recalibrate
+the interval, and rounds 8-13 are scored (5,210 laps). Every variant reuses the base
+preprocessor and contract and runs only local, layer-wise updates plus a closed-form
+readout refit (`scripts/finetune_ffr.py`). The comparison rows retrain the classical
+baselines and FFR-M from scratch on the same rows (2018-2024 plus 2026 rounds 1-5, the new
+`--train-through-round` split). Test MAE on 2026 rounds 8-13, seconds; intervals are
+event × driver cluster bootstraps of the paired |error| difference.
+
+| Model | MAE s | vs untouched model | vs retrained tree |
+| --- | --- | --- | --- |
+| previous-lap stopwatch | 0.426 | | |
+| rolling-5 median | 0.419 | | |
+| ridge, retrained with 2026 R1-5 | 0.391 | | |
+| gradient-boosted trees, retrained with 2026 R1-5 | **0.371** | | |
+| FFR-M untouched (trained to 2024), zero-shot | 0.377 | | +0.005 |
+| FFR-M retrained from scratch with 2026 R1-5 | RETRAIN_ROW | | |
+| fine-tune: readout refit only, 20k replay rows (15 s) | 0.3765 | −0.0002 (−0.0014, +0.0009) | +0.005 (−0.001, +0.011) |
+| fine-tune: 5 local epochs, lr 1e-4, 20k replay (28 s) | 0.3765 | −0.0002 (−0.0015, +0.0010) | +0.005 (−0.001, +0.011) |
+| fine-tune: 20 epochs, lr 2e-4, 60k replay in layers (22 min) | 0.3771 | +0.0004 (−0.0003, +0.0011) | +0.006 (+0.000, +0.011) |
+| fine-tune: 20 epochs, lr 2e-4, 20k replay | 0.3779 | +0.0012 (−0.0004, +0.0026) | +0.007 (+0.000, +0.012) |
+| fine-tune: 10 epochs, 20k replay (readout and layers) | 0.3787 | +0.0020 (+0.0004, +0.0036) | +0.007 |
+| fine-tune: 10 epochs, 20k replay (readout only) | 0.3794 | +0.0027 (+0.0007, +0.0047) | +0.008 |
+| fine-tune: 30 epochs, 20k replay | 0.3809 | +0.0042 (+0.0020, +0.0064) | +0.010 |
+| fine-tune: 10 epochs, no replay | 0.3945 | +0.0178 (+0.0129, +0.0228) | +0.023 |
+
+What the numbers say:
+
+- Five races of a new regulation season do not move the model. The best fine-tuning
+  variants tie the untouched model (differences of 0.0002 s with intervals straddling
+  zero); the untouched model already beats the stopwatch by 0.049 s on these rounds.
+- More local epochs at the base learning rate make things worse, and refitting the readout
+  on the new rows alone without replay costs 0.018 s: the 3.6k new laps are too few to
+  re-solve a 125-coefficient readout, and the layers drift towards the new distribution
+  and away from the old one. Replay of old rows is the difference between harmless and
+  harmful; a low learning rate (1e-4) and few epochs are equivalent to not updating the
+  layers at all.
+- The retrained gradient-boosted trees are the best model on these rounds by 0.005 s over
+  every FFR variant, an edge whose interval just excludes zero for the fine-tuned
+  variants (+0.000 to +0.011 s). This matches the season-split result: the tree is the
+  strongest model, FFR sits within a few thousandths of it, and both beat the stopwatch by
+  a wide margin.
+- Fine-tuning does help when the new rows are a different kind of session (sprints,
+  above): there the untouched model was no better than the stopwatch and a 15-second
+  readout refit recovered 0.022 s.
+
+## Commands
+
+```bash
+# providers
+python scripts/fetch_openf1.py --years 2025-2026 --sessions R --output data/raw/openf1 --combine data/imports/f1_races_openf1.parquet
+python scripts/fetch_openf1.py --years 2023-2026 --sessions S --output data/raw/openf1 --combine data/imports/f1_sprints_openf1.parquet
+python scripts/fetch_tracinginsights.py --years 2025-2026 --sessions R --rounds-from data/processed/f1_laps_fastf1.parquet --combine data/imports/f1_races_tracinginsights.parquet
+python scripts/build_ergast_kaggle.py --csv-dir data/raw/ergast_kaggle --years 1996-2026 --output data/processed/f1_laps_ergast.parquet
+python scripts/cross_provider_check.py --left data/processed/f1_laps_fastf1.parquet --right data/imports/f1_races_openf1.parquet --names fastf1 openf1
+
+# same model, two providers (mixed table = FastF1 rows to 2024 + the provider's 2025-2026 rows)
+python scripts/score_artifact.py --artifact artifacts/f1_2025h2_ffr-m --input <mixed.parquet> --season 2025 --rounds 13- --output reports/data_sources/ffr-m_openf1_2025
+
+# 2026 fine-tuning and its comparison rows
+python scripts/finetune_ffr.py --base artifacts/domain_shift_2026_ffr-m --input data/processed/f1_laps_fastf1.parquet --season 2026 --train-rounds 1-5 --val-rounds 6-7 --test-rounds 8- --epochs-per-layer 0 --replay-rows 20000 --output artifacts/ft2026_ffr-m_readout
+python scripts/train_baselines.py --input data/processed/f1_laps_fastf1.parquet --output artifacts/ft2026_baselines_retrain --train-end 2024 --val-year 2026 --test-year 2026 --split-round 7 --train-through-round 5
+python scripts/train_ffr.py --input data/processed/f1_laps_fastf1.parquet --config configs/ffr_production.json --output artifacts/ft2026_ffr-m_retrain --train-end 2024 --val-year 2026 --test-year 2026 --split-round 7 --train-through-round 5
+
+# sprints (FastF1 races + OpenF1 sprints in one table)
+python scripts/finetune_ffr.py --base artifacts/domain_shift_2026_ffr-m --input <races_plus_sprints.parquet> --sessions S --train-seasons 2023-2024 --val-seasons 2025 --test-seasons 2026 --epochs-per-layer 0 --replay-rows 20000 --output artifacts/ft_sprints_ffr-m_readout
+```

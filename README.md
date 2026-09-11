@@ -282,6 +282,31 @@ table in this README was re-run; the before/after table above is under the v2 ru
 tester used. Still open: the model does not follow a lap-on-lap trend, and value ranges are
 not validated on upload.
 
+### Three providers, one model, and fine-tuning on the next season
+
+The same laps are now available from three sources, and the model is scored on each
+(`reports/data_sources/REPORT.md`). Scored on a table whose 2025-2026 rows come from a
+different provider (history to 2024 unchanged), FFR-M's error on the 2025 test rounds is
+0.331 s on FastF1 rows, 0.327 s on OpenF1 rows and 0.325 s on TracingInsights rows, with the
+stopwatch within 0.004 s across providers; on 2026 the OpenF1 figure is 0.429 s against 0.413 s,
+almost entirely the Australian Grand Prix, where OpenF1's own lap feed is broken. The first pass
+of that check found two leaks in the OpenF1 adapter (a race started behind the safety car, and a
+stoppage reported as a session abort) that let neutralised laps through as clean; both are
+fixed and covered by tests, and `scripts/cross_provider_check.py` is the guard. The Kaggle
+Ergast dump equals the Jolpica rows the legacy tier already used (99.7%) and agrees with FastF1
+lap times on 99.4% of 2018-2026 laps, the rest being Ergast lap-alignment errors in a few races.
+
+Fine-tuning is forward-forward only (`scripts/finetune_ffr.py`: local layer updates from the
+saved weights, then a closed-form readout refit, base preprocessor and contract unchanged).
+On the first five races of 2026 it changes nothing: the best variants tie the untouched
+model (0.3765 s vs 0.3767 s on rounds 8-13, interval straddling zero) while the retrained
+gradient-boosted trees lead every FFR variant by 0.005 s; more local epochs or a readout refit
+without replay of old rows make the model worse. On sprints, a session type the race-trained
+model had never seen, the untouched model is no better than the stopwatch (0.496 s vs 0.491 s
+on the 2026 sprints) and a 15-second readout refit on 2023-2024 sprints brings it to 0.474 s,
+0.022 s better than untouched with an interval that excludes zero and 0.017 s better than the
+stopwatch, which does not.
+
 ## Architecture
 
 ```text
