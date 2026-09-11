@@ -27,8 +27,114 @@ def missing_artifact_files(directory: str | Path) -> list[str]:
     return [name for name in ARTIFACT_FILES if not (path / name).is_file()]
 
 
+def is_blank(value: object) -> bool:
+    """True for a missing identity value: null, or a string that is empty once stripped
+    (a whitespace-only event or session name is not a usable selector key)."""
+    return bool(pd.isna(value)) or str(value).strip() in {"", "nan", "None"}
+
+
+def blank_mask(values: pd.Series) -> pd.Series:
+    """Row mask of missing identity values, see :func:`is_blank`."""
+    return values.isna() | values.astype(str).str.strip().isin({"", "nan", "None"})
+
+
+def integer_season(value: object) -> int | None:
+    """The season as an int when the value is a whole number, else None (a fractional or
+    non-numeric season is not a usable selector key and is never silently truncated)."""
+    number = pd.to_numeric(pd.Series([value]), errors="coerce").iloc[0]
+    if pd.isna(number) or not float(number).is_integer():
+        return None
+    return int(number)
+
+
+def addressable_mask(frame: pd.DataFrame) -> pd.Series:
+    """Rows whose season/event/session identity the selector can address: a whole-number
+    season and non-blank event and session names."""
+    season = pd.to_numeric(frame["season"], errors="coerce")
+    whole = season.notna() & np.isfinite(season) & (season == np.floor(season))
+    return whole & ~blank_mask(frame["event"]) & ~blank_mask(frame["session"])
+
+
 def _chronological_order(frame: pd.DataFrame) -> list[str]:
     return [c for c in ["season", "round_number", "event_date", "event", "session", "lap_number"] if c in frame.columns]
+
+
+# Session codes as FastF1 writes them, plus the spelled-out forms a hand-made file may use.
+SESSION_ALIASES = {
+    "PRACTICE 1": "FP1", "PRACTICE 2": "FP2", "PRACTICE 3": "FP3", "QUALIFYING": "Q",
+    "SPRINT QUALIFYING": "SQ", "SPRINT SHOOTOUT": "SS", "SPRINT": "S", "RACE": "R",
+}
+SPRINT_CODES = {"S", "SQ", "SS"}
+# Running order of a weekend's sessions. Lexical order would put a Sprint ("S") after the
+# Race ("R") and make it the "latest" session of a file; the race is the last session run.
+# Sprint weekends have had three formats: 2021-2022 ran qualifying on Friday before FP2
+# and the sprint (FP1, Q, FP2, S, R); 2023 replaced FP2 with the sprint shootout
+# (FP1, Q, SS, S, R); from 2024 sprint qualifying and the sprint precede qualifying
+# (FP1, SQ, S, Q, R). A conventional weekend is FP1, FP2, FP3, Q, R. Codes not in the
+# table sort just before the race so the race stays the latest session when present.
+_CONVENTIONAL = {"FP1": 0, "FP2": 1, "FP3": 2, "Q": 3, "R": 6}
+_SPRINT_2021 = {"FP1": 0, "Q": 1, "FP2": 2, "S": 4, "R": 6}
+_SPRINT_2023 = {"FP1": 0, "Q": 1, "SS": 2, "S": 4, "R": 6}
+_SPRINT_2024 = {"FP1": 0, "SQ": 1, "S": 2, "Q": 3, "R": 6}
+_UNKNOWN_RANK = 5
+_MISSING_SEASON = "(missing season)"
+# Kept for callers that only need the modern order (sprint weekends since 2024).
+SESSION_ORDER = dict(_SPRINT_2024, FP2=1, FP3=2, SS=1)
+
+
+def session_code(value: object) -> str:
+    """Normalised session code: 'Sprint' and 'sprint ' become 'S', 'r' becomes 'R'."""
+    code = str(value).strip().upper()
+    return SESSION_ALIASES.get(code, code)
+
+
+def _weekend_order(season: float, sprint_weekend: bool) -> dict[str, int]:
+    if not sprint_weekend:
+        return _CONVENTIONAL
+    if pd.isna(season) or season >= 2024:
+        return _SPRINT_2024
+    if season >= 2023:
+        return _SPRINT_2023
+    return _SPRINT_2021
+
+
+def session_rank(frame: pd.DataFrame) -> pd.Series:
+    """Position of each row's session within its weekend (see the tables above). The weekend
+    format is inferred per season/event: an event with any sprint session uses the sprint
+    order of its season, every other event the conventional order."""
+    codes = frame["session"].map(session_code)
+    season = pd.to_numeric(frame["season"], errors="coerce") if "season" in frame.columns else pd.Series(np.nan, index=frame.index)
+    # A missing season is keyed by a sentinel no numeric value can equal, so a file that
+    # really contains season -1 (or any other number) is never mistaken for "unknown".
+    season_key = season.astype(object).where(season.notna(), _MISSING_SEASON)
+    group_keys = [season_key] + ([frame["event"].astype(str)] if "event" in frame.columns else [])
+    sprint_weekend = codes.isin(SPRINT_CODES).groupby(group_keys).transform("any")
+    # One rank per distinct (code, season, weekend format), then a single vectorised lookup,
+    # so a multi-season import costs one pass however many combinations it holds.
+    combos = pd.DataFrame({"code": codes, "season": season_key, "sprint": sprint_weekend}).drop_duplicates()
+    combos["rank"] = [
+        float(_weekend_order(np.nan if s == _MISSING_SEASON else float(s), bool(sp)).get(c, _UNKNOWN_RANK))
+        for c, s, sp in zip(combos["code"], combos["season"], combos["sprint"])
+    ]
+    lookup = combos.set_index(["code", "season", "sprint"])["rank"]
+    index = pd.MultiIndex.from_arrays([codes, season_key, sprint_weekend])
+    return pd.Series(lookup.reindex(index).to_numpy(), index=frame.index, dtype=float)
+
+
+def sort_chronologically(frame: pd.DataFrame) -> pd.DataFrame:
+    """Rows in the order the laps were driven: season, round or date, event, session (by the
+    weekend's running order, not alphabetically), lap number."""
+    keys = _chronological_order(frame)
+    if "session" not in keys:
+        return frame.sort_values(keys, kind="stable")
+    # The rank lives in a scratch column whose name cannot collide with user data; it is
+    # dropped again so the caller gets its own columns back untouched.
+    scratch = "_raceshift_session_rank"
+    while scratch in frame.columns:
+        scratch += "_"
+    ranked = frame.assign(**{scratch: session_rank(frame)})
+    keys = [scratch if k == "session" else k for k in keys]
+    return ranked.sort_values(keys, kind="stable").drop(columns=scratch)
 
 
 def inference_table_for(raw: pd.DataFrame, history: int = 5) -> pd.DataFrame:
@@ -49,9 +155,30 @@ class RaceShiftArtifact:
         if missing:
             raise FileNotFoundError(f"Artifact {self.directory.name} is incomplete, missing: {missing}")
         self.model = ForwardForwardRegressor.load(self.directory)
-        self.preprocessor = joblib.load(self.directory / "preprocessor.joblib")
         self.contract = json.loads((self.directory / "feature_contract.json").read_text())
         self.metrics = json.loads((self.directory / "metrics.json").read_text())
+        self.preprocessor = self._load_preprocessor()
+
+    def _load_preprocessor(self):
+        """Prefer the pickle-free JSON preprocessor spec written by the exporter (exact NumPy
+        re-implementation, verified against sklearn at export time); fall back to the joblib
+        pickle, silencing sklearn's version-mismatch warning, which is harmless for a fitted
+        OneHotEncoder/StandardScaler and would otherwise print a dozen lines per load."""
+        specs = sorted((self.directory / "export").glob("*_preprocessor.json")) if (self.directory / "export").is_dir() else []
+        if specs:
+            from raceshift.models.export import JsonPreprocessor
+
+            return JsonPreprocessor(json.loads(specs[0].read_text()))
+        import warnings
+
+        with warnings.catch_warnings():
+            try:
+                from sklearn.exceptions import InconsistentVersionWarning
+
+                warnings.simplefilter("ignore", InconsistentVersionWarning)
+            except ImportError:  # pragma: no cover
+                pass
+            return joblib.load(self.directory / "preprocessor.joblib")
 
     @property
     def is_synthetic(self) -> bool:
@@ -63,14 +190,68 @@ class RaceShiftArtifact:
 
     @staticmethod
     def latest_session(raw: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, object]]:
-        """Return the rows of the chronologically latest season/event/session and its key."""
-        ordered = raw.sort_values(_chronological_order(raw), kind="stable")
+        """Return the rows of the chronologically latest season/event/session and its key.
+        Rows with a blank or fractional identity (listed as placeholders by ``list_sessions``)
+        are never the default: the API serialises the key as an integer season and the
+        selector could not address such a session anyway."""
+        usable = raw[addressable_mask(raw)]
+        if usable.empty:
+            raise ValueError("No session with a whole-number season and non-blank event and session names in this file")
+        ordered = sort_chronologically(usable)
         last = ordered.iloc[-1]
         key = {"season": last["season"], "event": last["event"], "session": last["session"]}
         mask = (
             (raw["season"] == key["season"]) & (raw["event"] == key["event"]) & (raw["session"] == key["session"])
         )
         return raw[mask], key
+
+    @staticmethod
+    def select_session(
+        raw: pd.DataFrame, season: int | None = None, event: str | None = None, session: str | None = None
+    ) -> tuple[pd.DataFrame, dict[str, object]]:
+        """Rows of one session in the file: the chronologically latest one by default, or the
+        one named by ``event`` (plus ``season``/``session`` when the file has several)."""
+        if event is None and season is None and session is None:
+            return RaceShiftArtifact.latest_session(raw)
+        mask = pd.Series(True, index=raw.index)
+        if event is not None:
+            mask &= raw["event"].astype(str) == str(event)
+        if season is not None:
+            mask &= pd.to_numeric(raw["season"], errors="coerce") == int(season)
+        if session is not None:
+            mask &= raw["session"].astype(str) == str(session)
+        scope = raw[mask]
+        if scope.empty:
+            wanted = " ".join(str(v) for v in (season, event, session) if v is not None)
+            raise ValueError(f"No laps for session {wanted!r} in this file")
+        return RaceShiftArtifact.latest_session(scope)
+
+    @staticmethod
+    def list_sessions(raw: pd.DataFrame) -> list[dict[str, object]]:
+        """Every season/event/session in the file in chronological order with lap and driver counts."""
+        cols = ["season", "event", "session"]
+        ordered = sort_chronologically(raw)
+        out = []
+        # Rows with a null season/event/session cannot be addressed by the selector; they are
+        # listed under an explicit placeholder so nothing disappears silently (the summary also
+        # reports them as a data warning).
+        for (season, event, session), group in ordered.groupby(cols, sort=False, dropna=False):
+            season_number = integer_season(season)
+            selectable = season_number is not None and not is_blank(event) and not is_blank(session)
+            out.append({
+                "season": season_number,
+                "event": str(event) if not is_blank(event) else "(missing event)",
+                "session": str(session) if not is_blank(session) else "(missing session)",
+                # False for the placeholder rows: the selector cannot address them, so the UI
+                # lists them disabled instead of sending the placeholder back as a filter.
+                "selectable": bool(selectable),
+                "laps": int(len(group)),
+                "drivers": int(group["driver"].astype(str).nunique()),
+                "driver_codes": sorted(group["driver"].astype(str).unique().tolist()),
+                "date": str(group["event_date"].iloc[0])[:10] if "event_date" in group and pd.notna(group["event_date"].iloc[0]) else None,
+            })
+        return out
+
 
     @staticmethod
     def _pick_driver(scope: pd.DataFrame, driver: str | None) -> tuple[str, list[str]]:
@@ -97,7 +278,15 @@ class RaceShiftArtifact:
         usable next lap exists. The API caches this per file so repeated calls are cheap."""
         return inference_table_for(raw, history=self.history_laps)
 
-    def forecast_last_available(self, raw: pd.DataFrame, driver: str | None = None, table: pd.DataFrame | None = None) -> dict:
+    def forecast_last_available(
+        self,
+        raw: pd.DataFrame,
+        driver: str | None = None,
+        table: pd.DataFrame | None = None,
+        season: int | None = None,
+        event: str | None = None,
+        session: str | None = None,
+    ) -> dict:
         """Forecast the next lap for the latest completed lap in the supplied history.
 
         Scope is the chronologically latest session in the file. When `driver` is not given,
@@ -112,7 +301,7 @@ class RaceShiftArtifact:
         if data.empty:
             raise ValueError("No rows with a lap time available for forecast")
 
-        scope, key = self.latest_session(data)
+        scope, key = self.select_session(data, season=season, event=event, session=session)
         scope = scope.copy()
         scope["driver"] = scope["driver"].astype(str)
         driver, available_drivers = self._pick_driver(scope, driver)
@@ -146,6 +335,10 @@ class RaceShiftArtifact:
             raise ValueError("Model produced a non-finite forecast for this row")
 
         completed = int(len(history))
+        # The forecast is for the lap after the last recorded one. When that lap is the last
+        # lap anybody completed in the session, the race is over and the forecast is hypothetical.
+        session_last_lap = int(pd.to_numeric(scope["lap_number"], errors="coerce").max())
+        race_finished = int(latest["lap_number"]) >= session_last_lap
 
         def _num(col: str):
             if col not in row.columns:
@@ -203,6 +396,8 @@ class RaceShiftArtifact:
             "completed_laps_in_session": completed,
             "history_laps_used": history_laps,
             "short_history": completed < history_laps,
+            "race_finished": bool(race_finished),
+            "session_last_lap": session_last_lap,
             "predicted_next_lap_s": predicted,
             "lower_80_s": baseline + float(pred["lower_80"][0]),
             "upper_80_s": baseline + float(pred["upper_80"][0]),
@@ -214,7 +409,16 @@ class RaceShiftArtifact:
             "is_synthetic": self.is_synthetic,
         }
 
-    def backtest_session(self, raw: pd.DataFrame, driver: str | None = None, laps: int = 10, table: pd.DataFrame | None = None) -> dict:
+    def backtest_session(
+        self,
+        raw: pd.DataFrame,
+        driver: str | None = None,
+        laps: int = 10,
+        table: pd.DataFrame | None = None,
+        season: int | None = None,
+        event: str | None = None,
+        session: str | None = None,
+    ) -> dict:
         """Score the model on the last ``laps`` completed lap pairs of one driver in the latest session.
 
         Every row is a lap N whose next lap N+1 was actually driven, so predicted and actual
@@ -233,7 +437,7 @@ class RaceShiftArtifact:
         if data.empty:
             raise ValueError("No rows with a lap time available for a backtest")
 
-        scope, key = self.latest_session(data)
+        scope, key = self.select_session(data, season=season, event=event, session=session)
         scope = scope.copy()
         scope["driver"] = scope["driver"].astype(str)
         driver, available_drivers = self._pick_driver(scope, driver)

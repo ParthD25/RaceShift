@@ -28,7 +28,7 @@ function ContextBox({ label, value, wide = false }: { label: string; value: stri
 }
 
 export function AppShell() {
-  const { result } = useForecast();
+  const { active } = useForecast();
   const health = useApi(() => api.health());
   const runtime = useApi(() => api.runtime());
   const online = Boolean(health.data) && !health.error;
@@ -67,14 +67,14 @@ export function AppShell() {
       <div className="main-column">
         <header className="topbar">
           <div className="context-row">
-            <ContextBox label="Event" value={result ? `${result.event} · ${result.season}` : 'No forecast yet'} />
-            <ContextBox label="Session" value={result ? result.session : '—'} />
-            <ContextBox label="Driver" value={result ? result.driver : '—'} wide />
+            <ContextBox label="Event" value={active ? `${active.event} · ${active.season}` : 'No forecast yet'} />
+            <ContextBox label="Session" value={active ? active.session : '—'} />
+            <ContextBox label="Driver" value={active ? active.driver : '—'} wide />
             <div className="model-status">
               <span className={online ? 'status-dot' : 'off-dot'} />
-              <span><small>Model</small><strong>{result ? result.artifact : runtime.data?.default_artifact.id ?? '—'}</strong></span>
-              {result
-                ? <SourceBadge kind={sourceKindFor(result.is_synthetic || Boolean(result.data_is_synthetic))} text={result.data_is_synthetic ? (result.is_synthetic ? 'Synthetic' : 'Real model · synthetic laps') : (result.is_synthetic ? 'Synthetic model · real laps' : 'Real')} />
+              <span><small>Model</small><strong>{active ? active.artifact : runtime.data?.default_artifact.id ?? '—'}</strong></span>
+              {active
+                ? <SourceBadge kind={sourceKindFor(active.is_synthetic || Boolean(active.data_is_synthetic))} text={active.data_is_synthetic ? (active.is_synthetic ? 'Synthetic' : 'Real model · synthetic laps') : (active.is_synthetic ? 'Synthetic model · real laps' : 'Real')} />
                 : runtime.data
                   ? <SourceBadge kind={sourceKindFor(runtime.data.default_artifact.is_synthetic)} text={runtime.data.default_artifact.is_synthetic ? 'Synthetic demo' : 'Real data'} />
                   : null}

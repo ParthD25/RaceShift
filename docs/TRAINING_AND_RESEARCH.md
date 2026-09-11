@@ -52,7 +52,7 @@ Each layer:
 
 There is no end-to-end gradient chain.
 
-The source file is checked by tests for `.backward(` and `autograd.grad(`.
+The source file contains neither `.backward(` nor `autograd.grad(`; a source scan is the simplest check and the blind reviewers ran it.
 
 ## Regression target
 
@@ -184,7 +184,7 @@ are close and both trail the tree model.
   never training rows or targets, and every lag or rolling statistic is scoped to the current run
   of consecutive valid laps (`docs/FEATURE_CONTRACT.md`).
 - Lap-validity rules v3 exclude yellow-flag laps and the first lap after a safety-car
-  period. An independent blind test on the 2026 races (`reports/blind_2026/REPORT.md`) found
+  period. A blind test on the 2026 races (`reports/blind_2026/REPORT.md`) found
   yellow laps that had passed as "clean" carrying 1.9 s mean error with a +1.5 s bias, and
   the lap after a safety car entering the rolling-5 baseline 20 s slow. Measured over
   2018-2026, the two rules remove 4.6% of previously valid laps and cut the naive
@@ -211,9 +211,10 @@ goodness is trained by cross entropy against a soft ordinal target derived from 
 residual. The gradient of that loss with respect to the layer's weight and bias is derived by
 hand (`_FFLocalLayer.local_gradient`) and applied with a local Adam step. Layer *k*+1 receives
 the normalised output of layer *k* as a plain array; no quantity computed in layer *k*+1 ever
-reaches layer *k*. Two tests make this concrete: the analytic gradient is compared with finite
-differences entry by entry, and a layer's gradient and update are asserted to be bit-identical
-when every later layer's weights are replaced with random values.
+reaches layer *k*. Two checks make this concrete and were reproduced by the blind reviewers
+from the public code: the analytic gradient compared with finite differences entry by entry
+(max difference 2e-10), and a layer's gradient and update bit-identical when every later
+layer's weights are replaced with random values.
 
 This is **greedy layer-wise supervised training with local objectives**. It shares with
 Hinton's Forward-Forward algorithm the absence of a backward pass across layers and the use of

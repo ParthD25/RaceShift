@@ -28,7 +28,7 @@ from raceshift import __version__
 from raceshift.data.provenance import infer_data_source, is_synthetic_source
 from raceshift.data.schema import REQUIRED_FORECAST_COLUMNS
 from raceshift.features.full_context import LAP_VALIDITY_VERSION
-from raceshift.models.artifact import ARTIFACT_FILES, RaceShiftArtifact, inference_table_for, missing_artifact_files
+from raceshift.models.artifact import ARTIFACT_FILES, RaceShiftArtifact, blank_mask, inference_table_for, integer_season, missing_artifact_files
 
 ROOT = Path(__file__).resolve().parents[2]
 ARTIFACTS = ROOT / "artifacts"
@@ -46,7 +46,18 @@ ALLOWED_SUFFIXES = {".csv", ".parquet"}
 MAX_IMPORT_BYTES = 200 * 1024 * 1024
 MAX_IMPORT_ROWS = 2_000_000
 MAX_IMPORT_COLUMNS = 250
-UI_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173"]
+def _web_port() -> int:
+    """WEB_PORT from the environment, falling back to Vite's default when unset or invalid."""
+    raw = os.environ.get("WEB_PORT", "5173") or "5173"
+    try:
+        port = int(raw)
+    except ValueError:
+        return 5173
+    return port if 1 <= port <= 65535 else 5173
+
+
+_WEB_PORTS = sorted({5173, _web_port()})
+UI_ORIGINS = [f"http://{host}:{port}" for port in _WEB_PORTS for host in ("localhost", "127.0.0.1")]
 _SAFE_NAME = re.compile(r"[^A-Za-z0-9._-]+")
 
 app = FastAPI(title="RaceShift Local API", version=__version__)
@@ -54,7 +65,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=UI_ORIGINS,
     allow_credentials=False,
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["*"],
 )
 
@@ -203,6 +214,11 @@ def _default_artifact_ready() -> bool:
     return not missing_artifact_files(ARTIFACTS / DEMO_ARTIFACT_ID)
 
 
+# Files that ship with the repository; deleting them from the UI would break the documented
+# first run, so the API refuses (they can still be removed with git or the shell).
+SHIPPED_IMPORTS = {"f1_2025_season.parquet", "f1_2026_races.parquet", "synthetic_fixture.csv"}
+
+
 def _import_files() -> list[dict[str, Any]]:
     if not IMPORTS.is_dir():
         return []
@@ -239,25 +255,99 @@ def _table_summary(frame: pd.DataFrame, name: str) -> dict[str, Any]:
         "data_source": infer_data_source(frame),
     }
     if not missing:
-        latest_scope, key = RaceShiftArtifact.latest_session(frame)
         summary.update({
-            "seasons": sorted(int(s) for s in pd.to_numeric(frame["season"], errors="coerce").dropna().unique()),
+            "seasons": sorted({integer_season(s) for s in frame["season"].unique()} - {None}),
             "events": sorted(frame["event"].astype(str).unique().tolist()),
             "drivers": sorted(frame["driver"].astype(str).unique().tolist()),
-            "latest_session": {"season": int(key["season"]), "event": str(key["event"]), "session": str(key["session"])},
-            "latest_session_drivers": sorted(latest_scope["driver"].astype(str).unique().tolist()),
+            "sessions": RaceShiftArtifact.list_sessions(frame),
         })
+        try:
+            latest_scope, key = RaceShiftArtifact.latest_session(frame)
+        except ValueError:
+            # Every row has a blank or fractional identity: nothing the selector can address.
+            summary.update({"latest_session": None, "latest_session_drivers": []})
+        else:
+            summary.update({
+                "latest_session": {"season": int(key["season"]), "event": str(key["event"]), "session": str(key["session"])},
+                "latest_session_drivers": sorted(latest_scope["driver"].astype(str).unique().tolist()),
+            })
+    summary["has_chronology"] = bool({"event_date", "round_number"} & set(frame.columns))
+    summary["data_warnings"] = _value_warnings(frame)
+    if not summary["has_chronology"]:
+        summary["data_warnings"].insert(
+            0,
+            "No 'event_date' or 'round_number' column: the forecaster needs one of them to order events "
+            "(historical priors must come from strictly earlier events), so forecasts on this file will be refused.",
+        )
     return summary
 
 
-def _forecast(file: str, driver: str | None, artifact_id: str | None) -> dict[str, Any]:
+# Plausible ranges for a Formula 1 lap table. Values outside are not rejected (a user's own
+# series may differ) but they are reported, because the model was never shown such values and
+# silently imputing or scaling them would produce a confident number from garbage.
+_VALUE_RANGES = {
+    "lap_time_s": (30.0, 600.0, "s"),
+    "tyre_life": (0.0, 100.0, "laps"),
+    "position": (1.0, 40.0, ""),
+    "track_temp_c": (-20.0, 80.0, "°C"),
+    "air_temp_c": (-20.0, 60.0, "°C"),
+    "humidity_pct": (0.0, 100.0, "%"),
+    "wind_speed_ms": (0.0, 40.0, "m/s"),
+    "lap_number": (1.0, 200.0, ""),
+}
+
+
+def _value_warnings(frame: pd.DataFrame) -> list[str]:
+    warnings_out: list[str] = []
+    for column, (low, high, unit) in _VALUE_RANGES.items():
+        if column not in frame.columns:
+            continue
+        values = pd.to_numeric(frame[column], errors="coerce")
+        bad = values.notna() & ((values < low) | (values > high))
+        if bad.any():
+            worst = values[bad]
+            example = worst.iloc[worst.sub((low + high) / 2).abs().argmax()]
+            warnings_out.append(
+                f"{int(bad.sum())} rows have {column} outside {low:g}-{high:g} {unit}".rstrip()
+                + f" (for example {example:g}); the model was never trained on such values."
+            )
+    if "driver" in frame.columns:
+        drivers = frame["driver"]
+        if drivers.isna().any() or drivers.astype(str).str.strip().isin({"", "nan", "None"}).any():
+            warnings_out.append("Some rows have an empty driver code; they will appear as a driver named 'nan'.")
+    for column in ("season", "event", "session"):
+        # Null or blank (whitespace-only) identity values: neither can be a selector key.
+        if column in frame.columns and blank_mask(frame[column]).any():
+            warnings_out.append(
+                f"{int(blank_mask(frame[column]).sum())} rows have an empty {column}; they are listed under a placeholder "
+                "session and cannot be forecast."
+            )
+    key_cols = [c for c in ("season", "event", "session", "driver", "lap_number") if c in frame.columns]
+    if len(key_cols) == 5 and frame.duplicated(key_cols).any():
+        warnings_out.append(
+            f"{int(frame.duplicated(key_cols).sum())} rows duplicate another row's season/event/session/driver/lap_number; "
+            "duplicates break lap adjacency and collapse every segment to one lap."
+        )
+    return warnings_out
+
+
+def _forecast(
+    file: str,
+    driver: str | None,
+    artifact_id: str | None,
+    season: int | None = None,
+    event: str | None = None,
+    session: str | None = None,
+) -> dict[str, Any]:
     artifact_dir = _safe_artifact_path(artifact_id or default_artifact_id())
     path = _safe_import_path(file)
     try:
         frame = _load_table(path)
         _check_frame_types(frame)
         artifact = _load_artifact(str(artifact_dir))
-        result = artifact.forecast_last_available(frame, driver=driver, table=_inference_table(artifact_dir, path))
+        result = artifact.forecast_last_available(
+            frame, driver=driver, table=_inference_table(artifact_dir, path), season=season, event=event, session=session
+        )
     except HTTPException:
         raise
     except ValueError as exc:
@@ -291,6 +381,9 @@ class ForecastRequest(BaseModel):
     file: str = Field(default="synthetic_fixture.csv", description="Filename inside data/imports")
     driver: str | None = Field(default=None, description="Driver code. Defaults to the driver with most completed laps.")
     artifact: str | None = Field(default=None, description="Artifact directory name inside artifacts/")
+    season: int | None = Field(default=None, description="Season of the session to use; defaults to the latest session in the file")
+    event: str | None = Field(default=None, description="Event name of the session to use (see /api/imports/{file}/summary sessions)")
+    session: str | None = Field(default=None, description="Session code (R, S, Q, ...) when the file holds several for one event")
 
 
 # --------------------------------------------------------------------------- routes
@@ -366,7 +459,13 @@ def models() -> dict[str, Any]:
 def datasets() -> dict[str, Any]:
     manifest = _read_json(ROOT / "dataset_manifest.json") or {"sources": []}
     processed = sorted(_relative(p) for p in PROCESSED.glob("*") if p.is_file() and not p.name.startswith(".")) if PROCESSED.is_dir() else []
-    return {"sources": manifest.get("sources", []), "imports": _import_files(), "processed_files": processed, "import_dir": _relative(IMPORTS)}
+    return {
+        "sources": manifest.get("sources", []),
+        "imports": _import_files(),
+        "processed_files": processed,
+        "import_dir": _relative(IMPORTS),
+        "shipped_imports": sorted(SHIPPED_IMPORTS),
+    }
 
 
 @app.get("/api/imports/{filename}/summary")
@@ -413,11 +512,28 @@ async def import_file(file: UploadFile = File(...), overwrite: bool = Query(Fals
         raise HTTPException(400, f"Upload is not a readable {target.suffix} table: {type(exc).__name__}") from exc
     finally:
         await file.close()
+    missing = [c for c in REQUIRED_FORECAST_COLUMNS if c not in frame.columns]
+    if missing:
+        tmp.unlink(missing_ok=True)
+        raise HTTPException(
+            400,
+            f"Upload rejected: missing required columns {missing}. Required: {list(REQUIRED_FORECAST_COLUMNS)}; "
+            "see docs/FEATURE_CONTRACT.md.",
+        )
     shutil.move(str(tmp), str(target))
     summary = _table_summary(frame, target.name)
     summary["bytes"] = written
     summary["stored_as"] = _relative(target)
     return summary
+
+
+@app.delete("/api/imports/{filename}")
+def delete_import(filename: str) -> dict[str, Any]:
+    path = _safe_import_path(filename)
+    if path.name in SHIPPED_IMPORTS:
+        raise HTTPException(403, f"{path.name} ships with the repository and cannot be deleted from the UI")
+    path.unlink()
+    return {"deleted": path.name, "imports": _import_files()}
 
 
 EXPORTS = ROOT / "exports"
@@ -452,7 +568,7 @@ def export_model(artifact_id: str) -> FileResponse:
 
 @app.post("/api/forecast/latest")
 def forecast_latest(request: ForecastRequest) -> dict[str, Any]:
-    return _forecast(request.file, request.driver, request.artifact)
+    return _forecast(request.file, request.driver, request.artifact, request.season, request.event, request.session)
 
 
 @app.get("/api/forecast")
@@ -460,9 +576,12 @@ def forecast(
     file: str = Query("synthetic_fixture.csv", description="Filename inside data/imports"),
     driver: str | None = Query(None),
     artifact: str | None = Query(None),
+    season: int | None = Query(None),
+    event: str | None = Query(None),
+    session: str | None = Query(None),
 ) -> dict[str, Any]:
     """Query-string alias of POST /api/forecast/latest kept for curl convenience."""
-    return _forecast(file, driver, artifact)
+    return _forecast(file, driver, artifact, season, event, session)
 
 
 class BacktestRequest(ForecastRequest):
@@ -482,7 +601,10 @@ def forecast_backtest(request: BacktestRequest) -> dict[str, Any]:
         frame = _load_table(path)
         artifact = _load_artifact(str(artifact_dir))
         _check_frame_types(frame)
-        result = artifact.backtest_session(frame, driver=request.driver, laps=request.laps, table=_inference_table(artifact_dir, path))
+        result = artifact.backtest_session(
+            frame, driver=request.driver, laps=request.laps, table=_inference_table(artifact_dir, path),
+            season=request.season, event=request.event, session=request.session,
+        )
     except HTTPException:
         raise
     except ValueError as exc:
@@ -490,24 +612,10 @@ def forecast_backtest(request: BacktestRequest) -> dict[str, Any]:
     except Exception as exc:  # pragma: no cover - defensive
         raise HTTPException(500, f"Local backtest failed: {type(exc).__name__}") from exc
     result["file"] = path.name
-    result["lap_validity"] = _lap_validity(artifact_dir)
     result["session_warning"] = _session_warning(result.get("session"))
     result["lap_validity"] = _lap_validity(artifact_dir)
     result.update(_data_provenance(frame))
     return result
-
-
-def _session_warning(session: object) -> str | None:
-    """The models are trained on race laps only. Qualifying and practice laps (push laps,
-    cool-down laps, fuel runs) follow a different process, so a forecast there is not
-    evidence of anything; say so rather than returning a bare number."""
-    code = str(session or "").strip().upper()
-    if code in {"R", "RACE", "S", "SPRINT"}:
-        return None
-    return (
-        f"This is a {code or 'non-race'} session. The model was trained on race laps only; "
-        "qualifying and practice laps alternate push and cool-down laps, so this forecast is not meaningful."
-    )
 
 
 # --------------------------------------------------------------------------- reports

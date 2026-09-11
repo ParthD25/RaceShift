@@ -74,9 +74,10 @@ npm run demo:data && npm run demo:model                # regenerate the syntheti
 
 A step-by-step walkthrough with expected output is in `docs/LOCAL_SETUP.md`. There is no
 live-timing connection; RaceShift reads local files only. If a port is taken, the API prints
-two ports that are free at that moment and the exact command to use them. `npm install`
-reports two moderate advisories in react-router's server-side rendering paths, which this
-client-only app does not use; the dependency audit in CI fails only on high severity.
+two ports that are free at that moment and the exact command to use them. The dependency
+audit in CI fails on high-severity advisories. This public repository ships without the
+development test suite (the checks it ran are described where they matter below); CI runs
+the synthetic pipeline smoke, the web build and the dependency audit.
 
 **How to read the numbers.** This is regression, not classification, so there is no
 "accuracy" percentage. MAE is the average distance in seconds between the predicted and the
@@ -108,6 +109,7 @@ three widths (256→128, 512→384→256→192 and 1024→768→512→384 hidden
 | FFR-L | 0.327 | 0.505 | 0.691 | 82.4% | 0.862 | 11276.4 | 3928 | 2591 | 8.18 |
 | FFR-M-groups-coarse | 0.332 | 0.510 | 0.704 | 81.5% | 0.852 | 2415.2 | 2670 | 1321 | 3.27 |
 | FFR-M-groups-fine | 0.332 | 0.505 | 0.692 | 81.7% | 0.860 | 2603.6 | 2670 | 1332 | 3.31 |
+| FFR-M-random-layers | 0.353 | 0.550 | 0.768 | 79.5% | 0.865 | 13.6 | 2685 | 1318 | 3.29 |
 | FFR-M minus historical_numeric | 0.330 | 0.504 | 0.698 | 81.9% | 0.869 | 2540.1 | 2665 | 1325 | 3.27 |
 | FFR-M minus temporal_numeric | 0.351 | 0.534 | 0.747 | 79.7% | 0.855 | 2331.8 | 2660 | 1324 | 3.16 |
 | FFR-M minus static_categorical | 0.329 | 0.504 | 0.699 | 82.1% | 0.851 | 2685.5 | 2574 | 1324 | 2.89 |
@@ -164,6 +166,16 @@ fixture numbers are never reported as Formula 1 results.
   thousandths of a second between FFR variants (depth, group ladders, ablations that "change
   nothing") are noise, not effects. Only the temporal-features ablation (+0.020 s) clears
   that bar.
+- Seed spread is model variance; sampling variance is a separate question, answered by
+  `scripts/paired_bootstrap.py` (paired |error| differences on the same lap pairs, resampled
+  by row and by event × driver cluster). FFR-M minus previous-lap on the 2025 test rounds is
+  −0.005 s with a cluster-bootstrap 95% interval of (−0.011, +0.001) s: not distinguishable
+  from zero. FFR-S's −0.008 s (−0.014, −0.003) is. Against the rolling median (−0.035 s) and
+  ridge (−0.026 s) the FFR advantage is clear, and against the tree its deficit (+0.029 s) is
+  clear. On the unseen 2026 races FFR-M's −0.040 s edge over previous-lap (−0.047, −0.033) is
+  real, and its gap to the tree (+0.004 s, interval −0.001 to +0.010) is not.
+- Runs execute one at a time on the same 4-vCPU / 16 GB machine (`scripts/run_experiments.py`
+  is sequential), so wall-time and memory columns are not inflated by concurrent training.
 
 **What the numbers say so far** (2018-2024 training, 119k clean laps; test = 2025 rounds 13-24; lap-validity rules v3):
 
@@ -184,6 +196,10 @@ fixture numbers are never reported as Formula 1 results.
   which made FFR-S look lighter than the tree; that measurement has been corrected.
 - Ablations: removing the temporal pace features costs 0.020 s MAE; removing historical priors
   or driver/team/circuit identity changes nothing measurable. Recent pace carries the signal.
+- Do the trained layers add anything over a random feature expansion? The
+  `FFR-M-random-layers` row keeps the architecture and the ridge readout but never trains the
+  layers: 0.353 s, against 0.331 s with local training and 0.357 s for ridge on the raw
+  features. The layer training is worth 0.022 s, about the same as the temporal features.
 - Group-ladder variants (4/8/16/32, 8/16/32/64, 16/32/64/64) are indistinguishable.
 - **Memorisation check.** Every model's error on its own training laps (FFR about 0.42 s, tree
   0.38 s) is higher than on validation (0.36-0.40 s) and test (0.30-0.33 s) because the training
@@ -202,9 +218,13 @@ fixture numbers are never reported as Formula 1 results.
   model degrades by 0.08-0.11 s MAE: trees 0.409 s, FFR-S 0.412 s, FFR-M 0.413 s, ridge 0.426 s,
   previous lap 0.453 s. FFR degrades less than the tree and its 0.04 s margin over the stopwatch
   is the widest it shows anywhere, but its 80% intervals, calibrated on 2025, cover only 77% of
-  2026 laps: the shift is visible in calibration before it is visible in MAE.
-- **Independent blind test on the 2026 races through the shipped product (see below).** A
-  tester who was given only the repository link fetched the 13 races run so far in 2026 with
+  2026 laps: the shift is visible in calibration before it is visible in MAE. (The models in
+  this table have the same training years as the shipped FFR-M but their interval width is
+  calibrated on all of 2025, the validation set of this split; the shipped FFR-M's width comes
+  from 2025 rounds 1-12 and covers 80% of the 2026 laps.)
+- **Blind test on the 2026 races through the shipped product (see below).** An automated
+  tester commissioned by the author, given only the repository link and no access to the
+  development history, fetched the 13 races run so far in 2026 with
   the repo's own loader and scored the committed FFR-M through the API's inference path (under
   the version 2 rules in force at the time): 0.435 s MAE, RMSE 0.78 s, 80% interval coverage
   80%, previous lap 0.472 s. That matched the experiment-script numbers only after a bug the
@@ -221,9 +241,10 @@ fixture numbers are never reported as Formula 1 results.
 
 ### Blind test on unseen 2026 races
 
-Published numbers are only as good as the product that serves them, so an independent tester
-was given nothing but the repository link and asked to feed the product data it had never
-seen and check its outcomes against reality. The tester fetched every 2026 race run so far
+Published numbers are only as good as the product that serves them, so a blind tester (an
+automated agent commissioned by the author, with nothing but the repository link and no access
+to the development history) was asked to feed the product data it had never seen and check its
+outcomes against reality. Its scripts are committed next to the report. The tester fetched every 2026 race run so far
 (13 rounds, Australia to Monza, 15,149 laps, new regulations, two new teams and four new
 drivers) with `scripts/fetch_fastf1.py`, scored the committed FFR-M through the API against
 the real next laps, simulated live use at laps 5 to 50, and tried malformed uploads, path
@@ -284,9 +305,10 @@ chronological split (season-forward, season-round, circuit holdout, 2026 domain 
 explicit local Adam update. Hidden units are partitioned into ordered target groups (8 → 16 →
 32 → 64 for FFR-M); layer *k* trains on the frozen, normalised output of layer *k−1*. A
 closed-form ridge readout over all layers' goodness vectors and local predictions produces
-the residual forecast; the 80% interval is calibrated on validation residuals and widened
-by cross-layer disagreement. No `Tensor.backward()`, no `autograd.grad()`, and a test fails if
-either appears in the model source.
+the residual forecast; the 80% interval is one validation-residual quantile width per
+model (a cross-layer disagreement term can widen it, but it has never exceeded that floor on
+a test lap, so in practice the width is fixed). No `Tensor.backward()`, no `autograd.grad()`;
+the model is plain NumPy and a source scan for either call comes back empty.
 
 ## Methodology
 
@@ -300,8 +322,10 @@ either appears in the model source.
   so they transfer across circuits; the one absolute anchor is the rolling median itself.
 - **Historical priors.** Medians of per-event medians from strictly earlier events (driver ×
   circuit, team × circuit, compound × circuit, matched weather bins, …), relative to current pace.
-- **Leakage tests.** A perturbation test changes everything after a cutoff lap and asserts no
-  feature at or before it moves; another asserts priors ignore the current event.
+- **Leakage checks.** During development a perturbation check changed everything after a
+  cutoff lap and asserted that no feature at or before it moved, and that priors ignore the
+  current event; the blind testers re-ran the same probe through the API and found forecasts
+  identical to the last decimal.
 - **Splits.** Season-round (train 2018-2024, validation early 2025, test late 2025), circuit
   holdout, train ≤ 2024 → 2026 domain shift without retraining, and a 2000-2024 legacy
   training extension on the same test rows.
@@ -314,9 +338,10 @@ either appears in the model source.
   in `metrics.json`). The NumPy FFR materialises each layer's full-batch activations before
   training the next layer, which is where FFR-M and FFR-L spend their memory; a streaming
   implementation would trade training time for memory and has not been built.
-- **Local learning, tested.** Each layer's analytic gradient is checked against finite
-  differences, and a test asserts that a layer's update does not change when the weights of
-  any later layer change: nothing flows backwards between layers.
+- **Local learning, checked.** Each layer's analytic gradient was checked against finite
+  differences (max difference 2e-10) and a layer's update shown to be bit-identical when the
+  weights of every later layer are replaced: nothing flows backwards between layers. Both
+  checks were reproduced independently by the blind reviewers from the public code.
 - **Resources.** Training wall time, peak RSS, traced peak, single-row latency, artifact bytes.
 
 Details: `docs/FEATURE_CONTRACT.md`, `docs/TRAINING_AND_RESEARCH.md`, `RACESHIFT_MASTER_SPEC.md`.
@@ -387,7 +412,7 @@ Localhost only, no credentials, path-restricted file access. See `apps/api/READM
 ## Project map
 
 ```text
-apps/web/                  React/Vite UI (Overview, Forecast + backtest, Compare Drivers, Experiments, Datasets, Models; Telemetry/Strategy are marked Planned)
+apps/web/                  React/Vite UI (Overview, Forecast + backtest, Compare Drivers, Experiments, Datasets, Models, Settings)
 apps/api/                  local FastAPI backend
 src/raceshift/data/        schema, provenance, splits, FastF1 / Jolpica-Ergast / OpenF1 adapters
 src/raceshift/features/    lap-state flags, segments, leakage-safe features, selection

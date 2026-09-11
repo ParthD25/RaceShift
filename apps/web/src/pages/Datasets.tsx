@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Database, Upload } from 'lucide-react';
+import { Database, Trash2, Upload } from 'lucide-react';
 import { Panel } from '../components/Panel';
 import { SourceBadge } from '../components/SourceBadge';
 import { api, errorMessage, fmtBytes, type ImportSummary } from '../lib/api';
@@ -12,6 +12,23 @@ export default function Datasets() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploaded, setUploaded] = useState<ImportSummary | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const shipped = new Set(datasets.data?.shipped_imports ?? []);
+
+  async function remove(name: string) {
+    if (!window.confirm(`Delete ${name} from data/imports? This cannot be undone.`)) return;
+    setDeleting(name);
+    setError(null);
+    try {
+      await api.deleteImport(name);
+      if (uploaded?.file === name) setUploaded(null);
+      datasets.reload();
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setDeleting(null);
+    }
+  }
 
   async function upload() {
     if (!file) return;
@@ -36,8 +53,15 @@ export default function Datasets() {
           {datasets.data && datasets.data.imports.length === 0 && <div className="empty-inline">No CSV or Parquet files yet.</div>}
           {datasets.data && datasets.data.imports.length > 0 && (
             <div className="wide-table imports-table">
-              <div className="wide-head"><span>File</span><span>Size</span><span>Modified (UTC)</span></div>
-              {datasets.data.imports.map(i => <div className="wide-row" key={i.name}><span><strong>{i.name}</strong></span><span>{fmtBytes(i.bytes)}</span><span>{i.modified_utc.replace('T', ' ').slice(0, 19)}</span></div>)}
+              <div className="wide-head"><span>File</span><span>Size</span><span>Modified (UTC)</span><span /></div>
+              {datasets.data.imports.map(i => (
+                <div className="wide-row" key={i.name}>
+                  <span><strong>{i.name}</strong>{shipped.has(i.name) ? <small className="muted"> · ships with the repo</small> : null}</span>
+                  <span>{fmtBytes(i.bytes)}</span>
+                  <span>{i.modified_utc.replace('T', ' ').slice(0, 19)}</span>
+                  <span>{shipped.has(i.name) ? '' : <button className="link-btn" onClick={() => remove(i.name)} disabled={deleting === i.name} title="Delete this file"><Trash2 size={14} /> {deleting === i.name ? 'Deleting…' : 'Delete'}</button>}</span>
+                </div>
+              ))}
             </div>
           )}
           {datasets.data && datasets.data.processed_files.filter(f => !f.startsWith('.')).length > 0 && (
@@ -57,9 +81,13 @@ export default function Datasets() {
               <div><span>Rows</span><strong>{uploaded.rows.toLocaleString()}</strong></div>
               <div><span>Required columns</span><strong className={uploaded.missing_required_columns.length ? 'bad' : 'good'}>{uploaded.missing_required_columns.length ? `missing ${uploaded.missing_required_columns.join(', ')}` : 'all present'}</strong></div>
               {uploaded.latest_session && <div><span>Latest session</span><strong>{uploaded.latest_session.season} · {uploaded.latest_session.event}</strong></div>}
+              {uploaded.sessions && <div><span>Sessions</span><strong>{uploaded.sessions.length}</strong></div>}
             </div>
           )}
-          <p className="prose small">Schema: see <code>docs/FEATURE_CONTRACT.md</code>. Required columns: season, event, session, driver, lap_number, lap_time_s.</p>
+          {uploaded?.data_warnings && uploaded.data_warnings.length > 0 && (
+            <div className="warn-box">{uploaded.data_warnings.map(w => <div key={w}>{w}</div>)}</div>
+          )}
+          <p className="prose small">Schema: see <code>docs/FEATURE_CONTRACT.md</code>. Required columns: season, event, session, driver, lap_number, lap_time_s, plus event_date or round_number so events can be ordered. Uploads missing a required column are rejected; out-of-range values are accepted but flagged.</p>
         </Panel>
       </div>
       <Panel title="Source registry (dataset_manifest.json)" icon={<Database size={17} />}>

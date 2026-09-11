@@ -1,0 +1,28 @@
+{
+  "name": "FFR-M-random-layers",
+  "model": "RaceShiftFFR",
+  "training_policy": "forward-forward-local-updates-no-global-backprop",
+  "history_laps": 5,
+  "layer_nodes": [
+    512,
+    384,
+    256,
+    192
+  ],
+  "ordinal_groups": [
+    8,
+    16,
+    32,
+    64
+  ],
+  "epochs_per_layer": 0,
+  "batch_size": 512,
+  "learning_rate": 0.0008,
+  "weight_decay": 1e-05,
+  "temperature": 0.55,
+  "target_sigma_groups": 1.1,
+  "ridge_alpha": 2.0,
+  "seed": 42,
+  "clip_update_norm": 5.0,
+  "notes": "Control for the hidden layers: same architecture as FFR-M but the layers are never trained (random initialisation), only the ridge readout on the grouped goodness features is fitted. If this matches FFR-M, the local layer training adds nothing over a random feature expansion."
+}

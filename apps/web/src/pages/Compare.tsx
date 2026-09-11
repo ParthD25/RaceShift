@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useForecast } from '../context/ForecastContext';
 import { GitCompareArrows, Play } from 'lucide-react';
 import { Panel } from '../components/Panel';
 import { SourceBadge, sourceKindFor } from '../components/SourceBadge';
-import { api, errorMessage, fmtDelta, fmtLap, fmtNumber, type ArtifactEntry, type BacktestResult, type ImportFile, type ImportSummary } from '../lib/api';
+import { api, errorMessage, fmtDelta, fmtLap, fmtNumber, type ArtifactEntry, type BacktestResult, type ImportFile, type ImportSummary, type SessionInfo, isSelectable, lastSelectable } from '../lib/api';
 import { useApi } from '../lib/useApi';
 
 // Two drivers, same session, same model: side-by-side backtests on laps that were really driven,
@@ -17,6 +18,8 @@ export default function Compare() {
   const [left, setLeft] = useState('');
   const [right, setRight] = useState('');
   const [summary, setSummary] = useState<ImportSummary | null>(null);
+  const [sessionKey, setSessionKey] = useState('');
+  const { setActive } = useForecast();
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<[BacktestResult, BacktestResult] | null>(null);
@@ -38,25 +41,31 @@ export default function Compare() {
     api.importSummary(file).then(s => {
       if (cancelled) return;
       setSummary(s);
-      const drivers = s.latest_session_drivers ?? [];
+      setSessionKey('');
+      const last = lastSelectable(s.sessions ?? []);
+      const drivers = last?.driver_codes ?? s.latest_session_drivers ?? [];
       setLeft(drivers[0] ?? '');
       setRight(drivers[1] ?? drivers[0] ?? '');
     }).catch(err => { if (!cancelled) setError(errorMessage(err)); });
     return () => { cancelled = true; };
   }, [file]);
 
-  const drivers = summary?.latest_session_drivers ?? [];
+  const sessions: SessionInfo[] = summary?.sessions ?? [];
+  const chosen: SessionInfo | null = sessions.find(x => `${x.season}|${x.event}|${x.session}` === sessionKey && isSelectable(x)) ?? lastSelectable(sessions);
+  const drivers = chosen?.driver_codes ?? summary?.latest_session_drivers ?? [];
   const canRun = Boolean(file && artifact && left && right) && !running;
 
   async function run() {
     setRunning(true);
     setError(null);
     try {
+      const where = { season: chosen?.season ?? null, event: chosen?.event ?? null, session: chosen?.session ?? null };
       const [a, b] = await Promise.all([
-        api.backtest({ file, driver: left, artifact, laps: 15 }),
-        api.backtest({ file, driver: right, artifact, laps: 15 })
+        api.backtest({ file, driver: left, artifact, laps: 15, ...where }),
+        api.backtest({ file, driver: right, artifact, laps: 15, ...where })
       ]);
       setResults([a, b]);
+      setActive({ season: a.season, event: a.event, session: a.session, driver: `${a.driver} vs ${b.driver}`, artifact: a.artifact, is_synthetic: a.is_synthetic, data_is_synthetic: a.data_is_synthetic });
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -80,6 +89,11 @@ export default function Compare() {
               {imports.map(i => <option key={i.name} value={i.name}>{i.name}</option>)}
             </select>
           </label>
+          <label className="field"><span>Race (session in this file)</span>
+            <select value={chosen ? `${chosen.season}|${chosen.event}|${chosen.session}` : ''} onChange={e => { setSessionKey(e.target.value); const x = sessions.find(y => `${y.season}|${y.event}|${y.session}` === e.target.value); const d = x?.driver_codes ?? []; setLeft(d[0] ?? ''); setRight(d[1] ?? d[0] ?? ''); setResults(null); }} disabled={!sessions.length || running}>
+              {sessions.map(x => <option key={`${x.season}|${x.event}|${x.session}`} value={`${x.season}|${x.event}|${x.session}`} disabled={!isSelectable(x)}>{x.season ?? '?'} · {x.event} · {x.session}{x.date ? ` · ${x.date}` : ''}{isSelectable(x) ? '' : ' · not selectable'}</option>)}
+            </select>
+          </label>
           <label className="field"><span>Driver A</span>
             <select value={left} onChange={e => setLeft(e.target.value)} disabled={!drivers.length}>{drivers.map(d => <option key={d} value={d}>{d}</option>)}</select>
           </label>
@@ -92,7 +106,7 @@ export default function Compare() {
             </select>
           </label>
         </div>
-        {summary && <p className="prose small">Latest session in this file: {summary.latest_session ? `${summary.latest_session.season} · ${summary.latest_session.event} · ${summary.latest_session.session}` : '—'}. Backtests use the last 15 completed lap pairs of each driver.</p>}
+        {summary && <p className="prose small">{sessions.length} session{sessions.length === 1 ? '' : 's'} in this file; backtests use the last 15 completed lap pairs of each driver in the chosen one.</p>}
         {error && <div className="error-box">{error}</div>}
       </Panel>
 

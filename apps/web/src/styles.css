@@ -62,3 +62,15 @@
 .wide-row>span,.experiment-row>span{min-width:0;overflow-wrap:anywhere}
 @media(max-width:480px){.context-row{flex-wrap:wrap}.context-select,.model-status{min-width:0;flex:1 1 45%}.topbar{padding:10px 12px}}
 .detail-list strong.muted{color:#7f8c97;font-weight:500}
+
+
+/* A forecast for a lap that never happened is shown smaller than the evidence above it. */
+.result-layout.hypothetical .forecast-time { font-size: 1.6rem; opacity: 0.85; }
+.muted-box { background: var(--panel-2, rgba(127,127,127,0.08)); border: 1px solid var(--border, rgba(127,127,127,0.25)); border-radius: 8px; padding: 10px 12px; font-size: 0.9rem; margin-bottom: 10px; }
+.link-btn { background: none; border: none; color: inherit; opacity: 0.8; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; padding: 0; font: inherit; }
+.link-btn:hover { opacity: 1; text-decoration: underline; }
+.link-btn:disabled { opacity: 0.5; cursor: default; }
+
+/* Phone widths: grid items default to min-width:auto, which let the two context boxes push the
+   top bar 14 px past the viewport. Let them shrink and drop the fixed minimums. */
+@media(max-width:480px){.context-row>*{min-width:0}.context-select.wide{min-width:0}.context-select,.model-status{min-width:0;overflow:hidden}.context-value{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.model-status .badge{margin-left:4px}}
