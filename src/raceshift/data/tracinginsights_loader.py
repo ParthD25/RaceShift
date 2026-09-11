@@ -156,8 +156,15 @@ def load_session_file(path: str | Path, year: int, event: str, session_code: str
     return session_frame(payload, year, event, session_code, round_number)
 
 
-def assign_rounds(frames: list[pd.DataFrame]) -> list[pd.DataFrame]:
-    """Round numbers from the calendar order of the events' first lap dates (per season)."""
+def assign_rounds(frames: list[pd.DataFrame], calendar: pd.DataFrame | None = None) -> list[pd.DataFrame]:
+    """Round numbers per season. With ``calendar`` (any RaceShift lap table holding season,
+    event and round_number, e.g. the FastF1 or Ergast table) the official numbers are used;
+    otherwise events are numbered in the order of their first lap date, which is right
+    only when the archive holds every event of the season."""
+    known: dict[tuple[int, str], int] = {}
+    if calendar is not None and {"season", "event", "round_number"} <= set(calendar.columns):
+        cal = calendar.dropna(subset=["round_number"]).drop_duplicates(["season", "event"])
+        known = {(int(s), str(e)): int(r) for s, e, r in zip(cal["season"], cal["event"], cal["round_number"])}
     dates: dict[tuple[int, str], pd.Timestamp] = {}
     for f in frames:
         if f.empty:
@@ -175,6 +182,7 @@ def assign_rounds(frames: list[pd.DataFrame]) -> list[pd.DataFrame]:
     for f in frames:
         if not f.empty:
             f = f.copy()
-            f["round_number"] = order.get((int(f["season"].iloc[0]), str(f["event"].iloc[0])))
+            key = (int(f["season"].iloc[0]), str(f["event"].iloc[0]))
+            f["round_number"] = known.get(key, order.get(key))
         out.append(f)
     return out

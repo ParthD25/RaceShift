@@ -57,6 +57,9 @@ def test_assign_rounds_orders_events_by_first_lap_date():
     b = session_frame(later, 2025, "Japanese Grand Prix", "R")
     rounds = {f["event"].iloc[0]: int(f["round_number"].iloc[0]) for f in assign_rounds([b, a])}
     assert rounds == {"Chinese Grand Prix": 1, "Japanese Grand Prix": 2}
+    calendar = pd.DataFrame({"season": [2025, 2025], "event": ["Chinese Grand Prix", "Japanese Grand Prix"], "round_number": [2, 3]})
+    rounds = {f["event"].iloc[0]: int(f["round_number"].iloc[0]) for f in assign_rounds([b, a], calendar)}
+    assert rounds == {"Chinese Grand Prix": 2, "Japanese Grand Prix": 3}
 
 
 def test_raw_url_encodes_folder_names():

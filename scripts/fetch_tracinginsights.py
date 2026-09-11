@@ -53,6 +53,7 @@ def main() -> None:
     p.add_argument("--output", default=str(ROOT / "data" / "raw" / "tracinginsights"))
     p.add_argument("--cache", default=str(ROOT / "data" / "cache" / "tracinginsights"))
     p.add_argument("--combine", help="Also write every session of this run into one parquet")
+    p.add_argument("--rounds-from", help="Lap table (parquet/csv with season, event, round_number) giving official round numbers; otherwise events are numbered by date, which is wrong when the archive lacks an event")
     args = p.parse_args()
 
     wanted = set(args.sessions)
@@ -93,7 +94,10 @@ def main() -> None:
                 continue
             frames.append(frame)
             print(f"OK {year} {event} {code}: {len(frame)} laps", flush=True)
-    frames = assign_rounds(frames)
+    calendar = None
+    if args.rounds_from:
+        calendar = pd.read_parquet(args.rounds_from) if args.rounds_from.endswith(".parquet") else pd.read_csv(args.rounds_from)
+    frames = assign_rounds(frames, calendar)
     for frame in frames:
         target = output / f"{int(frame['season'].iloc[0])}_{str(frame['event'].iloc[0]).replace(' ', '_')}_{frame['session'].iloc[0]}.parquet"
         frame.to_parquet(target, index=False)
