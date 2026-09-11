@@ -1,0 +1,57 @@
+{
+  "model_type": "RaceShiftFFR",
+  "input_dim": 327,
+  "config": {
+    "layer_nodes": [
+      512,
+      384,
+      256,
+      192
+    ],
+    "ordinal_groups": [
+      8,
+      16,
+      32,
+      64
+    ],
+    "epochs_per_layer": 80,
+    "batch_size": 512,
+    "learning_rate": 0.0008,
+    "weight_decay": 1e-05,
+    "temperature": 0.55,
+    "target_sigma_groups": 1.1,
+    "ridge_alpha": 2.0,
+    "seed": 42,
+    "clip_update_norm": 5.0
+  },
+  "target_center": -0.03999999910593033,
+  "target_scale": 1.9449999704957008,
+  "interval_q80": 0.5846226215362549,
+  "architecture": [
+    {
+      "layer": 1,
+      "input_nodes": 327,
+      "hidden_nodes": 512,
+      "ordinal_groups": 8
+    },
+    {
+      "layer": 2,
+      "input_nodes": 512,
+      "hidden_nodes": 384,
+      "ordinal_groups": 16
+    },
+    {
+      "layer": 3,
+      "input_nodes": 384,
+      "hidden_nodes": 256,
+      "ordinal_groups": 32
+    },
+    {
+      "layer": 4,
+      "input_nodes": 256,
+      "hidden_nodes": 192,
+      "ordinal_groups": 64
+    }
+  ],
+  "training_policy": "local-forward-forward-no-global-backprop"
+}
