@@ -3,7 +3,7 @@ import { BrainCircuit, Play, Target, TrendingDown } from 'lucide-react';
 import { Panel } from '../components/Panel';
 import { SourceBadge, sourceKindFor } from '../components/SourceBadge';
 import { useForecast } from '../context/ForecastContext';
-import { api, errorMessage, fmtDelta, fmtLap, fmtNumber, type ArtifactEntry, type ImportFile, type ImportSummary, type SessionInfo } from '../lib/api';
+import { api, errorMessage, fmtDelta, fmtLap, fmtNumber, type ArtifactEntry, type ImportFile, type ImportSummary, type SessionInfo, isSelectable, lastSelectable } from '../lib/api';
 import { useApi } from '../lib/useApi';
 
 export default function Forecast() {
@@ -44,7 +44,7 @@ export default function Forecast() {
   }, [file]);
 
   const sessions: SessionInfo[] = summary?.sessions ?? [];
-  const chosenSession: SessionInfo | null = sessions.find(x => sessionKeyOf(x) === sessionKey) ?? sessions[sessions.length - 1] ?? null;
+  const chosenSession: SessionInfo | null = sessions.find(x => sessionKeyOf(x) === sessionKey && isSelectable(x)) ?? lastSelectable(sessions);
   const drivers = chosenSession?.driver_codes ?? summary?.latest_session_drivers ?? [];
   const chronologyMissing = Boolean(summary && summary.has_chronology === false);
   const selectedArtifact = artifacts.find(a => a.id === artifact);
@@ -101,7 +101,7 @@ export default function Forecast() {
             <label className="field"><span>Race (session in this file)</span>
               <select value={chosenSession ? sessionKeyOf(chosenSession) : ''} onChange={e => { setSessionKey(e.target.value); setDriver(''); }} disabled={!sessions.length}>
                 {!sessions.length && <option value="">{summary ? 'No sessions found' : 'Loading…'}</option>}
-                {sessions.map(x => <option key={sessionKeyOf(x)} value={sessionKeyOf(x)}>{x.season} · {x.event} · {sessionLabel(x.session)}{x.date ? ` · ${x.date}` : ''} · {x.laps} laps</option>)}
+                {sessions.map(x => <option key={sessionKeyOf(x)} value={sessionKeyOf(x)} disabled={!isSelectable(x)}>{x.season ?? '?'} · {x.event} · {sessionLabel(x.session)}{x.date ? ` · ${x.date}` : ''} · {x.laps} laps{isSelectable(x) ? '' : ' · not selectable'}</option>)}
               </select>
             </label>
             <label className="field"><span>Driver</span>
@@ -280,6 +280,7 @@ function intervalGeometry(lower: number, upper: number, prediction: number, last
 function sessionKeyOf(x: SessionInfo): string {
   return `${x.season}|${x.event}|${x.session}`;
 }
+
 
 function sessionLabel(code: string): string {
   const names: Record<string, string> = { R: 'Race', S: 'Sprint', Q: 'Qualifying', SQ: 'Sprint qualifying', FP1: 'Practice 1', FP2: 'Practice 2', FP3: 'Practice 3' };

@@ -26,7 +26,7 @@ const ForecastContext = createContext<ForecastState>({
 // Bump when the shape of ForecastResult/BacktestResult/ActiveSession changes so a payload
 // saved by an older build is discarded instead of dereferenced.
 const KEY = 'raceshift.forecast';
-const VERSION = 2;
+const VERSION = 3;
 
 type Stored = { result: ForecastResult | null; backtest: BacktestResult | null; active: ActiveSession | null };
 

@@ -3,7 +3,7 @@ import { useForecast } from '../context/ForecastContext';
 import { GitCompareArrows, Play } from 'lucide-react';
 import { Panel } from '../components/Panel';
 import { SourceBadge, sourceKindFor } from '../components/SourceBadge';
-import { api, errorMessage, fmtDelta, fmtLap, fmtNumber, type ArtifactEntry, type BacktestResult, type ImportFile, type ImportSummary, type SessionInfo } from '../lib/api';
+import { api, errorMessage, fmtDelta, fmtLap, fmtNumber, type ArtifactEntry, type BacktestResult, type ImportFile, type ImportSummary, type SessionInfo, isSelectable, lastSelectable } from '../lib/api';
 import { useApi } from '../lib/useApi';
 
 // Two drivers, same session, same model: side-by-side backtests on laps that were really driven,
@@ -42,7 +42,7 @@ export default function Compare() {
       if (cancelled) return;
       setSummary(s);
       setSessionKey('');
-      const last = s.sessions?.[s.sessions.length - 1];
+      const last = lastSelectable(s.sessions ?? []);
       const drivers = last?.driver_codes ?? s.latest_session_drivers ?? [];
       setLeft(drivers[0] ?? '');
       setRight(drivers[1] ?? drivers[0] ?? '');
@@ -51,7 +51,7 @@ export default function Compare() {
   }, [file]);
 
   const sessions: SessionInfo[] = summary?.sessions ?? [];
-  const chosen: SessionInfo | null = sessions.find(x => `${x.season}|${x.event}|${x.session}` === sessionKey) ?? sessions[sessions.length - 1] ?? null;
+  const chosen: SessionInfo | null = sessions.find(x => `${x.season}|${x.event}|${x.session}` === sessionKey && isSelectable(x)) ?? lastSelectable(sessions);
   const drivers = chosen?.driver_codes ?? summary?.latest_session_drivers ?? [];
   const canRun = Boolean(file && artifact && left && right) && !running;
 
@@ -91,7 +91,7 @@ export default function Compare() {
           </label>
           <label className="field"><span>Race (session in this file)</span>
             <select value={chosen ? `${chosen.season}|${chosen.event}|${chosen.session}` : ''} onChange={e => { setSessionKey(e.target.value); const x = sessions.find(y => `${y.season}|${y.event}|${y.session}` === e.target.value); const d = x?.driver_codes ?? []; setLeft(d[0] ?? ''); setRight(d[1] ?? d[0] ?? ''); setResults(null); }} disabled={!sessions.length || running}>
-              {sessions.map(x => <option key={`${x.season}|${x.event}|${x.session}`} value={`${x.season}|${x.event}|${x.session}`}>{x.season} · {x.event} · {x.session}{x.date ? ` · ${x.date}` : ''}</option>)}
+              {sessions.map(x => <option key={`${x.season}|${x.event}|${x.session}`} value={`${x.season}|${x.event}|${x.session}`} disabled={!isSelectable(x)}>{x.season ?? '?'} · {x.event} · {x.session}{x.date ? ` · ${x.date}` : ''}{isSelectable(x) ? '' : ' · not selectable'}</option>)}
             </select>
           </label>
           <label className="field"><span>Driver A</span>

@@ -69,7 +69,18 @@ export type ModelsResponse = { default_artifact: string; artifacts: ArtifactEntr
 export type DatasetSource = { name: string; url: string; status?: 'used' | 'planned'; role: string; coverage_note: string; local_policy: string };
 export type ImportFile = { name: string; bytes: number; modified_utc: string };
 export type DatasetsResponse = { sources: DatasetSource[]; imports: ImportFile[]; processed_files: string[]; import_dir: string; shipped_imports?: string[] };
-export type SessionInfo = { season: number; event: string; session: string; laps: number; drivers: number; driver_codes: string[]; date: string | null };
+export type SessionInfo = { season: number | null; event: string; session: string; laps: number; drivers: number; driver_codes: string[]; date: string | null; selectable?: boolean };
+
+// Placeholder rows (blank season, event or session) are listed so nothing disappears, but
+// the API cannot address them, so they are never the default and never sent as a filter.
+export function isSelectable(x: SessionInfo): boolean {
+  return x.selectable !== false;
+}
+export function lastSelectable(sessions: SessionInfo[]): SessionInfo | null {
+  for (let i = sessions.length - 1; i >= 0; i--) if (isSelectable(sessions[i])) return sessions[i];
+  return null;
+}
+
 
 export type ImportSummary = {
   file: string;
