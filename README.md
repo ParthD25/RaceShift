@@ -65,7 +65,9 @@ and a synthetic fixture with a small demo model trained on it, both badged *Synt
 wherever they appear. Drivers are identified by their FIA three-letter codes.
 
 ```bash
+npm run test:py     # Python tests (65): leakage, feature availability, lap rules, gradients, splits, artifact, API
 npm run build       # TypeScript check + Vite build
+npm run test:e2e    # Chromium walk through the running UI (needs `npx playwright install chromium` once)
 API_PORT=8010 WEB_PORT=5180 npm run dev                # if 8000 or 5173 is taken
 python scripts/fetch_fastf1.py --year 2025 --event "Abu Dhabi" --session R \
     --output data/imports/abu_dhabi_2025.parquet       # one more race in about 15 s; the UI lists it
@@ -75,9 +77,10 @@ npm run demo:data && npm run demo:model                # regenerate the syntheti
 A step-by-step walkthrough with expected output is in `docs/LOCAL_SETUP.md`. There is no
 live-timing connection; RaceShift reads local files only. If a port is taken, the API prints
 two ports that are free at that moment and the exact command to use them. The dependency
-audit in CI fails on high-severity advisories. This public repository ships without the
-development test suite (the checks it ran are described where they matter below); CI runs
-the synthetic pipeline smoke, the web build and the dependency audit.
+audit in CI fails on high-severity advisories. CI runs the Python test suite (leakage and
+feature availability, lap-state rules incl. red-flag and safety-car restarts, splits,
+finite-difference gradients and layer locality, artifact forecasting and backtesting, export,
+API), the synthetic pipeline smoke, the web build, a browser end-to-end test and the audit.
 
 **How to read the numbers.** This is regression, not classification, so there is no
 "accuracy" percentage. MAE is the average distance in seconds between the predicted and the
@@ -308,7 +311,7 @@ closed-form ridge readout over all layers' goodness vectors and local prediction
 the residual forecast; the 80% interval is one validation-residual quantile width per
 model (a cross-layer disagreement term can widen it, but it has never exceeded that floor on
 a test lap, so in practice the width is fixed). No `Tensor.backward()`, no `autograd.grad()`;
-the model is plain NumPy and a source scan for either call comes back empty.
+the model is plain NumPy and a test fails if either call appears in the model source.
 
 ## Methodology
 
@@ -322,10 +325,10 @@ the model is plain NumPy and a source scan for either call comes back empty.
   so they transfer across circuits; the one absolute anchor is the rolling median itself.
 - **Historical priors.** Medians of per-event medians from strictly earlier events (driver ×
   circuit, team × circuit, compound × circuit, matched weather bins, …), relative to current pace.
-- **Leakage checks.** During development a perturbation check changed everything after a
-  cutoff lap and asserted that no feature at or before it moved, and that priors ignore the
-  current event; the blind testers re-ran the same probe through the API and found forecasts
-  identical to the last decimal.
+- **Leakage tests.** A perturbation test changes everything after a cutoff lap and asserts no
+  feature at or before it moves; another asserts priors ignore the current event
+  (`tests/test_feature_availability.py`). The blind testers re-ran the same probe through
+  the API and found forecasts identical to the last decimal.
 - **Splits.** Season-round (train 2018-2024, validation early 2025, test late 2025), circuit
   holdout, train ≤ 2024 → 2026 domain shift without retraining, and a 2000-2024 legacy
   training extension on the same test rows.
@@ -338,10 +341,10 @@ the model is plain NumPy and a source scan for either call comes back empty.
   in `metrics.json`). The NumPy FFR materialises each layer's full-batch activations before
   training the next layer, which is where FFR-M and FFR-L spend their memory; a streaming
   implementation would trade training time for memory and has not been built.
-- **Local learning, checked.** Each layer's analytic gradient was checked against finite
-  differences (max difference 2e-10) and a layer's update shown to be bit-identical when the
-  weights of every later layer are replaced: nothing flows backwards between layers. Both
-  checks were reproduced independently by the blind reviewers from the public code.
+- **Local learning, tested.** Each layer's analytic gradient is checked against finite
+  differences (max difference 2e-10) and a test asserts that a layer's update is bit-identical
+  when the weights of every later layer are replaced: nothing flows backwards between layers
+  (`tests/test_forward_forward.py`). Both checks were also reproduced by the blind reviewers.
 - **Resources.** Training wall time, peak RSS, traced peak, single-row latency, artifact bytes.
 
 Details: `docs/FEATURE_CONTRACT.md`, `docs/TRAINING_AND_RESEARCH.md`, `RACESHIFT_MASTER_SPEC.md`.
@@ -412,7 +415,7 @@ Localhost only, no credentials, path-restricted file access. See `apps/api/READM
 ## Project map
 
 ```text
-apps/web/                  React/Vite UI (Overview, Forecast + backtest, Compare Drivers, Experiments, Datasets, Models, Settings)
+apps/web/                  React/Vite UI (Overview, Forecast + backtest, Compare Drivers, Experiments, Datasets, Models, Settings); apps/web/e2e is the browser smoke test
 apps/api/                  local FastAPI backend
 src/raceshift/data/        schema, provenance, splits, FastF1 / Jolpica-Ergast / OpenF1 adapters
 src/raceshift/features/    lap-state flags, segments, leakage-safe features, selection
@@ -426,6 +429,7 @@ notebooks/                 Colab workflow
 data/imports/              local datasets (2025 season FastF1 timing and the synthetic fixture included)
 artifacts/                 model artifacts (real FFR-M and legacy FFR-S, baseline metrics and the synthetic demo committed)
 docs/                      feature contract, research standard, sources, security, local setup walkthrough
+tests/                     Python tests (see `npm run test:py`)
 ```
 
 ## Status

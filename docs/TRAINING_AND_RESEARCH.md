@@ -52,7 +52,7 @@ Each layer:
 
 There is no end-to-end gradient chain.
 
-The source file contains neither `.backward(` nor `autograd.grad(`; a source scan is the simplest check and the blind reviewers ran it.
+The source file is checked by a test for `.backward(` and `autograd.grad(`; the blind reviewers ran the same scan.
 
 ## Regression target
 
@@ -211,8 +211,8 @@ goodness is trained by cross entropy against a soft ordinal target derived from 
 residual. The gradient of that loss with respect to the layer's weight and bias is derived by
 hand (`_FFLocalLayer.local_gradient`) and applied with a local Adam step. Layer *k*+1 receives
 the normalised output of layer *k* as a plain array; no quantity computed in layer *k*+1 ever
-reaches layer *k*. Two checks make this concrete and were reproduced by the blind reviewers
-from the public code: the analytic gradient compared with finite differences entry by entry
+reaches layer *k*. Two tests make this concrete (`tests/test_forward_forward.py`), and the blind
+reviewers reproduced both from the public code: the analytic gradient compared with finite differences entry by entry
 (max difference 2e-10), and a layer's gradient and update bit-identical when every later
 layer's weights are replaced with random values.
 
