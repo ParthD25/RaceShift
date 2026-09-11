@@ -88,15 +88,17 @@ def session_rank(frame: pd.DataFrame) -> pd.Series:
     season = pd.to_numeric(frame["season"], errors="coerce") if "season" in frame.columns else pd.Series(np.nan, index=frame.index)
     group_keys = [season.fillna(-1)] + ([frame["event"].astype(str)] if "event" in frame.columns else [])
     sprint_weekend = codes.isin(SPRINT_CODES).groupby(group_keys).transform("any")
-    ranks = pd.Series(_UNKNOWN_RANK, index=frame.index, dtype=float)
-    combos = pd.DataFrame({"code": codes, "season": season, "sprint": sprint_weekend}).drop_duplicates()
-    for _, row in combos.iterrows():
-        table = _weekend_order(row["season"], bool(row["sprint"]))
-        if row["code"] in table:
-            same_season = season.isna() if pd.isna(row["season"]) else season == row["season"]
-            mask = (codes == row["code"]) & same_season & (sprint_weekend == row["sprint"])
-            ranks[mask] = table[row["code"]]
-    return ranks
+    # One rank per distinct (code, season, weekend format), then a single vectorised lookup,
+    # so a multi-season import costs one pass however many combinations it holds.
+    season_key = season.fillna(-1)
+    combos = pd.DataFrame({"code": codes, "season": season_key, "sprint": sprint_weekend}).drop_duplicates()
+    combos["rank"] = [
+        float(_weekend_order(np.nan if s == -1 else s, bool(sp)).get(c, _UNKNOWN_RANK))
+        for c, s, sp in zip(combos["code"], combos["season"], combos["sprint"])
+    ]
+    lookup = combos.set_index(["code", "season", "sprint"])["rank"]
+    index = pd.MultiIndex.from_arrays([codes, season_key, sprint_weekend])
+    return pd.Series(lookup.reindex(index).to_numpy(), index=frame.index, dtype=float)
 
 
 def sort_chronologically(frame: pd.DataFrame) -> pd.DataFrame:
@@ -209,10 +211,14 @@ class RaceShiftArtifact:
         # reports them as a data warning).
         for (season, event, session), group in ordered.groupby(cols, sort=False, dropna=False):
             season_number = pd.to_numeric(pd.Series([season]), errors="coerce").iloc[0]
+            selectable = pd.notna(season_number) and not is_blank(event) and not is_blank(session)
             out.append({
                 "season": int(season_number) if pd.notna(season_number) else None,
                 "event": str(event) if not is_blank(event) else "(missing event)",
                 "session": str(session) if not is_blank(session) else "(missing session)",
+                # False for the placeholder rows: the selector cannot address them, so the UI
+                # lists them disabled instead of sending the placeholder back as a filter.
+                "selectable": bool(selectable),
                 "laps": int(len(group)),
                 "drivers": int(group["driver"].astype(str).nunique()),
                 "driver_codes": sorted(group["driver"].astype(str).unique().tolist()),
