@@ -44,6 +44,7 @@ from raceshift.models.artifact import RaceShiftArtifact  # noqa: E402
 from raceshift.train.finetune import (  # noqa: E402
     build_table,
     copy_preprocessor,
+    replay_pool,
     describe,
     encode,
     evaluate,
@@ -117,13 +118,15 @@ def main() -> None:
 
     replay = pd.DataFrame(columns=table.columns)
     if args.replay_rows > 0:
-        train_end = int(base_split.get("train_end", (args.season or train_sel[0]) - 1))
-        pool = table[pd.to_numeric(table["season"], errors="coerce") <= train_end]
+        pool = replay_pool(table, base.metrics, args.sessions, fallback_train_end=(args.season or train_sel[0]) - 1)
+        pool = pool[~pool.index.isin(train.index)]
         replay = pool.sample(n=min(args.replay_rows, len(pool)), random_state=args.replay_seed) if len(pool) else replay
 
     x_train, y_train = encode(base, train, args.target_clip)
     x_test, y_test = encode(base, test)
-    x_val, y_val = encode(base, val, args.target_clip) if len(val) else (None, None)
+    # Validation targets are never clipped: the interval is calibrated against the same raw
+    # residuals its coverage is later reported on.
+    x_val, y_val = encode(base, val) if len(val) else (None, None)
     x_replay, y_replay = encode(base, replay, args.target_clip) if len(replay) else (np.zeros((0, x_train.shape[1]), np.float32), np.zeros(0, np.float32))
 
     zero_shot = predict_frame(base, test, x_test)
@@ -192,6 +195,7 @@ def main() -> None:
             "train_seasons": list(train_sel) if by_season else None,
             "validation_seasons": list(val_sel) if (by_season and val_sel) else None,
             "test_seasons": list(test_sel) if by_season else None,
+            "sessions": args.sessions,
             "base_split": base_split,
             "train_rows": describe(train),
             "validation_rows": describe(val),

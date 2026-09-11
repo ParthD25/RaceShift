@@ -166,7 +166,11 @@ class JolpicaClient:
         return items, races
 
 
-def _lap_time_seconds(text: str) -> float:
+def _lap_time_seconds(text: object) -> float:
+    """``"1:31.234"`` or ``"1:02:03.4"`` or plain seconds -> seconds; anything else is NaN
+    (the Ergast CSVs leave the time blank on a few laps)."""
+    if not isinstance(text, str):
+        return float("nan")
     parts = text.split(":")
     try:
         if len(parts) == 2:

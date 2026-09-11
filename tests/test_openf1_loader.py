@@ -134,3 +134,27 @@ def test_session_frame_assembles_the_raceshift_schema():
     assert frame["is_accurate"].tolist() == [False, True, False, False, True]
     assert frame["position"].tolist() == [3.0, 3.0, 1.0, 1.0, 1.0]
     assert frame["air_temp_c"].iloc[0] == 20.0 and frame["wind_direction_deg"].iloc[0] == 90
+
+
+def test_lap_track_status_needs_a_positive_overlap_and_unions_back_to_back_intervals():
+    starts = pd.Series(pd.to_datetime([_at(0), _at(90), _at(180)], utc=True))
+    ends = starts + pd.Timedelta(seconds=90)
+    # A safety car that ends exactly when lap 2 starts touches lap 2 for zero seconds.
+    intervals = [(pd.Timestamp(_at(30)), pd.Timestamp(_at(90)), "4")]
+    assert lap_track_status(starts, ends, intervals).tolist() == ["14", "1", "1"]
+    # Safety car handed straight to a virtual one: lap 2 ran under neutralisation throughout.
+    intervals = [(pd.Timestamp(_at(30)), pd.Timestamp(_at(120)), "4"), (pd.Timestamp(_at(120)), pd.Timestamp(_at(200)), "6")]
+    assert lap_track_status(starts, ends, intervals).tolist() == ["14", "46", "16"]
+
+
+def test_session_frame_without_weather_rows_keeps_weather_missing():
+    laps = [{"driver_number": 1, "lap_number": lap, "date_start": _at(90 * (lap - 1)), "lap_duration": 90.0,
+             "duration_sector_1": 30.0, "duration_sector_2": 30.0, "duration_sector_3": 30.0, "is_pit_out_lap": False} for lap in range(1, 4)]
+    payloads = {"laps": laps, "drivers": [{"driver_number": 1, "name_acronym": "VER", "team_name": "Red Bull Racing"}],
+                "stints": [], "pit": [], "weather": [], "race_control": [], "position": []}
+    meeting = {"meeting_key": 1, "meeting_name": "Test Grand Prix", "location": "Sakhir", "date_end": "2025-03-16T06:00:00+00:00", "round_number": 1, "year": 2025}
+    session = {"session_key": 9, "session_code": "R", "year": 2025, "date_end": "2025-03-16T06:00:00+00:00"}
+    frame = session_frame(_StubClient(payloads), meeting, session)
+    assert len(frame) == 3
+    assert frame["air_temp_c"].isna().all() and frame["track_temp_c"].isna().all()
+    assert (~frame["rainfall"]).all() and frame["wind_direction_deg"].tolist() == [0, 0, 0]

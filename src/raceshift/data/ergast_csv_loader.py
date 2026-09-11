@@ -20,27 +20,17 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from .jolpica_loader import CIRCUIT_TO_LOCATION, DATA_TIER, _ascii_code, finish_legacy_frame, team_name
+from .jolpica_loader import CIRCUIT_TO_LOCATION, DATA_TIER, _ascii_code, _lap_time_seconds, finish_legacy_frame, team_name
 
 REQUIRED_FILES = ("lap_times.csv", "races.csv", "drivers.csv", "results.csv", "constructors.csv", "circuits.csv")
+
+# From this season the FastF1 timing tier covers every race; Ergast rows for these seasons
+# are for integrity checks only, never for a training table that also holds FastF1 rows.
+FIRST_TIMING_SEASON = 2018
 
 
 def _read(csv_dir: Path, name: str) -> pd.DataFrame:
     return pd.read_csv(csv_dir / name, na_values=["\\N"], keep_default_na=True)
-
-
-def _lap_time_seconds(text: object) -> float:
-    if not isinstance(text, str):
-        return float("nan")
-    parts = text.split(":")
-    try:
-        if len(parts) == 2:
-            return int(parts[0]) * 60 + float(parts[1])
-        if len(parts) == 3:
-            return int(parts[0]) * 3600 + int(parts[1]) * 60 + float(parts[2])
-        return float(text)
-    except ValueError:
-        return float("nan")
 
 
 def _driver_code(code: object, surname: object) -> str:
@@ -110,8 +100,16 @@ def season_frame(tables: dict[str, pd.DataFrame], year: int) -> pd.DataFrame:
     return out
 
 
-def export_seasons(csv_dir: str | Path, years: list[int], output: str | Path) -> Path:
-    """Write the selected seasons to one parquet in the RaceShift legacy schema."""
+def export_seasons(csv_dir: str | Path, years: list[int], output: str | Path, include_timing_era: bool = False) -> Path:
+    """Write the selected seasons to one parquet in the RaceShift legacy schema.
+
+    Seasons from :data:`FIRST_TIMING_SEASON` on are refused unless ``include_timing_era``
+    is set: those races already exist in the FastF1 tier with sectors, tyres and weather,
+    and a training table holding both copies would duplicate every lap. The timing-era
+    rows are only for lap-for-lap checks against the timing providers."""
+    timing_era = [y for y in years if y >= FIRST_TIMING_SEASON]
+    if timing_era and not include_timing_era:
+        raise ValueError(f"Seasons {timing_era} belong to the FastF1 timing tier; pass include_timing_era=True (--include-timing-era) to export them for cross-provider checks only")
     tables = load_tables(csv_dir)
     frames = [season_frame(tables, year) for year in years]
     frames = [f for f in frames if not f.empty]

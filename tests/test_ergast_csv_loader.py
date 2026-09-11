@@ -43,3 +43,11 @@ def test_team_name_follows_renames():
     assert team_name("sauber", 2018) == "Sauber" and team_name("sauber", 2025) == "Kick Sauber"
     assert team_name("alfa", 2020) == "Alfa Romeo Racing" and team_name("alfa", 2023) == "Alfa Romeo"
     assert team_name("audi", 2026) == "Audi" and team_name("unknown_ref", 2026, "Fallback") == "Fallback"
+
+
+def test_timing_era_seasons_need_an_explicit_opt_in(tmp_path: Path):
+    import pytest
+    from raceshift.data.ergast_csv_loader import export_seasons
+
+    with pytest.raises(ValueError, match="include_timing_era"):
+        export_seasons(tmp_path, [2017, 2018], tmp_path / "out.parquet")

@@ -40,7 +40,7 @@ def main() -> None:
     args = p.parse_args()
 
     artifact = RaceShiftArtifact(args.artifact)
-    raw = pd.read_parquet(args.input) if args.input.endswith(".parquet") else pd.read_csv(args.input)
+    raw = pd.read_parquet(args.input) if Path(args.input).suffix.lower() == ".parquet" else pd.read_csv(args.input)
     table = build_table(artifact, raw, args.table_cache)
     rows = select_rows(table, args.season, parse_rounds(args.rounds), args.sessions)
     if rows.empty:

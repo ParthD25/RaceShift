@@ -27,7 +27,7 @@
       "url": "https://openf1.org/docs/",
       "status": "used",
       "role": "Second timing provider 2023-2026: every race and sprint with laps, sectors, stints, pit stops, positions, weather and race control (scripts/fetch_openf1.py, src/raceshift/data/openf1_loader.py). Used for the cross-provider check against FastF1, for sprint sessions (the FastF1 tables hold races only) and for the OpenF1-sourced fine-tuning experiments",
-      "coverage_note": "Historical data from 2023 onward without authentication; rows are tagged data_tier = openf1_timing and carry the same columns as the FastF1 tier. Lap times agree with FastF1 to the millisecond from lap 2 on; the opening lap is timed differently by the two providers",
+      "coverage_note": "Historical data from 2023 onward without authentication; rows are tagged data_tier = openf1_timing and carry the same columns as the FastF1 tier. Lap and sector times agree with FastF1 within 2 ms on 97.6% of shared laps from lap 2 on (reports/data_sources/REPORT.md); the rest are OpenF1 feed faults, almost all in the 2026 Australian Grand Prix, whose lap feed merges a stretch of laps and shifts the numbering. The opening lap is timed differently by the two providers",
       "local_policy": "Polite client (spaced requests, back-off on 429); every response cached as JSON under data/cache/openf1; per-session parquet under data/raw/openf1; do not commit raw data"
     },
     {
@@ -59,7 +59,7 @@
       "url": "https://tracinginsights.com/data",
       "status": "used",
       "role": "Mirror tier 2018 onward, every session type: FastF1's lap table per session with per-lap weather, published per season on GitHub (github.com/TracingInsights/<year>); scripts/fetch_tracinginsights.py lists a season with a blob-less partial clone and fetches only session_laptimes.json. Used as the third table in the provider checks (identical to FastF1 on every timing, tyre, status and pit column for 2025-2026) and as a rate-limit-free bulk download of the FastF1 tier",
-      "coverage_note": "Not an independent measurement (FastF1 is its upstream; race lap times are the official Ergast values). Some events are missing (2025 São Paulo Grand Prix), so pass --rounds-from a calendar table for official round numbers. Telemetry and corner files exist but are not read",
+      "coverage_note": "Not an independent measurement (FastF1 is its upstream; race lap times are the official Ergast values). The archive stores no round number or circuit: pass --rounds-from the FastF1 table so rows carry the official round, circuit and event date of the FastF1 tier (without it round_number stays unset). Telemetry and corner files exist but are not read",
       "local_policy": "Cache JSON under data/cache/tracinginsights; per-session parquet under data/raw/tracinginsights; do not commit raw data. Apache 2.0 licensed by the publisher"
     },
     {

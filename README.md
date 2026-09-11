@@ -293,7 +293,7 @@ almost entirely the Australian Grand Prix, where OpenF1's own lap feed is broken
 of that check found two leaks in the OpenF1 adapter (a race started behind the safety car, and a
 stoppage reported as a session abort) that let neutralised laps through as clean; both are
 fixed and covered by tests, and `scripts/cross_provider_check.py` is the guard. The Kaggle
-Ergast dump equals the Jolpica rows the legacy tier already used (99.7%) and agrees with FastF1
+Ergast dump equals the Jolpica rows the legacy tier already used (99.96%) and agrees with FastF1
 lap times on 99.4% of 2018-2026 laps, the rest being Ergast lap-alignment errors in a few races.
 
 Fine-tuning is forward-forward only (`scripts/finetune_ffr.py`: local layer updates from the
@@ -380,7 +380,7 @@ Details: `docs/FEATURE_CONTRACT.md`, `docs/TRAINING_AND_RESEARCH.md`, `RACESHIFT
 | --- | --- | --- | --- |
 | `fastf1_timing` | 2018 → today | FastF1 live-timing archive | lap and sector times, tyre compound/age/stint, position, track status, pit markers, weather |
 | `openf1_timing` | 2023 → today | OpenF1 API (second provider; races and sprints) | the same columns as the FastF1 tier, rebuilt from OpenF1's laps, stints, pit, position, weather and race-control feeds |
-| `legacy_timing` | 1996 → 2017 | Jolpica API or the Ergast dump on Kaggle | lap time, position, constructor, pit stops; no sectors, tyres, track status or weather |
+| `legacy_timing` | 2000 → 2017 in the trained models (the Kaggle Ergast dump also holds 1996-1999 and, for lap-for-lap checks only, 2018 → today) | Jolpica API or the Ergast dump on Kaggle | lap time, position, constructor, pit stops; no sectors, tyres, track status or weather |
 
 `data/imports/f1_2025_season.parquet` is derived from the FastF1 archive of the public F1
 live-timing feed and is included only so the demo runs on real laps; it is not a redistribution
@@ -450,12 +450,12 @@ Localhost only, no credentials, path-restricted file access. See `apps/api/READM
 ```text
 apps/web/                  React/Vite UI (Overview, Forecast + backtest, Compare Drivers, Experiments, Datasets, Models, Settings); apps/web/e2e is the browser smoke test
 apps/api/                  local FastAPI backend
-src/raceshift/data/        schema, provenance, splits, FastF1 / OpenF1 / Jolpica-Ergast (API and Kaggle CSV) adapters
+src/raceshift/data/        schema, provenance, splits, FastF1 / OpenF1 / TracingInsights / Jolpica-Ergast (API and Kaggle CSV) adapters
 src/raceshift/features/    lap-state flags, segments, leakage-safe features, selection
 src/raceshift/models/      Forward-Forward regressor and artifact runtime
 src/raceshift/train/       metrics and resource measurement
 src/raceshift/foundation/  walk-forward examples for frozen time-series foundation models
-scripts/                   collectors (FastF1, OpenF1, Jolpica, Kaggle Ergast), training, fine-tuning, baselines, experiment runner, full_pipeline.sh
+scripts/                   collectors (FastF1, OpenF1, TracingInsights, Jolpica, Kaggle Ergast), cross-provider check, training, fine-tuning, baselines, experiment runner, full_pipeline.sh
 configs/                   FFR-S/M/L, group-ladder ablations, baseline settings
 reports/                   measured experiment tables (committed)
 notebooks/                 Colab workflow

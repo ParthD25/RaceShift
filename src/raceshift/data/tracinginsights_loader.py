@@ -10,9 +10,11 @@ the FastF1 tier for every session type since 2018, and a third table to hold Fas
 OpenF1 against. Rows are tagged ``data_tier = "tracinginsights_timing"``.
 
 The file is columnar: each key maps to one list with one entry per lap. Missing values are
-the string ``"None"``. The circuit is not stored; it is looked up from the event name with
-the FastF1 ``Location`` strings RaceShift already uses, so historical priors join across
-tiers.
+the string ``"None"``. The circuit is not stored; :func:`apply_calendar` takes it, with the
+official round number and event date, from any RaceShift lap table of the same seasons
+(the FastF1 table), so the rows join the FastF1 tier exactly. Without a calendar the
+circuit falls back to a season-aware map of FastF1's ``Location`` strings, which FastF1
+itself renames between seasons (Miami/Miami Gardens, Monaco/Monte Carlo).
 """
 from __future__ import annotations
 
@@ -38,6 +40,14 @@ SESSION_FOLDERS = {
 }
 
 # FastF1 event name -> FastF1 ``Location`` (the ``circuit`` value of the FastF1 tier).
+# FastF1 renames a few locations between seasons; RENAMED_CIRCUITS lists them as
+# (first season, name) steps so the fallback reproduces the value of the same season.
+RENAMED_CIRCUITS = {
+    "Abu Dhabi Grand Prix": [(2018, "Yas Marina"), (2019, "Yas Island")],
+    "Miami Grand Prix": [(2022, "Miami"), (2025, "Miami Gardens")],
+    "Monaco Grand Prix": [(2018, "Monte Carlo"), (2022, "Monaco"), (2026, "Monte Carlo")],
+    "Singapore Grand Prix": [(2018, "Singapore"), (2022, "Marina Bay")],
+}
 EVENT_TO_CIRCUIT = {
     "70th Anniversary Grand Prix": "Silverstone",
     "Abu Dhabi Grand Prix": "Yas Island",
@@ -62,7 +72,6 @@ EVENT_TO_CIRCUIT = {
     "Las Vegas Grand Prix": "Las Vegas",
     "Mexican Grand Prix": "Mexico City",
     "Mexico City Grand Prix": "Mexico City",
-    "Miami Grand Prix": "Miami Gardens",
     "Monaco Grand Prix": "Monaco",
     "Portuguese Grand Prix": "Portimão",
     "Qatar Grand Prix": "Lusail",
@@ -78,6 +87,18 @@ EVENT_TO_CIRCUIT = {
     "United States Grand Prix": "Austin",
     "Malaysian Grand Prix": "Kuala Lumpur",
 }
+
+
+def circuit_for(event: str, year: int) -> str:
+    """FastF1's ``Location`` for an event in a given season."""
+    steps = RENAMED_CIRCUITS.get(str(event))
+    if steps:
+        name = steps[0][1]
+        for first_season, step_name in steps:
+            if int(year) >= first_season:
+                name = step_name
+        return name
+    return EVENT_TO_CIRCUIT.get(str(event), str(event).replace(" Grand Prix", ""))
 
 
 def raw_url(year: int, event: str, session_folder: str, file: str = "session_laptimes.json") -> str:
@@ -116,7 +137,7 @@ def session_frame(payload: dict, year: int, event: str, session_code: str, round
         "series": "F1",
         "round_number": round_number,
         "event": str(event),
-        "circuit": circuit or EVENT_TO_CIRCUIT.get(str(event), str(event).replace(" Grand Prix", "")),
+        "circuit": circuit or circuit_for(event, year),
         "event_date": event_date,
         "session": session_code,
         "driver": _column(payload, "drv", n).astype(str),
@@ -156,33 +177,35 @@ def load_session_file(path: str | Path, year: int, event: str, session_code: str
     return session_frame(payload, year, event, session_code, round_number)
 
 
-def assign_rounds(frames: list[pd.DataFrame], calendar: pd.DataFrame | None = None) -> list[pd.DataFrame]:
-    """Round numbers per season. With ``calendar`` (any RaceShift lap table holding season,
-    event and round_number, e.g. the FastF1 or Ergast table) the official numbers are used;
-    otherwise events are numbered in the order of their first lap date, which is right
-    only when the archive holds every event of the season."""
-    known: dict[tuple[int, str], int] = {}
-    if calendar is not None and {"season", "event", "round_number"} <= set(calendar.columns):
-        cal = calendar.dropna(subset=["round_number"]).drop_duplicates(["season", "event"])
-        known = {(int(s), str(e)): int(r) for s, e, r in zip(cal["season"], cal["event"], cal["round_number"])}
-    dates: dict[tuple[int, str], pd.Timestamp] = {}
-    for f in frames:
-        if f.empty:
-            continue
-        key = (int(f["season"].iloc[0]), str(f["event"].iloc[0]))
-        first = f["lap_start_time"].dropna().min()
-        if pd.notna(first):
-            dates[key] = min(dates.get(key, first), first)
-    order: dict[tuple[int, str], int] = {}
-    for season in {k[0] for k in dates}:
-        events = sorted((k for k in dates if k[0] == season), key=lambda k: dates[k])
-        for i, key in enumerate(events, start=1):
-            order[key] = i
+def apply_calendar(frames: list[pd.DataFrame], calendar: pd.DataFrame | None = None) -> list[pd.DataFrame]:
+    """Take ``round_number``, ``circuit`` and ``event_date`` per (season, event) from
+    ``calendar``, any RaceShift lap table holding those columns (the FastF1 table), so the
+    archive's rows carry exactly the identifiers the FastF1 tier uses for the same race.
+
+    Without a calendar ``round_number`` is left unset: numbering the events the archive
+    happens to hold would shift every round after a missing event, and ``event_date``
+    already orders events chronologically. Events absent from the calendar keep the
+    fallback circuit and their own event date and stay without a round."""
+    known: dict[tuple[int, str], dict] = {}
+    if calendar is not None and {"season", "event"} <= set(calendar.columns):
+        cal = calendar.drop_duplicates(["season", "event"])
+        for _, row in cal.iterrows():
+            entry = {}
+            if "round_number" in cal.columns and pd.notna(row["round_number"]):
+                entry["round_number"] = int(row["round_number"])
+            if "circuit" in cal.columns and pd.notna(row["circuit"]):
+                entry["circuit"] = str(row["circuit"])
+            if "event_date" in cal.columns and pd.notna(row["event_date"]):
+                entry["event_date"] = str(row["event_date"])
+            known[(int(row["season"]), str(row["event"]))] = entry
     out = []
     for f in frames:
         if not f.empty:
             f = f.copy()
-            key = (int(f["season"].iloc[0]), str(f["event"].iloc[0]))
-            f["round_number"] = known.get(key, order.get(key))
+            entry = known.get((int(f["season"].iloc[0]), str(f["event"].iloc[0])), {})
+            f["round_number"] = entry.get("round_number")
+            for col in ("circuit", "event_date"):
+                if col in entry:
+                    f[col] = entry[col]
         out.append(f)
     return out

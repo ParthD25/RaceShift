@@ -15,17 +15,20 @@ this repository run on the tables named; the commands are listed at the end.
 
 ## Data integrity across providers
 
-`scripts/cross_provider_check.py` matches laps on season, event, session, driver and lap
-number and reports agreement per column (lap 1 excluded: every provider times the opening
-lap from a different reference point).
+`scripts/cross_provider_check.py` matches laps on season, official round number, session,
+driver and lap number (event names differ between providers) and reports agreement per
+column. Lap 1 is dropped from both tables before anything is counted: every provider times
+the opening lap from a different reference point. Rows with a missing key or a duplicated
+key (two drivers sharing a three-letter code in the same race, in the legacy tier) are
+excluded and counted, so every match is one lap to one lap.
 
 ### Ergast dump (Kaggle) against the Jolpica API, 2000-2017
 
 | | |
 | --- | --- |
-| Laps | 363,027 (API) vs 363,017 (dump); 355,515 shared, 330 events on both sides |
-| Lap time within 2 ms | 99.73% |
-| Position | 99.74% |
+| Laps from lap 2 | 355,758 (API) vs 355,748 (dump); 354,147 shared; 456 laps per side with a duplicated key excluded (Panis and Pantano both coded `PAN` in 2004) |
+| Lap time within 2 ms | 99.96%; 69 laps differ by more than 1 s |
+| Position | 99.97% |
 | Pit-in / pit-out flags | 98.1% (the dump records pit stops before 2011, the API collector did not fetch them) |
 
 The unmatched laps are one driver: the API loader wrote Häkkinen as `HÄK`, the dump loader
@@ -35,36 +38,41 @@ as `HAK`. Both loaders now strip accents, so the tiers agree.
 
 | | |
 | --- | --- |
-| Laps | 203,631 (FastF1) vs 204,223 (Ergast); 198,380 shared |
-| Lap time within 2 ms | 99.44%; 442 laps differ by more than 1 s |
-| Position | 99.28% |
+| Laps from lap 2 | 199,931 (FastF1) vs 200,578 (Ergast); 199,592 shared |
+| Lap time within 2 ms | 99.45%; 442 laps differ by more than 1 s |
+| Position | 99.29% |
 | Pit-in flag | 99.87% |
 | Team name | 99.6% (the dump names teams by constructor, mapped per season: RB in 2024, Racing Bulls from 2025, Kick Sauber 2024-2025, Audi and Cadillac in 2026) |
 
 The 442 lap-time disagreements are Ergast lap-alignment errors in a few races (2020
 Austrian and 2021 Styrian Grands Prix are the worst: a lap's time is attributed to the
 neighbouring lap for some drivers). Ergast has the 2018 Italian Grand Prix, which the
-FastF1 archive cannot load; it names the 2026 Barcelona race "Barcelona-Catalunya Grand
-Prix" where FastF1 says "Barcelona Grand Prix".
+FastF1 archive cannot load, and no laps for the 2021 Belgian Grand Prix (run behind the
+safety car); it names the 2026 Barcelona race "Barcelona-Catalunya Grand Prix" where
+FastF1 says "Barcelona Grand Prix", which is why laps are matched on the round number.
 
 ### TracingInsights against FastF1, 2025-2026 races
 
 | | |
 | --- | --- |
-| Laps | 41,838 (FastF1) vs 40,610 (TracingInsights); 39,852 shared |
-| Lap and sector times, compound, stint, track status, pit flags, accuracy, deleted | 100% |
-| Tyre life, position, fresh-tyre flag | 99.7-99.9% |
-| Weather columns | 84-98% (the archive joins the weather sample nearest the lap start; FastF1's table joins a neighbouring sample, so temperatures differ by a tenth of a degree) |
+| Laps from lap 2 | 41,083 (FastF1) vs 41,103 (TracingInsights); 41,083 shared (every FastF1 lap), 37 events on both sides |
+| Lap and sector times, compound, track status, pit flags, accuracy, deleted, circuit, event date | 100% |
+| Tyre life, stint, position, fresh-tyre flag | 99.7-99.9% |
+| Weather columns | 85-98% (the archive joins the weather sample nearest the lap start; FastF1's table joins a neighbouring sample, so temperatures differ by a tenth of a degree) |
 
-The archive is missing the 2025 São Paulo Grand Prix. Because its round numbers are derived
-from lap dates, the fetch script takes official round numbers from any RaceShift table
-(`--rounds-from`); without it, later rounds of an incomplete season shift by one.
+The archive holds every 2025 and 2026 race. An earlier pass of this check reported the 2025
+São Paulo Grand Prix missing: the collector listed the season repository with `git
+ls-tree`, which quotes and escapes paths with non-ASCII characters, so the "São Paulo"
+folder never matched and was silently skipped. The listing is now NUL-separated. The
+archive stores no circuit or round number; the collector takes both, and the event date,
+from the FastF1 table (`--rounds-from`) so the rows carry the same identifiers as the
+FastF1 tier, and leaves the round unset rather than numbering the events it happens to hold.
 
 ### OpenF1 against FastF1, 2025-2026 races
 
 | | |
 | --- | --- |
-| Laps | 41,838 (FastF1) vs 41,433 (OpenF1); 40,628 shared, 37 events on both sides |
+| Laps from lap 2 | 41,083 (FastF1) vs 40,671 (OpenF1); 40,628 shared, 37 events on both sides |
 | Lap and sector times within 2 ms | 97.6% (325 laps differ by more than 1 s) |
 | Position | 99.0% |
 | Pit-in / pit-out flags | 99.9% |
@@ -89,7 +97,7 @@ only the scored season differs. Mean absolute error of the next-lap forecast, se
 
 | Rows scored | FastF1 | OpenF1 | TracingInsights |
 | --- | --- | --- | --- |
-| FFR-M on the 2025 test rounds (13-24) | 0.331 (10,519 laps) | 0.327 (10,444) | 0.325 (9,538; São Paulo missing) |
+| FFR-M on the 2025 test rounds (13-24) | 0.331 (10,519 laps) | 0.327 (10,444) | 0.325 (9,538; scored before the São Paulo laps were recovered, rescore pending) |
 | FFR-S on the 2025 test rounds | 0.328 | 0.329 | |
 | previous-lap stopwatch, same rows | 0.336 | 0.340 | 0.340 |
 | FFR-M (trained to 2024) on all 2026 races | 0.413 (10,778) | 0.429 (10,675) | 0.416 (10,788) |
@@ -113,10 +121,10 @@ part of the repository.
 ## Sprints: a session type the model had never seen
 
 The FastF1 tables hold races only; OpenF1 supplies every sprint since 2023 (23 sessions,
-8,916 laps; TracingInsights agrees with OpenF1 lap for lap on the 7,086 laps it also
-holds). The 2026 domain-shift model (trained on races to 2024) was scored on sprints,
-then fine-tuned on the 2023-2024 sprints with the 2025 sprints calibrating the interval
-and the five 2026 sprints held out (1,611 scored laps).
+8,916 laps; TracingInsights holds the same sprints and agrees with OpenF1 on every one of
+the 8,426 shared laps from lap 2). The 2026 domain-shift model (trained on races to 2024)
+was scored on sprints, then fine-tuned on the 2023-2024 sprints with the 2025 sprints
+calibrating the interval and the five 2026 sprints held out (1,611 scored laps).
 
 | Model on 2026 sprints | MAE s | vs untouched model (cluster bootstrap 95%) | vs previous lap |
 | --- | --- | --- | --- |
@@ -190,7 +198,7 @@ What the numbers say:
 python scripts/fetch_openf1.py --years 2025-2026 --sessions R --output data/raw/openf1 --combine data/imports/f1_races_openf1.parquet
 python scripts/fetch_openf1.py --years 2023-2026 --sessions S --output data/raw/openf1 --combine data/imports/f1_sprints_openf1.parquet
 python scripts/fetch_tracinginsights.py --years 2025-2026 --sessions R --rounds-from data/processed/f1_laps_fastf1.parquet --combine data/imports/f1_races_tracinginsights.parquet
-python scripts/build_ergast_kaggle.py --csv-dir data/raw/ergast_kaggle --years 1996-2026 --output data/processed/f1_laps_ergast.parquet
+python scripts/build_ergast_kaggle.py --csv-dir data/raw/ergast_kaggle --years 1996-2026 --include-timing-era --output data/processed/f1_laps_ergast.parquet   # 2018+ rows for the checks only
 python scripts/cross_provider_check.py --left data/processed/f1_laps_fastf1.parquet --right data/imports/f1_races_openf1.parquet --names fastf1 openf1
 
 # same model, two providers (mixed table = FastF1 rows to 2024 + the provider's 2025-2026 rows)

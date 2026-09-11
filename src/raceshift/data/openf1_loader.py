@@ -299,23 +299,41 @@ def lap_track_status(lap_start: pd.Series, lap_end: pd.Series, intervals: list[t
     ``1`` included when some part of the lap ran under a clear track (FastF1 writes ``"12"``
     for a lap that started green and met a yellow)."""
     codes = [set() for _ in range(len(lap_start))]
-    covered = np.zeros(len(lap_start))
+    spans: list[list[tuple[np.datetime64, np.datetime64]]] = [[] for _ in range(len(lap_start))]
     start = lap_start.to_numpy(dtype="datetime64[ns]")
     end = lap_end.to_numpy(dtype="datetime64[ns]")
     length = (end - start) / np.timedelta64(1, "s")
     for s, e, code in intervals:
         s64, e64 = np.datetime64(s.tz_convert("UTC").tz_localize(None)), np.datetime64(e.tz_convert("UTC").tz_localize(None))
-        hit = (start <= e64) & (end >= s64)
-        overlap = (np.minimum(end, e64) - np.maximum(start, s64)) / np.timedelta64(1, "s")
-        for i in np.flatnonzero(hit):
+        lo, hi = np.maximum(start, s64), np.minimum(end, e64)
+        # An interval that ends exactly when the lap starts (or starts when it ends) did not
+        # run during the lap: only a strictly positive overlap counts.
+        for i in np.flatnonzero(lo < hi):
             codes[i].add(code)
-            covered[i] = max(covered[i], float(overlap[i]))
+            spans[i].append((lo[i], hi[i]))
     out = []
     for i, c in enumerate(codes):
-        if not c or not np.isfinite(length[i]) or covered[i] < length[i] - 0.5:
+        if not c or not np.isfinite(length[i]) or _union_seconds(spans[i]) < length[i] - 0.5:
             c.add("1")
         out.append("".join(code for code in STATUS_ORDER if code in c) or "1")
     return pd.Series(out, index=lap_start.index)
+
+
+def _union_seconds(spans: list[tuple[np.datetime64, np.datetime64]]) -> float:
+    """Length of the union of (start, end) spans in seconds; back-to-back neutralisations
+    (a safety car handed over to a virtual one) cover a lap together."""
+    total = 0.0
+    current_lo = current_hi = None
+    for lo, hi in sorted(spans, key=lambda span: span[0]):
+        if current_hi is None or lo > current_hi:
+            if current_hi is not None:
+                total += float((current_hi - current_lo) / np.timedelta64(1, "s"))
+            current_lo, current_hi = lo, hi
+        elif hi > current_hi:
+            current_hi = hi
+    if current_hi is not None:
+        total += float((current_hi - current_lo) / np.timedelta64(1, "s"))
+    return total
 
 
 _DELETED_ANY = re.compile(r"CAR (\d+) \((\w{3})\) (?:LAP|TIME [\d:.]+) DELETED")
@@ -418,9 +436,10 @@ def session_frame(client: OpenF1Client, meeting: dict, session: dict) -> pd.Data
         merged = pd.merge_asof(probe, wx.rename(columns={"date": "at"}), on="at", direction="nearest", tolerance=pd.Timedelta(minutes=10))
         merged = merged.set_index("index").reindex(laps.index)
         for src, dst in WEATHER_COLUMNS.items():
-            weather_cols[dst] = merged[src] if src in merged.columns else np.nan
+            if src in merged.columns:
+                weather_cols[dst] = merged[src]
     for dst in WEATHER_COLUMNS.values():
-        weather_cols.setdefault(dst, np.nan)
+        weather_cols.setdefault(dst, pd.Series(np.nan, index=laps.index, dtype=float))
 
     intervals = track_status_intervals(race_control, session_end)
     status = lap_track_status(laps["date_start"], lap_end, intervals)

@@ -270,5 +270,13 @@ variants is an effect or noise.
   lags the safety-car deployment.
 - Historical priors are medians over earlier events; a nearest-neighbour similarity
   retrieval over normalised conditions is the planned replacement.
+- FastF1 renames some locations between seasons, and `circuit` is that string: Miami is
+  `Miami` (2022-2024) and `Miami Gardens` (2025-2026), Monaco is `Monte Carlo` (2018-2021,
+  2026) and `Monaco` (2022-2025), Singapore is `Singapore` (2018-2019) and `Marina Bay`
+  (2022-2025), Abu Dhabi 2018 is `Yas Marina`. Circuit priors therefore do not carry across
+  a rename. The OpenF1 adapter reads the same location string, and the TracingInsights
+  adapter takes the circuit from the FastF1 table it is aligned to (`--rounds-from`), so
+  the tiers agree with each other (the provider checks show 100% agreement on `circuit`);
+  canonicalising the names changes the priors and means rerunning the matrix.
 - `scripts/eval_chronos2_zeroshot.py` expects the light table from `scripts/build_lap_dataset.py`
   and an optional `chronos` install; it has not been run on real data yet.

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from raceshift.data.tracinginsights_loader import DATA_TIER, assign_rounds, raw_url, session_frame
+from raceshift.data.tracinginsights_loader import DATA_TIER, apply_calendar, circuit_for, raw_url, session_frame
 
 
 def _payload():
@@ -50,16 +50,29 @@ def test_session_frame_maps_columns_and_flags():
     assert pd.isna(ver.loc[3.0, "track_temp_c"]) and ver.loc[1.0, "air_temp_c"] == 27.3
 
 
-def test_assign_rounds_orders_events_by_first_lap_date():
+def test_apply_calendar_uses_the_official_calendar_or_nothing():
     a = session_frame(_payload(), 2025, "Chinese Grand Prix", "R")
     later = _payload()
     later["lSD"] = ["2025-04-06T05:03:00", "2025-04-06T05:04:30", "2025-04-06T05:06:00", "2025-04-06T05:03:01", "2025-04-06T05:04:31"]
     b = session_frame(later, 2025, "Japanese Grand Prix", "R")
-    rounds = {f["event"].iloc[0]: int(f["round_number"].iloc[0]) for f in assign_rounds([b, a])}
-    assert rounds == {"Chinese Grand Prix": 1, "Japanese Grand Prix": 2}
-    calendar = pd.DataFrame({"season": [2025, 2025], "event": ["Chinese Grand Prix", "Japanese Grand Prix"], "round_number": [2, 3]})
-    rounds = {f["event"].iloc[0]: int(f["round_number"].iloc[0]) for f in assign_rounds([b, a], calendar)}
-    assert rounds == {"Chinese Grand Prix": 2, "Japanese Grand Prix": 3}
+    # No calendar: the archive may lack events, so no round is invented from the date order.
+    assert all(f["round_number"].isna().all() for f in apply_calendar([b, a]))
+    calendar = pd.DataFrame({"season": [2025, 2025], "event": ["Chinese Grand Prix", "Japanese Grand Prix"], "round_number": [2, 3],
+                             "circuit": ["Shanghai International", "Suzuka"], "event_date": ["2025-03-23", "2025-04-06"]})
+    frames = {f["event"].iloc[0]: f for f in apply_calendar([b, a], calendar)}
+    assert int(frames["Chinese Grand Prix"]["round_number"].iloc[0]) == 2 and int(frames["Japanese Grand Prix"]["round_number"].iloc[0]) == 3
+    assert frames["Chinese Grand Prix"]["circuit"].iloc[0] == "Shanghai International"  # the calendar's spelling wins
+    # An event the calendar does not know stays unset instead of taking a neighbour's number.
+    frames = {f["event"].iloc[0]: f for f in apply_calendar([b, a], calendar.iloc[:1])}
+    assert int(frames["Chinese Grand Prix"]["round_number"].iloc[0]) == 2 and frames["Japanese Grand Prix"]["round_number"].isna().all()
+    assert frames["Japanese Grand Prix"]["circuit"].iloc[0] == "Suzuka"
+
+
+def test_circuit_fallback_follows_fastf1_renames():
+    assert circuit_for("Miami Grand Prix", 2024) == "Miami" and circuit_for("Miami Grand Prix", 2025) == "Miami Gardens"
+    assert circuit_for("Monaco Grand Prix", 2021) == "Monte Carlo" and circuit_for("Monaco Grand Prix", 2024) == "Monaco" and circuit_for("Monaco Grand Prix", 2026) == "Monte Carlo"
+    assert circuit_for("Abu Dhabi Grand Prix", 2018) == "Yas Marina" and circuit_for("Abu Dhabi Grand Prix", 2025) == "Yas Island"
+    assert circuit_for("Italian Grand Prix", 2025) == "Monza" and circuit_for("Made Up Grand Prix", 2025) == "Made Up"
 
 
 def test_raw_url_encodes_folder_names():

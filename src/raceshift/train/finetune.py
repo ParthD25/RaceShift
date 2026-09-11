@@ -49,8 +49,42 @@ def select_rows(table: pd.DataFrame, season: int | tuple[int, int] | None, round
     return table[mask].copy()
 
 
+def replay_pool(table: pd.DataFrame, base_metrics: dict, sessions: list[str] | None, fallback_train_end: int | None = None) -> pd.DataFrame:
+    """Rows the base model has already been fitted on: its original training seasons plus,
+    when the base is itself a fine-tuned artifact, every fine-tuning selection in the chain
+    (a second fine-tune must replay the first one's rows as well, or it forgets them)."""
+    years = pd.to_numeric(table["season"], errors="coerce")
+    mask = pd.Series(False, index=table.index)
+    split = base_metrics.get("split") or {}
+    for _ in range(50):  # the chain is finite; guard against a self-referencing split
+        if not isinstance(split, dict):
+            break
+        if "train_end" in split:
+            mask |= years <= int(split["train_end"])
+            break
+        level_sessions = split.get("sessions") or sessions
+        if split.get("mode") == "fine_tune_rounds" and split.get("train_rounds") and split.get("season") is not None:
+            mask |= table.index.isin(select_rows(table, int(split["season"]), tuple(split["train_rounds"]), level_sessions).index)
+        elif split.get("mode") == "fine_tune_seasons" and split.get("train_seasons"):
+            mask |= table.index.isin(select_rows(table, tuple(split["train_seasons"]), None, level_sessions).index)
+        split = split.get("base_split")
+    else:
+        split = None
+    if not mask.any() and fallback_train_end is not None:
+        mask = years <= int(fallback_train_end)
+    return table[mask]
+
+
 def contract_features(artifact: RaceShiftArtifact) -> list[str]:
     return list(artifact.contract["numeric"]) + list(artifact.contract["categorical"])
+
+
+def cache_key(raw: pd.DataFrame, history: int) -> str:
+    """Fingerprint of a raw lap table: two tables with the same shape but different laps
+    never share a cached feature table."""
+    columns = ",".join(f"{c}:{d}" for c, d in zip(raw.columns, raw.dtypes.astype(str)))
+    content = int(pd.util.hash_pandas_object(raw, index=False).sum())
+    return f"rows={len(raw)} columns=[{columns}] content={content} history={history} lap_validity={LAP_VALIDITY_VERSION}"
 
 
 def build_table(artifact: RaceShiftArtifact, raw: pd.DataFrame, cache: str | Path | None = None) -> pd.DataFrame:
@@ -59,9 +93,10 @@ def build_table(artifact: RaceShiftArtifact, raw: pd.DataFrame, cache: str | Pat
 
     ``cache`` names a parquet that stores the built table for the same raw file and
     history, so a sweep of fine-tuning variants builds the features once. The cache is
-    keyed on the raw table's shape and the history length; anything else is rebuilt.
+    keyed on a fingerprint of the raw table (columns, dtypes and a hash of every value),
+    the history length and the lap-validity version; anything else is rebuilt.
     """
-    key = f"rows={len(raw)} cols={len(raw.columns)} history={artifact.history_laps} lap_validity={LAP_VALIDITY_VERSION}"
+    key = cache_key(raw, artifact.history_laps)
     if cache is not None and Path(cache).exists():
         cached = pd.read_parquet(cache)
         if cached.attrs.get("raceshift_cache_key") == key or (Path(cache).with_suffix(".key").exists() and Path(cache).with_suffix(".key").read_text() == key):
@@ -83,7 +118,10 @@ def encode(artifact: RaceShiftArtifact, rows: pd.DataFrame, target_clip: float |
     x = np.asarray(artifact.preprocessor.transform(rows[features]), dtype=np.float32)
     y = rows[TARGET_COLUMN].to_numpy(dtype=np.float32)
     if target_clip is not None:
-        y = np.clip(y, -float(target_clip), float(target_clip))
+        clip = float(target_clip)
+        if not np.isfinite(clip) or clip <= 0:
+            raise ValueError("target_clip must be a finite positive number of seconds")
+        y = np.clip(y, -clip, clip)
     return x, y
 
 
@@ -136,10 +174,14 @@ def copy_preprocessor(base: Path, target: Path) -> None:
     if joblib_file.exists():
         shutil.copy2(joblib_file, target / "preprocessor.joblib")
     export = base / "export"
+    target_export = target / "export"
+    if target_export.is_dir():
+        for stale in target_export.glob("*_preprocessor.json"):
+            stale.unlink()
     if export.is_dir():
-        (target / "export").mkdir(exist_ok=True)
+        target_export.mkdir(exist_ok=True)
         for spec in export.glob("*_preprocessor.json"):
-            shutil.copy2(spec, target / "export" / spec.name)
+            shutil.copy2(spec, target_export / spec.name)
 
 
 def write_contract(base: RaceShiftArtifact, target: Path, extra: dict) -> None:

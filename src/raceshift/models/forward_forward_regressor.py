@@ -269,10 +269,17 @@ class ForwardForwardRegressor:
         y = np.asarray(y, dtype=np.float32).reshape(-1)
         if x.ndim != 2 or len(x) != len(y):
             raise ValueError("x must be 2D and aligned with y")
+        if len(x) == 0:
+            raise ValueError("continue_fit needs at least one row")
         if x.shape[1] != self.input_dim:
             raise ValueError(f"expected {self.input_dim} input columns, got {x.shape[1]}")
         epochs = self.config.epochs_per_layer if epochs_per_layer is None else int(epochs_per_layer)
+        if epochs < 0:
+            raise ValueError("epochs_per_layer must be >= 0 (0 refits only the readout)")
         if learning_rate is not None:
+            learning_rate = float(learning_rate)
+            if not np.isfinite(learning_rate) or learning_rate <= 0.0:
+                raise ValueError("learning_rate must be a finite positive number")
             for layer in self.layers:
                 layer._adam_w.lr = float(learning_rate)
                 layer._adam_b.lr = float(learning_rate)

@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import argparse
 import sys
-from datetime import date
 from pathlib import Path
 
 import pandas as pd
@@ -22,14 +21,18 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from raceshift.data.openf1_loader import OpenF1Client, export_session, meeting_sessions, season_meetings  # noqa: E402
+from raceshift.data.openf1_loader import SESSION_CODES, OpenF1Client, export_session, meeting_sessions, season_meetings  # noqa: E402
 from fetch_fastf1_seasons import parse_years  # noqa: E402
+
+# A session fetched this soon after it ended could be cached incomplete (the cache never
+# expires), so it is left for the next run.
+SETTLE_HOURS = 3
 
 
 def main() -> None:
     p = argparse.ArgumentParser(description="Fetch F1 lap timing from OpenF1 into RaceShift lap tables.")
     p.add_argument("--years", default="2025")
-    p.add_argument("--sessions", nargs="+", default=["R"], help="Session codes: R, S (sprint), Q, SQ, SS, FP1-3")
+    p.add_argument("--sessions", nargs="+", default=["R"], type=str.upper, choices=sorted(set(SESSION_CODES.values())), help="Session codes: R, S (sprint), Q, SQ, SS, FP1-3")
     p.add_argument("--output", default=str(ROOT / "data" / "raw" / "openf1"))
     p.add_argument("--cache", default=str(ROOT / "data" / "cache" / "openf1"))
     p.add_argument("--combine", help="Also write every fetched session of this run into one parquet")
@@ -42,12 +45,24 @@ def main() -> None:
     produced: list[Path] = []
     failures: list[tuple[int, str, str]] = []
     skipped = 0
+    now = pd.Timestamp.now(tz="UTC")
     for year in parse_years(args.years):
-        for meeting in season_meetings(client, year):
-            if str(meeting.get("date_start", ""))[:10] > date.today().isoformat():
+        try:
+            meetings = season_meetings(client, year)
+        except Exception as exc:  # noqa: BLE001 - keep collecting, report at the end
+            print(f"FAILED {year} meetings: {exc!r}", flush=True)
+            failures.append((year, "season meetings", repr(exc)))
+            continue
+        for meeting in meetings:
+            try:
+                sessions = meeting_sessions(client, int(meeting["meeting_key"]), wanted)
+            except Exception as exc:  # noqa: BLE001
+                print(f"FAILED {year} {meeting.get('meeting_name')} sessions: {exc!r}", flush=True)
+                failures.append((year, str(meeting.get("meeting_name")), repr(exc)))
                 continue
-            for session in meeting_sessions(client, int(meeting["meeting_key"]), wanted):
-                if str(session.get("date_end", ""))[:10] >= date.today().isoformat():
+            for session in sessions:
+                session_end = pd.to_datetime(session.get("date_end"), utc=True, errors="coerce")
+                if pd.isna(session_end) or session_end + pd.Timedelta(hours=SETTLE_HOURS) > now:
                     continue
                 expected = output / f"{year}_{str(meeting['meeting_name']).replace(' ', '_')}_{session['session_code']}.parquet"
                 if expected.exists():

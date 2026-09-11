@@ -85,6 +85,8 @@ def split_from_args(
     (== val_year) chronologically.
     """
     if holdout_event:
+        if train_through_round is not None:
+            raise ValueError("train_through_round belongs to the season-round split and cannot be combined with a circuit holdout")
         rest, test = leave_event_out(df, holdout_event)
         train = rest[rest["season"] <= train_end].copy()
         val = rest[rest["season"] == val_year].copy()
