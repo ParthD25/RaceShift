@@ -10,9 +10,9 @@ Get the CSVs first, for example with kagglehub (needs a Kaggle API token):
 
 Rows are tagged ``data_tier = "legacy_timing"`` and match what ``fetch_jolpica_seasons.py``
 produces from the API, so either can feed the legacy-extended training table. Seasons from
-2018 on are the FastF1 tier's; they are exported only with ``--include-timing-era`` and
-only for the lap-for-lap checks (``scripts/cross_provider_check.py``), never concatenated
-with FastF1 rows of the same seasons.
+2018 on are the FastF1 tier's; they are exported only with ``--include-timing-era``, carry
+``data_tier = "legacy_timing_check_only"`` (which the feature builder refuses) and serve
+only the lap-for-lap checks (``scripts/cross_provider_check.py``).
 """
 from __future__ import annotations
 

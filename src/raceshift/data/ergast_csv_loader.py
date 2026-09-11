@@ -8,7 +8,10 @@ this loader is an offline mirror: rows carry ``data_tier = "legacy_timing"`` and
 by the same rules (:func:`raceshift.data.jolpica_loader.finish_legacy_frame`), and a race
 built from the CSVs matches the API row for row. It reaches 1996-1999, which the API
 collector skips by default, and it is updated a few days after each race, so it also
-covers the current season without touching the API.
+covers the current season without touching the API. Seasons from 2018 on (the FastF1
+tier's years) are exported only on request and carry ``data_tier =
+"legacy_timing_check_only"``: they serve the lap-for-lap provider checks and the feature
+builder refuses them, so they never reach a model next to the FastF1 rows of the same races.
 
 Download the CSVs with ``kagglehub.dataset_download("jtrotman/formula-1-race-data")`` (needs
 a Kaggle token) or from the dataset page, then point ``--csv-dir`` at the folder.

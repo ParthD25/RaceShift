@@ -293,8 +293,9 @@ almost entirely the Australian Grand Prix, where OpenF1's own lap feed is broken
 of that check found two leaks in the OpenF1 adapter (a race started behind the safety car, and a
 stoppage reported as a session abort) that let neutralised laps through as clean; both are
 fixed and covered by tests, and `scripts/cross_provider_check.py` is the guard. The Kaggle
-Ergast dump equals the Jolpica rows the legacy tier already used (99.99%) and agrees with FastF1
-lap times on 99.4% of 2018-2026 laps, the rest being Ergast lap-alignment errors in a few races.
+Ergast dump matches the Jolpica rows the legacy tier already used (lap times within 2 ms on
+99.99% of 353,691 shared 2000-2017 laps) and agrees with FastF1 lap times on 99.4% of
+2018-2026 laps, the rest being Ergast lap-alignment errors in a few races.
 
 Fine-tuning is forward-forward only (`scripts/finetune_ffr.py`: local layer updates from the
 saved weights, then a closed-form readout refit, base preprocessor and contract unchanged).
