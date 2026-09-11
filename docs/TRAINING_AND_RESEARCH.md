@@ -227,6 +227,27 @@ validation target. Clipping only affects residuals beyond ±6 s, which are far o
 80th percentile (about 0.6 s), so the interval is unaffected; the coverage reported in the tables
 is always evaluated on the raw, unclipped target.
 
+## Fine-tuning, forward-forward only
+
+A saved model is adapted to new laps with `scripts/finetune_ffr.py`, which calls
+`ForwardForwardRegressor.continue_fit`: every layer is trained further on its own local
+objective, one layer at a time, starting from the saved weights, and the ridge readout is
+then re-solved in closed form. Nothing is backpropagated across layers at any point; the
+base artifact's preprocessor and feature contract are reused unchanged, and the target
+scaling learnt at the original fit is kept so new residuals live on the old scale.
+
+Two details matter in practice. The readout has to be refitted on a mix of new and old rows
+(`--replay-rows`): solved on a few thousand new rows alone it forgets the old seasons and
+the test error rises above the untouched model. And the number of local epochs is a
+trade-off between adapting and forgetting; the sweep in `reports/data_sources/REPORT.md`
+records what each setting did on the 2026 rounds the model had never seen.
+
+The same script scores the untouched base model on the held-out rounds
+(`base_test_predictions.csv`) so every fine-tuning run reports its own zero-shot
+reference, and `scripts/score_artifact.py` scores any artifact on any lap table subset
+(used for the cross-provider check: the same model on FastF1 rows and on OpenF1 rows of the
+same races).
+
 ## Seed sensitivity
 
 Every headline row is one run with seed 42. Where `scripts/seed_sweep.py` has been run, the
@@ -239,8 +260,9 @@ variants is an effect or noise.
 - The 2018 Italian Grand Prix race is missing from the FastF1 tier: the live-timing archive
   fails to load timing data for that session (`Failed to load timing data!`), so the
   collector records it as a failure and every other 2018-2026 round is present.
-- Race-control messages are not yet used to flag laps affected by incidents that are not
-  encoded in the track status string. Red-flag and safety-car restart laps and yellow-flag
+- Race-control messages are used only by the OpenF1 adapter (to rebuild the track status
+  string that FastF1 provides directly); they are not yet used to flag laps affected by
+  incidents that are not encoded in the track status string. Red-flag and safety-car restart laps and yellow-flag
   laps are handled by the lap-validity rules (v3), but a slow lap caused by debris or a
   driver pitting for damage under green still passes every rule.
   Across 2018-2026, 41 laps out of 174k valid ones are more than 1.4× their driver's race
@@ -248,5 +270,13 @@ variants is an effect or noise.
   lags the safety-car deployment.
 - Historical priors are medians over earlier events; a nearest-neighbour similarity
   retrieval over normalised conditions is the planned replacement.
+- FastF1 renames some locations between seasons, and `circuit` is that string: Miami is
+  `Miami` (2022-2024) and `Miami Gardens` (2025-2026), Monaco is `Monte Carlo` (2018-2021,
+  2026) and `Monaco` (2022-2025), Singapore is `Singapore` (2018-2019) and `Marina Bay`
+  (2022-2025), Abu Dhabi 2018 is `Yas Marina`. Circuit priors therefore do not carry across
+  a rename. The OpenF1 adapter reads the same location string, and the TracingInsights
+  adapter takes the circuit from the FastF1 table it is aligned to (`--rounds-from`), so
+  the tiers agree with each other (the provider checks show 100% agreement on `circuit`);
+  canonicalising the names changes the priors and means rerunning the matrix.
 - `scripts/eval_chronos2_zeroshot.py` expects the light table from `scripts/build_lap_dataset.py`
   and an optional `chronos` install; it has not been run on real data yet.

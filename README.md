@@ -282,6 +282,33 @@ table in this README was re-run; the before/after table above is under the v2 ru
 tester used. Still open: the model does not follow a lap-on-lap trend, and value ranges are
 not validated on upload.
 
+### Three providers, one model, and fine-tuning on the next season
+
+The same laps are now available from three sources, and the model is scored on each
+(`reports/data_sources/REPORT.md`). Scored on a table whose 2025-2026 rows come from a
+different provider (history to 2024 unchanged), FFR-M's error on the 2025 test rounds is
+0.331 s on FastF1 rows, 0.327 s on OpenF1 rows and 0.322 s on TracingInsights rows, with the
+stopwatch within 0.004 s across providers; on 2026 the OpenF1 figure is 0.429 s against 0.413 s,
+almost entirely the Australian Grand Prix, where OpenF1's own lap feed is broken. The first pass
+of that check found two leaks in the OpenF1 adapter (a race started behind the safety car, and a
+stoppage reported as a session abort) that let neutralised laps through as clean; both are
+fixed and covered by tests, and `scripts/cross_provider_check.py` is the guard. The Kaggle
+Ergast dump matches the Jolpica rows the legacy tier already used (lap times within 2 ms on
+99.99% of 353,691 shared 2000-2017 laps) and agrees with FastF1 lap times on 99.4% of
+2018-2026 laps, the rest being Ergast lap-alignment errors in a few races.
+
+Fine-tuning is forward-forward only (`scripts/finetune_ffr.py`: local layer updates from the
+saved weights, then a closed-form readout refit, base preprocessor and contract unchanged).
+On the first five races of 2026 it changes nothing: the best variants tie the untouched
+model (0.3765 s vs 0.3767 s on rounds 8-13, interval straddling zero), as does FFR-M retrained
+from scratch with those races included (0.3768 s after 70 minutes of training), while the
+retrained gradient-boosted trees lead every FFR variant by 0.005 s; more local epochs or a
+readout refit without replay of old rows make the model worse. On sprints, a session type the race-trained
+model had never seen, the untouched model is no better than the stopwatch (0.496 s vs 0.491 s
+on the 2026 sprints) and a 15-second readout refit on 2023-2024 sprints brings it to 0.474 s,
+0.022 s better than untouched with an interval that excludes zero and 0.017 s better than the
+stopwatch, which does not.
+
 ## Architecture
 
 ```text
@@ -354,7 +381,8 @@ Details: `docs/FEATURE_CONTRACT.md`, `docs/TRAINING_AND_RESEARCH.md`, `RACESHIFT
 | Tier | Seasons | Source | What a lap carries |
 | --- | --- | --- | --- |
 | `fastf1_timing` | 2018 → today | FastF1 live-timing archive | lap and sector times, tyre compound/age/stint, position, track status, pit markers, weather |
-| `legacy_timing` | 2000 → 2017 | Jolpica (Ergast schema) | lap time, position, constructor, pit stops from 2011; no sectors, tyres, track status or weather |
+| `openf1_timing` | 2023 → today | OpenF1 API (second provider; races and sprints) | the same columns as the FastF1 tier, rebuilt from OpenF1's laps, stints, pit, position, weather and race-control feeds |
+| `legacy_timing` | 2000 → 2017 in the trained models (the Kaggle Ergast dump also holds 1996-1999 and, for lap-for-lap checks only, 2018 → today) | Jolpica API or the Ergast dump on Kaggle | lap time, position, constructor, pit stops; no sectors, tyres, track status or weather |
 
 `data/imports/f1_2025_season.parquet` is derived from the FastF1 archive of the public F1
 live-timing feed and is included only so the demo runs on real laps; it is not a redistribution
@@ -371,7 +399,14 @@ scripts/full_pipeline.sh fastf1 build-fastf1 experiments        # 2018→today, 
 scripts/full_pipeline.sh legacy build-all legacy-experiments    # 2000→2017 extension on the same test split
 ```
 
-Both collectors are resumable and stay under the public API budgets (FastF1 and Jolpica each
+OpenF1 is the second timing provider: `scripts/fetch_openf1.py` rebuilds every race and
+sprint since 2023 in the FastF1 column set, and `scripts/cross_provider_check.py` verifies lap
+for lap that the two providers describe the same races (see `reports/data_sources/REPORT.md`
+for the agreement figures and the two mismatches the check caught). The Kaggle Ergast dump
+(`scripts/build_ergast_kaggle.py`) is an offline mirror of the legacy tier that also reaches
+1996 and the current season. `dataset_manifest.json` lists every source with its status.
+
+All collectors are resumable and stay under the public API budgets (FastF1 and Jolpica each
 allow about 500 requests per hour), so a full collection takes several hours unattended. The
 Colab notebook `notebooks/RaceShift_FFR_Colab.ipynb` runs the same pipeline with data in
 Drive. Copy any finished artifact folder into `artifacts/` and the UI lists it.
@@ -417,12 +452,12 @@ Localhost only, no credentials, path-restricted file access. See `apps/api/READM
 ```text
 apps/web/                  React/Vite UI (Overview, Forecast + backtest, Compare Drivers, Experiments, Datasets, Models, Settings); apps/web/e2e is the browser smoke test
 apps/api/                  local FastAPI backend
-src/raceshift/data/        schema, provenance, splits, FastF1 / Jolpica-Ergast / OpenF1 adapters
+src/raceshift/data/        schema, provenance, splits, FastF1 / OpenF1 / TracingInsights / Jolpica-Ergast (API and Kaggle CSV) adapters
 src/raceshift/features/    lap-state flags, segments, leakage-safe features, selection
 src/raceshift/models/      Forward-Forward regressor and artifact runtime
 src/raceshift/train/       metrics and resource measurement
 src/raceshift/foundation/  walk-forward examples for frozen time-series foundation models
-scripts/                   collectors (FastF1, Jolpica), training, baselines, experiment runner, full_pipeline.sh
+scripts/                   collectors (FastF1, OpenF1, TracingInsights, Jolpica, Kaggle Ergast), cross-provider check, training, fine-tuning, baselines, experiment runner, full_pipeline.sh
 configs/                   FFR-S/M/L, group-ladder ablations, baseline settings
 reports/                   measured experiment tables (committed)
 notebooks/                 Colab workflow

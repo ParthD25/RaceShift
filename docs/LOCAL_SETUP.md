@@ -138,16 +138,38 @@ npm run demo:data && npm run demo:model   # synthetic fixture -> demo FFR artifa
 
 ## Optional historical data collection
 
-FastF1:
+FastF1 (primary timing tier, races 2018 onward):
 
 ```bash
 python scripts/fetch_fastf1.py --help
+python scripts/fetch_fastf1_seasons.py --years 2018-2026 --session R --output data/raw/fastf1
 ```
 
-OpenF1:
+OpenF1 (second timing provider, races and sprints 2023 onward; every response is cached
+under `data/cache/openf1`, so a season is downloaded once):
 
 ```bash
-python scripts/fetch_openf1.py --help
+python scripts/fetch_openf1.py --years 2025-2026 --sessions R --output data/raw/openf1 \
+    --combine data/imports/f1_races_openf1.parquet
+python scripts/fetch_openf1.py --years 2023-2026 --sessions S --output data/raw/openf1 \
+    --combine data/imports/f1_sprints_openf1.parquet
+```
+
+Legacy tier (lap times and positions 1996-2017, no sectors, tyres or weather): either the
+Jolpica API or the Ergast dump on Kaggle, which is the same data as CSV files:
+
+```bash
+python scripts/fetch_jolpica_seasons.py --years 2000-2017 --output data/raw/jolpica
+# or, after downloading jtrotman/formula-1-race-data into data/raw/ergast_kaggle:
+python scripts/build_ergast_kaggle.py --csv-dir data/raw/ergast_kaggle --years 1996-2017 \
+    --output data/processed/f1_laps_ergast.parquet
+```
+
+Two providers describing the same races can be checked lap for lap:
+
+```bash
+python scripts/cross_provider_check.py --left data/processed/f1_laps_fastf1.parquet \
+    --right data/imports/f1_races_openf1.parquet --names fastf1 openf1
 ```
 
 Historical data should be cached locally and not committed to Git.

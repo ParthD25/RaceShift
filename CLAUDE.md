@@ -15,6 +15,21 @@ checks layer locality with a finite-difference gradient test.
 - Fine-tuning on new laps means running the same local, layer-wise updates on the new
   rows (or retraining from the committed config); it never means attaching an autograd
   loss and backpropagating through the stack. Do not add PyTorch/JAX backprop paths.
+- The fine-tuning entry point is `scripts/finetune_ffr.py`, which calls
+  `ForwardForwardRegressor.continue_fit`: local updates from the saved weights, then a
+  closed-form ridge readout refit, reusing the base artifact's preprocessor and feature
+  contract. Example (adapt the 2026 model to the first five 2026 races, score rounds 8+):
+  `python scripts/finetune_ffr.py --base artifacts/domain_shift_2026_ffr-m --input <laps.parquet> --season 2026 --train-rounds 1-5 --val-rounds 6-7 --test-rounds 8- --replay-rows 20000 --output artifacts/<name>`.
+  Keep `--replay-rows` on: refitting the readout on the new rows alone forgets the old ones.
+
+## Data sources
+
+- FastF1 (2018+, races) is the primary timing tier; OpenF1 (2023+, races and sprints,
+  `scripts/fetch_openf1.py`) is the second provider and the only source for sprints; the
+  Ergast/Jolpica legacy tier (1996-2017, no tyres/sectors/weather) comes from the API
+  (`scripts/fetch_jolpica_seasons.py`) or the Kaggle dump (`scripts/build_ergast_kaggle.py`).
+  `dataset_manifest.json` records what each source is used for; `scripts/cross_provider_check.py`
+  verifies that two providers describe the same laps.
 
 ## Conventions
 
