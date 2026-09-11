@@ -1,12 +1,19 @@
+// Blind tester's browser walk, as run against commit 626fa60. Kept as the record of that test:
+// the <select> indexes it uses (0 dataset, 1 driver, 2 model) predate the race selector that
+// was added afterwards, so against the current UI they address the wrong controls. Requires
+// `npm i -D playwright` (not a project dependency); PW_EXEC and WEB_PORT are read from the
+// environment.
 const { chromium } = require('playwright');
+const fs = require('fs');
 (async () => {
-  const browser = await chromium.launch({ headless: true, executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+  fs.mkdirSync('shots', { recursive: true });
+  const browser = await chromium.launch({ headless: true, executablePath: process.env.PW_EXEC || undefined });
   const page = await browser.newPage({ viewport: { width: 1400, height: 1000 } });
   const consoleErrors = [], failed = [], pageErrors = [];
   page.on('console', m => { if (m.type() === 'error' || m.type() === 'warning') consoleErrors.push(`[${m.type()}] ${m.text().slice(0, 200)}`); });
   page.on('pageerror', e => pageErrors.push(String(e).slice(0, 300)));
   page.on('response', r => { if (r.status() >= 400) failed.push(`${r.status()} ${r.request().method()} ${r.url()}`); });
-  const base = 'http://127.0.0.1:5173';
+  const base = `http://127.0.0.1:${process.env.WEB_PORT ?? 5173}`;
   const routes = ['/', '/forecast', '/compare', '/experiments', '/datasets', '/models', '/settings', '/telemetry', '/strategy', '/does-not-exist'];
   for (const r of routes) {
     const t = Date.now();

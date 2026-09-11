@@ -37,5 +37,5 @@
       "ordinal_groups": 16
     }
   ],
-  "training_policy": "local-forward-forward-no-global-backprop"
+  "training_policy": "forward-forward-local-updates-no-global-backprop"
 }

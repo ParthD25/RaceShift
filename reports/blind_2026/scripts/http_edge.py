@@ -1,7 +1,10 @@
+# Blind tester's script, as run against commit 626fa60. Paths were made configurable afterwards
+# (RACESHIFT_ROOT, default ./RaceShift); the logic is unchanged.
 import json, time, io, sys, os
 import requests, pandas as pd, numpy as np
-B = 'http://127.0.0.1:8000'
-IMP = 'RaceShift/data/imports'
+R = os.environ.get('RACESHIFT_ROOT', 'RaceShift')
+B = f"http://127.0.0.1:{os.environ.get('API_PORT', '8000')}"
+IMP = f'{R}/data/imports'
 def call(method, path, label=None, **kw):
     t = time.time()
     r = requests.request(method, B + path, timeout=300, **kw)

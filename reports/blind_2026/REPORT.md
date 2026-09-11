@@ -15,7 +15,7 @@ Environment: Python 3.11.15, Node 22.22.2, 4 vCPU / 16 GB. Nothing in the produc
 5. Ran the same flows the UI runs (upload -> forecast -> 10-lap backtest) through the HTTP API and through the real React UI with Playwright (all routes, Compare, Datasets upload, mobile viewport).
 6. Attacked edge cases: leakage/perturbation and determinism tests, malformed and adversarial files, path traversal, unseen categories, absurd values, concurrency, ONNX export equivalence on unseen data.
 
-The scripts live in `scripts/` next to this file (`reproduce_2025.py`, `eval_2026.py`, `live_sim.py`, `leakage.py`, `http_edge.py`, `ui_test.js`); they expect a clone at `./RaceShift` and the fetched 2026 files under `./data2026`, which `data/imports/f1_2026_races.parquet` now supplies. Screenshots and the scored parquet were not committed.
+The scripts live in `scripts/` next to this file (`reproduce_2025.py`, `eval_2026.py`, `live_sim.py`, `leakage.py`, `http_edge.py`, `ui_test.js`). They read the clone from `RACESHIFT_ROOT` (default `./RaceShift`) and the 2026 races from its `data/imports/f1_2026_races.parquet`, which ships with the repository; the sprint and qualifying files are not shipped and that part is skipped unless they are fetched into `./data2026`. `ui_test.js` is kept as the record of the run and targets the UI of commit 626fa60. Screenshots and the scored parquet were not committed.
 
 ## 2. Headline numbers: claims vs. what I measured
 

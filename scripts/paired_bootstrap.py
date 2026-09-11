@@ -21,7 +21,14 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-KEYS = ["season", "event", "driver", "lap_number"]
+KEYS = ["season", "event", "session", "driver", "lap_number"]
+
+
+def _positive_int(value: str) -> int:
+    number = int(value)
+    if number <= 0:
+        raise argparse.ArgumentTypeError("must be a positive integer")
+    return number
 
 
 def _load(path: Path) -> pd.DataFrame:
@@ -59,13 +66,13 @@ def main() -> None:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--ffr", required=True, help="FFR artifact directory")
     p.add_argument("--baselines", required=True, help="baselines report directory")
-    p.add_argument("--draws", type=int, default=2000)
+    p.add_argument("--draws", type=_positive_int, default=2000, help="bootstrap resamples (positive)")
     p.add_argument("--seed", type=int, default=0)
     args = p.parse_args()
 
     ffr = _load(Path(args.ffr))
     base = _load(Path(args.baselines))
-    merged = ffr.merge(base, on=KEYS, suffixes=("", "_base"))
+    merged = ffr.merge(base, on=KEYS, suffixes=("", "_base"), validate="one_to_one")
     if merged.empty:
         raise SystemExit("no common lap pairs between the two prediction files")
     actual = merged["actual_next_lap_s"].to_numpy(float)
@@ -75,7 +82,7 @@ def main() -> None:
     print(f"{'baseline':24s} {'mean diff (s)':>14s} {'row 95% CI':>22s} {'cluster 95% CI':>22s} {'FFR better':>11s}")
     for column in [c for c in merged.columns if c.startswith("pred_") or c in ("previous_lap", "rolling_median_5", "ridge", "hist_gradient_boosting")]:
         other = np.abs(merged[column].to_numpy(float) - actual)
-        ok = np.isfinite(other)
+        ok = np.isfinite(ffr_err) & np.isfinite(other)
         r = paired_ci((ffr_err - other)[ok], clusters[ok], args.draws, args.seed)
         name = column.replace("pred_", "")
         print(

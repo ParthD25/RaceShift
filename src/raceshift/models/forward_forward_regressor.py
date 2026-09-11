@@ -290,7 +290,7 @@ class ForwardForwardRegressor:
             "target_scale": self.target_scale,
             "interval_q80": self.interval_q80,
             "architecture": self.architecture_summary(),
-            "training_policy": "local-forward-forward-no-global-backprop",
+            "training_policy": "forward-forward-local-updates-no-global-backprop",
         }
         (out / "model_config.json").write_text(json.dumps(metadata, indent=2))
         (out / "training_history.json").write_text(json.dumps(self.training_history, indent=2))

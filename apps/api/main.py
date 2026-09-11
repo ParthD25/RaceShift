@@ -46,7 +46,17 @@ ALLOWED_SUFFIXES = {".csv", ".parquet"}
 MAX_IMPORT_BYTES = 200 * 1024 * 1024
 MAX_IMPORT_ROWS = 2_000_000
 MAX_IMPORT_COLUMNS = 250
-_WEB_PORTS = sorted({5173, int(os.environ.get("WEB_PORT", "5173") or 5173)})
+def _web_port() -> int:
+    """WEB_PORT from the environment, falling back to Vite's default when unset or invalid."""
+    raw = os.environ.get("WEB_PORT", "5173") or "5173"
+    try:
+        port = int(raw)
+    except ValueError:
+        return 5173
+    return port if 1 <= port <= 65535 else 5173
+
+
+_WEB_PORTS = sorted({5173, _web_port()})
 UI_ORIGINS = [f"http://{host}:{port}" for port in _WEB_PORTS for host in ("localhost", "127.0.0.1")]
 _SAFE_NAME = re.compile(r"[^A-Za-z0-9._-]+")
 
@@ -55,7 +65,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=UI_ORIGINS,
     allow_credentials=False,
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["*"],
 )
 
@@ -298,6 +308,12 @@ def _value_warnings(frame: pd.DataFrame) -> list[str]:
         drivers = frame["driver"]
         if drivers.isna().any() or drivers.astype(str).str.strip().isin({"", "nan", "None"}).any():
             warnings_out.append("Some rows have an empty driver code; they will appear as a driver named 'nan'.")
+    for column in ("season", "event", "session"):
+        if column in frame.columns and frame[column].isna().any():
+            warnings_out.append(
+                f"{int(frame[column].isna().sum())} rows have an empty {column}; they are listed under a placeholder "
+                "session and cannot be forecast."
+            )
     key_cols = [c for c in ("season", "event", "session", "driver", "lap_number") if c in frame.columns]
     if len(key_cols) == 5 and frame.duplicated(key_cols).any():
         warnings_out.append(
@@ -552,9 +568,12 @@ def forecast(
     file: str = Query("synthetic_fixture.csv", description="Filename inside data/imports"),
     driver: str | None = Query(None),
     artifact: str | None = Query(None),
+    season: int | None = Query(None),
+    event: str | None = Query(None),
+    session: str | None = Query(None),
 ) -> dict[str, Any]:
     """Query-string alias of POST /api/forecast/latest kept for curl convenience."""
-    return _forecast(file, driver, artifact)
+    return _forecast(file, driver, artifact, season, event, session)
 
 
 class BacktestRequest(ForecastRequest):

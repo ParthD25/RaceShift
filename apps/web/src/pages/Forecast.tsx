@@ -166,7 +166,7 @@ export default function Forecast() {
           {backtest?.lap_validity && !backtest.lap_validity.match && <div className="warn-box">Lap-validity rules differ: model v{backtest.lap_validity.artifact ?? '?'}, runtime v{backtest.lap_validity.runtime}. The laps scored here are selected by the runtime's rules, not the ones the model was trained on.</div>}
           {backtest && (
             <>
-              <p className="prose">On {backtest.driver}'s last {backtest.summary.rows} real laps this model was within <strong>{fmtNumber(backtest.summary.mae_s)} s</strong> of the true next lap on average; simply repeating the last lap was within <strong>{fmtNumber(backtest.summary.previous_lap_mae_s)} s</strong>. {verdict(backtest.summary.mae_s, backtest.summary.previous_lap_mae_s, backtest.is_synthetic)}</p>
+              <p className="prose">On {backtest.driver}'s last {backtest.summary.rows} real laps this model was within <strong>{fmtNumber(backtest.summary.mae_s)} s</strong> of the true next lap on average; simply repeating the last lap was within <strong>{fmtNumber(backtest.summary.previous_lap_mae_s)} s</strong>. {verdict(backtest.summary.mae_s, backtest.summary.previous_lap_mae_s, backtest.is_synthetic || Boolean(backtest.data_is_synthetic))}</p>
               <div className="forecast-meta">
                 <div><strong>{fmtNumber(backtest.summary.mae_s)} s</strong><span>Mean abs. error, this model</span></div>
                 <div><strong>{fmtNumber(backtest.summary.previous_lap_mae_s)} s</strong><span>Mean abs. error, repeat the last lap</span></div>

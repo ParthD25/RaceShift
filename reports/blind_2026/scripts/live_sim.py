@@ -1,9 +1,18 @@
-import sys, warnings; warnings.filterwarnings('ignore'); sys.path.insert(0,'RaceShift/src')
+# Blind tester's script, as run against commit 626fa60. Paths were made configurable afterwards
+# (RACESHIFT_ROOT, default ./RaceShift); the logic is unchanged.
+import os, sys, warnings
+R = os.environ.get('RACESHIFT_ROOT', 'RaceShift')
+sys.path.insert(0, f'{R}/src')
+try:
+    from sklearn.exceptions import InconsistentVersionWarning
+    warnings.simplefilter('ignore', InconsistentVersionWarning)
+except ImportError:
+    pass
 import pandas as pd, numpy as np
 from raceshift.models.artifact import RaceShiftArtifact
 from raceshift.features.full_context import lap_state_flags
-art = RaceShiftArtifact('RaceShift/artifacts/f1_2025h2_ffr-m')
-r25 = pd.read_parquet('RaceShift/data/imports/f1_2025_season.parquet'); r26 = pd.read_parquet('data2026/f1_2026_races.parquet')
+art = RaceShiftArtifact(f'{R}/artifacts/f1_2025h2_ffr-m')
+r25 = pd.read_parquet(f'{R}/data/imports/f1_2025_season.parquet'); r26 = pd.read_parquet(f'{R}/data/imports/f1_2026_races.parquet')
 comb = pd.concat([r25, r26], ignore_index=True)
 table = art.inference_table(comb)     # causal features (verified identical to truncated-file forecasts)
 feats = art.contract['numeric'] + art.contract['categorical']
@@ -27,7 +36,7 @@ for (ev, drv), g in nxt.groupby(['event','driver']):
         rows.append({'event':ev,'driver':drv,'cut':cut,'pred':pred,'lo':base+float(p['lower_80'][0]),'hi':base+float(p['upper_80'][0]),'prev':float(rr.lap_time_s),'actual':rr.next_time,'next_valid':bool(rr.next_valid) if pd.notna(rr.next_valid) else None,'next_adjacent':rr.next_lap==cut+1,'next_pit_in':bool(rr.next_pit_in) if pd.notna(rr.next_pit_in) else None,'next_sc':bool(rr.next_sc)})
 d = pd.DataFrame(rows); d = d[d.actual.notna() & d.next_adjacent]
 d['ae'] = (d.pred-d.actual).abs(); d['ae_prev'] = (d.prev-d.actual).abs(); d['inside'] = (d.actual>=d.lo)&(d.actual<=d.hi)
-print(f'live-style forecasts issued: {len(rows)} of {total} driver/cut points ({refused} refused because lap N was pit/SC/inaccurate); {len(d)} had a timed adjacent next lap')
+print(f'live-style forecasts issued: {len(rows)} of {total} driver/cut points ({refused} refused because lap N was not a valid racing lap: pit, flagged, restart, deleted or inaccurate); {len(d)} had a timed adjacent next lap')
 def rep(name, q): print(f'  {name:55s} n={len(q):5d} FFR MAE={q.ae.mean():.3f} median={q.ae.median():.3f} p90={q.ae.quantile(.9):.3f} <0.5s={(q.ae<=0.5).mean():.3f} cov80={q.inside.mean():.3f} | prev-lap MAE={q.ae_prev.mean():.3f} <0.5s={(q.ae_prev<=0.5).mean():.3f}')
 rep('ALL next laps (what a live user would see)', d)
 rep('next lap was a clean racing lap (scored protocol)', d[d.next_valid==True])
