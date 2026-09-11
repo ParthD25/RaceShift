@@ -2,1601 +2,1601 @@
   {
     "layer": 1,
     "epoch": 1,
-    "local_loss": 1.9475688171386718
+    "local_loss": 1.9587228574466296
   },
   {
     "layer": 1,
     "epoch": 2,
-    "local_loss": 1.7808930606842042
+    "local_loss": 1.7897394419739687
   },
   {
     "layer": 1,
     "epoch": 3,
-    "local_loss": 1.7496929879188539
+    "local_loss": 1.7581620513113783
   },
   {
     "layer": 1,
     "epoch": 4,
-    "local_loss": 1.740660502433777
+    "local_loss": 1.7471025629616603
   },
   {
     "layer": 1,
     "epoch": 5,
-    "local_loss": 1.735913652420044
+    "local_loss": 1.741809606552124
   },
   {
     "layer": 1,
     "epoch": 6,
-    "local_loss": 1.7329302000999451
+    "local_loss": 1.7389626431362823
   },
   {
     "layer": 1,
     "epoch": 7,
-    "local_loss": 1.731067289829254
+    "local_loss": 1.7371988838834311
   },
   {
     "layer": 1,
     "epoch": 8,
-    "local_loss": 1.7299156613349915
+    "local_loss": 1.7360191590796212
   },
   {
     "layer": 1,
     "epoch": 9,
-    "local_loss": 1.7290401368141175
+    "local_loss": 1.7351410235458178
   },
   {
     "layer": 1,
     "epoch": 10,
-    "local_loss": 1.7283560242652893
+    "local_loss": 1.7344358438074332
   },
   {
     "layer": 1,
     "epoch": 11,
-    "local_loss": 1.7278243288993835
+    "local_loss": 1.7339160534445308
   },
   {
     "layer": 1,
     "epoch": 12,
-    "local_loss": 1.7273894300460815
+    "local_loss": 1.7334762095381773
   },
   {
     "layer": 1,
     "epoch": 13,
-    "local_loss": 1.727014127254486
+    "local_loss": 1.7331151302280343
   },
   {
     "layer": 1,
     "epoch": 14,
-    "local_loss": 1.7267061948776246
+    "local_loss": 1.7327430918492985
   },
   {
     "layer": 1,
     "epoch": 15,
-    "local_loss": 1.7264492883682252
+    "local_loss": 1.7324752408547464
   },
   {
     "layer": 1,
     "epoch": 16,
-    "local_loss": 1.7261985316276551
+    "local_loss": 1.7322576158548117
   },
   {
     "layer": 1,
     "epoch": 17,
-    "local_loss": 1.7259616041183472
+    "local_loss": 1.7320083093233887
   },
   {
     "layer": 1,
     "epoch": 18,
-    "local_loss": 1.7257553186416625
+    "local_loss": 1.7318809288254111
   },
   {
     "layer": 1,
     "epoch": 19,
-    "local_loss": 1.7255959753990173
+    "local_loss": 1.7316604295002034
   },
   {
     "layer": 1,
     "epoch": 20,
-    "local_loss": 1.725429651260376
+    "local_loss": 1.7315222280731528
   },
   {
     "layer": 1,
     "epoch": 21,
-    "local_loss": 1.725315308570862
+    "local_loss": 1.7313540826027998
   },
   {
     "layer": 1,
     "epoch": 22,
-    "local_loss": 1.7251687388420105
+    "local_loss": 1.7312626547056207
   },
   {
     "layer": 1,
     "epoch": 23,
-    "local_loss": 1.7250867209434508
+    "local_loss": 1.7312010188982723
   },
   {
     "layer": 1,
     "epoch": 24,
-    "local_loss": 1.724987823486328
+    "local_loss": 1.731098853978988
   },
   {
     "layer": 1,
     "epoch": 25,
-    "local_loss": 1.724870915412903
+    "local_loss": 1.7309704144113565
   },
   {
     "layer": 1,
     "epoch": 26,
-    "local_loss": 1.724813337802887
+    "local_loss": 1.7308981935353749
   },
   {
     "layer": 1,
     "epoch": 27,
-    "local_loss": 1.7247456817626954
+    "local_loss": 1.730838569960369
   },
   {
     "layer": 1,
     "epoch": 28,
-    "local_loss": 1.724660867214203
+    "local_loss": 1.7307486431793082
   },
   {
     "layer": 1,
     "epoch": 29,
-    "local_loss": 1.7246604590415955
+    "local_loss": 1.7307277201582945
   },
   {
     "layer": 1,
     "epoch": 30,
-    "local_loss": 1.7246073613166808
+    "local_loss": 1.7306542831429084
   },
   {
     "layer": 1,
     "epoch": 31,
-    "local_loss": 1.7245167703628541
+    "local_loss": 1.7306408912838784
   },
   {
     "layer": 1,
     "epoch": 32,
-    "local_loss": 1.7244721093177795
+    "local_loss": 1.73053154310955
   },
   {
     "layer": 1,
     "epoch": 33,
-    "local_loss": 1.724391417503357
+    "local_loss": 1.7305016834848428
   },
   {
     "layer": 1,
     "epoch": 34,
-    "local_loss": 1.724324376106262
+    "local_loss": 1.7304496739555326
   },
   {
     "layer": 1,
     "epoch": 35,
-    "local_loss": 1.7243301062583922
+    "local_loss": 1.7303838566137486
   },
   {
     "layer": 1,
     "epoch": 36,
-    "local_loss": 1.7242792158126832
+    "local_loss": 1.7303987224726207
   },
   {
     "layer": 1,
     "epoch": 37,
-    "local_loss": 1.724268654346466
+    "local_loss": 1.730340765269529
   },
   {
     "layer": 1,
     "epoch": 38,
-    "local_loss": 1.7242050461769105
+    "local_loss": 1.7302718628117966
   },
   {
     "layer": 1,
     "epoch": 39,
-    "local_loss": 1.7242114181518555
+    "local_loss": 1.73023177216493
   },
   {
     "layer": 1,
     "epoch": 40,
-    "local_loss": 1.7241227464675903
+    "local_loss": 1.7302817075549277
   },
   {
     "layer": 1,
     "epoch": 41,
-    "local_loss": 1.7241002717018128
+    "local_loss": 1.7302218430032035
   },
   {
     "layer": 1,
     "epoch": 42,
-    "local_loss": 1.7240464010238647
+    "local_loss": 1.7301969594709863
   },
   {
     "layer": 1,
     "epoch": 43,
-    "local_loss": 1.7240570158958435
+    "local_loss": 1.7301611854283083
   },
   {
     "layer": 1,
     "epoch": 44,
-    "local_loss": 1.7240309972763062
+    "local_loss": 1.7301263026413487
   },
   {
     "layer": 1,
     "epoch": 45,
-    "local_loss": 1.7240379910469055
+    "local_loss": 1.7301724980317472
   },
   {
     "layer": 1,
     "epoch": 46,
-    "local_loss": 1.7239576177597047
+    "local_loss": 1.7300860001805514
   },
   {
     "layer": 1,
     "epoch": 47,
-    "local_loss": 1.7239401078224181
+    "local_loss": 1.7301135610613187
   },
   {
     "layer": 1,
     "epoch": 48,
-    "local_loss": 1.723910146713257
+    "local_loss": 1.7300674490662604
   },
   {
     "layer": 1,
     "epoch": 49,
-    "local_loss": 1.7238719449043274
+    "local_loss": 1.7300443367896674
   },
   {
     "layer": 1,
     "epoch": 50,
-    "local_loss": 1.7238494052886963
+    "local_loss": 1.7299887678653898
   },
   {
     "layer": 1,
     "epoch": 51,
-    "local_loss": 1.7238073377609253
+    "local_loss": 1.7299860649354468
   },
   {
     "layer": 1,
     "epoch": 52,
-    "local_loss": 1.7238459649085998
+    "local_loss": 1.7299480489395207
   },
   {
     "layer": 1,
     "epoch": 53,
-    "local_loss": 1.7237262258529662
+    "local_loss": 1.729961550286911
   },
   {
     "layer": 1,
     "epoch": 54,
-    "local_loss": 1.723790424823761
+    "local_loss": 1.7299172243846843
   },
   {
     "layer": 1,
     "epoch": 55,
-    "local_loss": 1.7237587790489197
+    "local_loss": 1.7299343838712176
   },
   {
     "layer": 1,
     "epoch": 56,
-    "local_loss": 1.7237906193733215
+    "local_loss": 1.7299159529894719
   },
   {
     "layer": 1,
     "epoch": 57,
-    "local_loss": 1.7236843967437745
+    "local_loss": 1.7298451135086912
   },
   {
     "layer": 1,
     "epoch": 58,
-    "local_loss": 1.7236519718170167
+    "local_loss": 1.729837663183908
   },
   {
     "layer": 1,
     "epoch": 59,
-    "local_loss": 1.72367680311203
+    "local_loss": 1.7298285654174412
   },
   {
     "layer": 1,
     "epoch": 60,
-    "local_loss": 1.723687587738037
+    "local_loss": 1.7297855656546073
   },
   {
     "layer": 1,
     "epoch": 61,
-    "local_loss": 1.7235944142341615
+    "local_loss": 1.7297861596545436
   },
   {
     "layer": 1,
     "epoch": 62,
-    "local_loss": 1.7236095943450929
+    "local_loss": 1.7297701093771938
   },
   {
     "layer": 1,
     "epoch": 63,
-    "local_loss": 1.7235621914863586
+    "local_loss": 1.7297800743528702
   },
   {
     "layer": 1,
     "epoch": 64,
-    "local_loss": 1.7236022419929504
+    "local_loss": 1.7297296370559496
   },
   {
     "layer": 1,
     "epoch": 65,
-    "local_loss": 1.7235256052017212
+    "local_loss": 1.7297149625458943
   },
   {
     "layer": 1,
     "epoch": 66,
-    "local_loss": 1.723517270565033
+    "local_loss": 1.729674909247861
   },
   {
     "layer": 1,
     "epoch": 67,
-    "local_loss": 1.7235259776115417
+    "local_loss": 1.7296591623658275
   },
   {
     "layer": 1,
     "epoch": 68,
-    "local_loss": 1.7234545636177063
+    "local_loss": 1.729671012178511
   },
   {
     "layer": 1,
     "epoch": 69,
-    "local_loss": 1.7234146490097046
+    "local_loss": 1.7296372130193425
   },
   {
     "layer": 1,
     "epoch": 70,
-    "local_loss": 1.7234126439094544
+    "local_loss": 1.729613793766038
   },
   {
     "layer": 1,
     "epoch": 71,
-    "local_loss": 1.7233931651115417
+    "local_loss": 1.729624088230051
   },
   {
     "layer": 1,
     "epoch": 72,
-    "local_loss": 1.7234471158981324
+    "local_loss": 1.729602558418405
   },
   {
     "layer": 1,
     "epoch": 73,
-    "local_loss": 1.7233414497375488
+    "local_loss": 1.7295719594914514
   },
   {
     "layer": 1,
     "epoch": 74,
-    "local_loss": 1.7233407526016236
+    "local_loss": 1.7295585768417228
   },
   {
     "layer": 1,
     "epoch": 75,
-    "local_loss": 1.7233393955230714
+    "local_loss": 1.7295471992615465
   },
   {
     "layer": 1,
     "epoch": 76,
-    "local_loss": 1.7232467575073243
+    "local_loss": 1.7295136988930435
   },
   {
     "layer": 1,
     "epoch": 77,
-    "local_loss": 1.7232984919548036
+    "local_loss": 1.7295226482874335
   },
   {
     "layer": 1,
     "epoch": 78,
-    "local_loss": 1.7232047863006592
+    "local_loss": 1.7294357948548804
   },
   {
     "layer": 1,
     "epoch": 79,
-    "local_loss": 1.7232014651298524
+    "local_loss": 1.7294483665744633
   },
   {
     "layer": 1,
     "epoch": 80,
-    "local_loss": 1.7231872005462647
+    "local_loss": 1.7294314823437147
   },
   {
     "layer": 2,
     "epoch": 1,
-    "local_loss": 2.3855356397628786
+    "local_loss": 2.3896536888482744
   },
   {
     "layer": 2,
     "epoch": 2,
-    "local_loss": 2.2295832567214964
+    "local_loss": 2.246478348842506
   },
   {
     "layer": 2,
     "epoch": 3,
-    "local_loss": 2.203147488594055
+    "local_loss": 2.2203936904285086
   },
   {
     "layer": 2,
     "epoch": 4,
-    "local_loss": 2.194515504837036
+    "local_loss": 2.2092414761817505
   },
   {
     "layer": 2,
     "epoch": 5,
-    "local_loss": 2.190207399368286
+    "local_loss": 2.2035704794871447
   },
   {
     "layer": 2,
     "epoch": 6,
-    "local_loss": 2.1875156097412107
+    "local_loss": 2.200119767577863
   },
   {
     "layer": 2,
     "epoch": 7,
-    "local_loss": 2.18567160320282
+    "local_loss": 2.1979089417682696
   },
   {
     "layer": 2,
     "epoch": 8,
-    "local_loss": 2.1840843858718872
+    "local_loss": 2.1961287950753143
   },
   {
     "layer": 2,
     "epoch": 9,
-    "local_loss": 2.183082851409912
+    "local_loss": 2.1946813323467076
   },
   {
     "layer": 2,
     "epoch": 10,
-    "local_loss": 2.1816423320770264
+    "local_loss": 2.1932683287771986
   },
   {
     "layer": 2,
     "epoch": 11,
-    "local_loss": 2.1805106296539307
+    "local_loss": 2.1923318144589534
   },
   {
     "layer": 2,
     "epoch": 12,
-    "local_loss": 2.1797063484191894
+    "local_loss": 2.1911301643551675
   },
   {
     "layer": 2,
     "epoch": 13,
-    "local_loss": 2.1788110637664797
+    "local_loss": 2.19034125876529
   },
   {
     "layer": 2,
     "epoch": 14,
-    "local_loss": 2.178392825126648
+    "local_loss": 2.1896282132603067
   },
   {
     "layer": 2,
     "epoch": 15,
-    "local_loss": 2.177456916809082
+    "local_loss": 2.1888730188296077
   },
   {
     "layer": 2,
     "epoch": 16,
-    "local_loss": 2.1768855028152467
+    "local_loss": 2.1882019053201307
   },
   {
     "layer": 2,
     "epoch": 17,
-    "local_loss": 2.176117581367493
+    "local_loss": 2.1876134186855203
   },
   {
     "layer": 2,
     "epoch": 18,
-    "local_loss": 2.175596212387085
+    "local_loss": 2.1869099211795135
   },
   {
     "layer": 2,
     "epoch": 19,
-    "local_loss": 2.1751174573898315
+    "local_loss": 2.1862897422692296
   },
   {
     "layer": 2,
     "epoch": 20,
-    "local_loss": 2.174701994895935
+    "local_loss": 2.1857926569271497
   },
   {
     "layer": 2,
     "epoch": 21,
-    "local_loss": 2.174271675109863
+    "local_loss": 2.185235204614795
   },
   {
     "layer": 2,
     "epoch": 22,
-    "local_loss": 2.1739380865097044
+    "local_loss": 2.1850205501261697
   },
   {
     "layer": 2,
     "epoch": 23,
-    "local_loss": 2.173478105545044
+    "local_loss": 2.184358681731981
   },
   {
     "layer": 2,
     "epoch": 24,
-    "local_loss": 2.173131244659424
+    "local_loss": 2.1838888610381426
   },
   {
     "layer": 2,
     "epoch": 25,
-    "local_loss": 2.172928467750549
+    "local_loss": 2.1836152537186257
   },
   {
     "layer": 2,
     "epoch": 26,
-    "local_loss": 2.1722242307662962
+    "local_loss": 2.183380382767051
   },
   {
     "layer": 2,
     "epoch": 27,
-    "local_loss": 2.1722460708618163
+    "local_loss": 2.1831899149735086
   },
   {
     "layer": 2,
     "epoch": 28,
-    "local_loss": 2.1718168544769285
+    "local_loss": 2.1825538182974884
   },
   {
     "layer": 2,
     "epoch": 29,
-    "local_loss": 2.1718119497299195
+    "local_loss": 2.182337577762522
   },
   {
     "layer": 2,
     "epoch": 30,
-    "local_loss": 2.1712729091644287
+    "local_loss": 2.1819536747338946
   },
   {
     "layer": 2,
     "epoch": 31,
-    "local_loss": 2.1712001667022705
+    "local_loss": 2.1816904954132603
   },
   {
     "layer": 2,
     "epoch": 32,
-    "local_loss": 2.170768783569336
+    "local_loss": 2.18158912044738
   },
   {
     "layer": 2,
     "epoch": 33,
-    "local_loss": 2.1706697635650634
+    "local_loss": 2.1811198185441834
   },
   {
     "layer": 2,
     "epoch": 34,
-    "local_loss": 2.1703965311050415
+    "local_loss": 2.1808876438713893
   },
   {
     "layer": 2,
     "epoch": 35,
-    "local_loss": 2.1702498502731324
+    "local_loss": 2.1807358029574284
   },
   {
     "layer": 2,
     "epoch": 36,
-    "local_loss": 2.170083372116089
+    "local_loss": 2.1804218302468885
   },
   {
     "layer": 2,
     "epoch": 37,
-    "local_loss": 2.1696682682037354
+    "local_loss": 2.1802132631064484
   },
   {
     "layer": 2,
     "epoch": 38,
-    "local_loss": 2.169713725090027
+    "local_loss": 2.1799637974587633
   },
   {
     "layer": 2,
     "epoch": 39,
-    "local_loss": 2.169462975502014
+    "local_loss": 2.179802123057484
   },
   {
     "layer": 2,
     "epoch": 40,
-    "local_loss": 2.1693329668045043
+    "local_loss": 2.179745233110092
   },
   {
     "layer": 2,
     "epoch": 41,
-    "local_loss": 2.169043292999268
+    "local_loss": 2.1794144984478603
   },
   {
     "layer": 2,
     "epoch": 42,
-    "local_loss": 2.1690360860824587
+    "local_loss": 2.1792016008892796
   },
   {
     "layer": 2,
     "epoch": 43,
-    "local_loss": 2.1688037157058715
+    "local_loss": 2.179007105561285
   },
   {
     "layer": 2,
     "epoch": 44,
-    "local_loss": 2.1687296810150145
+    "local_loss": 2.17871945815025
   },
   {
     "layer": 2,
     "epoch": 45,
-    "local_loss": 2.1686255826950074
+    "local_loss": 2.178538429890579
   },
   {
     "layer": 2,
     "epoch": 46,
-    "local_loss": 2.168353566169739
+    "local_loss": 2.1784263946467717
   },
   {
     "layer": 2,
     "epoch": 47,
-    "local_loss": 2.168187984466553
+    "local_loss": 2.1786349996476724
   },
   {
     "layer": 2,
     "epoch": 48,
-    "local_loss": 2.1682448835372923
+    "local_loss": 2.1782687303845973
   },
   {
     "layer": 2,
     "epoch": 49,
-    "local_loss": 2.1680414810180664
+    "local_loss": 2.177986360926485
   },
   {
     "layer": 2,
     "epoch": 50,
-    "local_loss": 2.16805117893219
+    "local_loss": 2.1779429063264906
   },
   {
     "layer": 2,
     "epoch": 51,
-    "local_loss": 2.167899531364441
+    "local_loss": 2.1777310616980294
   },
   {
     "layer": 2,
     "epoch": 52,
-    "local_loss": 2.1678741006851197
+    "local_loss": 2.1776897303536216
   },
   {
     "layer": 2,
     "epoch": 53,
-    "local_loss": 2.1676245517730712
+    "local_loss": 2.1776534764040183
   },
   {
     "layer": 2,
     "epoch": 54,
-    "local_loss": 2.167427109718323
+    "local_loss": 2.1775061674895717
   },
   {
     "layer": 2,
     "epoch": 55,
-    "local_loss": 2.1672524938583373
+    "local_loss": 2.1772941581169425
   },
   {
     "layer": 2,
     "epoch": 56,
-    "local_loss": 2.1673941164016726
+    "local_loss": 2.1772732397005794
   },
   {
     "layer": 2,
     "epoch": 57,
-    "local_loss": 2.1672744092941283
+    "local_loss": 2.177368538574088
   },
   {
     "layer": 2,
     "epoch": 58,
-    "local_loss": 2.1669761905670164
+    "local_loss": 2.1772680630499712
   },
   {
     "layer": 2,
     "epoch": 59,
-    "local_loss": 2.1670109872817993
+    "local_loss": 2.1769824283829062
   },
   {
     "layer": 2,
     "epoch": 60,
-    "local_loss": 2.166928270339966
+    "local_loss": 2.176885741974663
   },
   {
     "layer": 2,
     "epoch": 61,
-    "local_loss": 2.166870704650879
+    "local_loss": 2.176782294915981
   },
   {
     "layer": 2,
     "epoch": 62,
-    "local_loss": 2.1667914695739747
+    "local_loss": 2.1767893697059204
   },
   {
     "layer": 2,
     "epoch": 63,
-    "local_loss": 2.166556966781616
+    "local_loss": 2.1766226629330876
   },
   {
     "layer": 2,
     "epoch": 64,
-    "local_loss": 2.166306434631348
+    "local_loss": 2.1764778180183773
   },
   {
     "layer": 2,
     "epoch": 65,
-    "local_loss": 2.16678422832489
+    "local_loss": 2.1763724042622314
   },
   {
     "layer": 2,
     "epoch": 66,
-    "local_loss": 2.1665581789016723
+    "local_loss": 2.176342971335153
   },
   {
     "layer": 2,
     "epoch": 67,
-    "local_loss": 2.166445378303528
+    "local_loss": 2.176007109138587
   },
   {
     "layer": 2,
     "epoch": 68,
-    "local_loss": 2.166383955001831
+    "local_loss": 2.176038741042174
   },
   {
     "layer": 2,
     "epoch": 69,
-    "local_loss": 2.166303126335144
+    "local_loss": 2.1759618443992514
   },
   {
     "layer": 2,
     "epoch": 70,
-    "local_loss": 2.166186236381531
+    "local_loss": 2.1760289914618234
   },
   {
     "layer": 2,
     "epoch": 71,
-    "local_loss": 2.1661434392929078
+    "local_loss": 2.175828892785592
   },
   {
     "layer": 2,
     "epoch": 72,
-    "local_loss": 2.1659975328445435
+    "local_loss": 2.175961119934213
   },
   {
     "layer": 2,
     "epoch": 73,
-    "local_loss": 2.1660040435791017
+    "local_loss": 2.175710906286608
   },
   {
     "layer": 2,
     "epoch": 74,
-    "local_loss": 2.1662572298049927
+    "local_loss": 2.175689127312198
   },
   {
     "layer": 2,
     "epoch": 75,
-    "local_loss": 2.1658063659667968
+    "local_loss": 2.1756434808984846
   },
   {
     "layer": 2,
     "epoch": 76,
-    "local_loss": 2.165819341659546
+    "local_loss": 2.175442974966483
   },
   {
     "layer": 2,
     "epoch": 77,
-    "local_loss": 2.1656915130615233
+    "local_loss": 2.175487176543142
   },
   {
     "layer": 2,
     "epoch": 78,
-    "local_loss": 2.1657292766571046
+    "local_loss": 2.1752741971241045
   },
   {
     "layer": 2,
     "epoch": 79,
-    "local_loss": 2.1657898502349853
+    "local_loss": 2.1752788631701163
   },
   {
     "layer": 2,
     "epoch": 80,
-    "local_loss": 2.1658122415542604
+    "local_loss": 2.1752927119128183
   },
   {
     "layer": 3,
     "epoch": 1,
-    "local_loss": 3.088891266822815
+    "local_loss": 3.078904687079237
   },
   {
     "layer": 3,
     "epoch": 2,
-    "local_loss": 2.908160102844238
+    "local_loss": 2.897634925760425
   },
   {
     "layer": 3,
     "epoch": 3,
-    "local_loss": 2.880726240158081
+    "local_loss": 2.8747005452413927
   },
   {
     "layer": 3,
     "epoch": 4,
-    "local_loss": 2.865679769515991
+    "local_loss": 2.861766472394886
   },
   {
     "layer": 3,
     "epoch": 5,
-    "local_loss": 2.8561390104293825
+    "local_loss": 2.853065120304091
   },
   {
     "layer": 3,
     "epoch": 6,
-    "local_loss": 2.8493236770629884
+    "local_loss": 2.8468588749226584
   },
   {
     "layer": 3,
     "epoch": 7,
-    "local_loss": 2.8444948272705077
+    "local_loss": 2.8419639880053476
   },
   {
     "layer": 3,
     "epoch": 8,
-    "local_loss": 2.8355220375061037
+    "local_loss": 2.838001836522966
   },
   {
     "layer": 3,
     "epoch": 9,
-    "local_loss": 2.8280666379928587
+    "local_loss": 2.8345630230310137
   },
   {
     "layer": 3,
     "epoch": 10,
-    "local_loss": 2.818447459220886
+    "local_loss": 2.826430795530393
   },
   {
     "layer": 3,
     "epoch": 11,
-    "local_loss": 2.8146175537109377
+    "local_loss": 2.8218750646697606
   },
   {
     "layer": 3,
     "epoch": 12,
-    "local_loss": 2.8070963525772097
+    "local_loss": 2.8187821627686462
   },
   {
     "layer": 3,
     "epoch": 13,
-    "local_loss": 2.803798864364624
+    "local_loss": 2.8163812221887286
   },
   {
     "layer": 3,
     "epoch": 14,
-    "local_loss": 2.8017773914337156
+    "local_loss": 2.8141503395440752
   },
   {
     "layer": 3,
     "epoch": 15,
-    "local_loss": 2.8001859798431394
+    "local_loss": 2.812074517999084
   },
   {
     "layer": 3,
     "epoch": 16,
-    "local_loss": 2.798857063293457
+    "local_loss": 2.810337660138699
   },
   {
     "layer": 3,
     "epoch": 17,
-    "local_loss": 2.7975696783065795
+    "local_loss": 2.80864128841351
   },
   {
     "layer": 3,
     "epoch": 18,
-    "local_loss": 2.7962511100769043
+    "local_loss": 2.8070666513729505
   },
   {
     "layer": 3,
     "epoch": 19,
-    "local_loss": 2.7953798589706422
+    "local_loss": 2.8058112670423645
   },
   {
     "layer": 3,
     "epoch": 20,
-    "local_loss": 2.794386421203613
+    "local_loss": 2.8043967316590663
   },
   {
     "layer": 3,
     "epoch": 21,
-    "local_loss": 2.793570010185242
+    "local_loss": 2.8029484257677595
   },
   {
     "layer": 3,
     "epoch": 22,
-    "local_loss": 2.7928212966918946
+    "local_loss": 2.8019546623393703
   },
   {
     "layer": 3,
     "epoch": 23,
-    "local_loss": 2.7920992574691774
+    "local_loss": 2.80074361363194
   },
   {
     "layer": 3,
     "epoch": 24,
-    "local_loss": 2.7911898918151854
+    "local_loss": 2.799558588363582
   },
   {
     "layer": 3,
     "epoch": 25,
-    "local_loss": 2.790687225341797
+    "local_loss": 2.7988833521568726
   },
   {
     "layer": 3,
     "epoch": 26,
-    "local_loss": 2.790024506568909
+    "local_loss": 2.7977439098603734
   },
   {
     "layer": 3,
     "epoch": 27,
-    "local_loss": 2.7893006343841553
+    "local_loss": 2.796839816375863
   },
   {
     "layer": 3,
     "epoch": 28,
-    "local_loss": 2.788815523147583
+    "local_loss": 2.7959883407461796
   },
   {
     "layer": 3,
     "epoch": 29,
-    "local_loss": 2.7882765522003172
+    "local_loss": 2.7951020130272077
   },
   {
     "layer": 3,
     "epoch": 30,
-    "local_loss": 2.7875920820236204
+    "local_loss": 2.794450300445884
   },
   {
     "layer": 3,
     "epoch": 31,
-    "local_loss": 2.7869974012374876
+    "local_loss": 2.7937072551301623
   },
   {
     "layer": 3,
     "epoch": 32,
-    "local_loss": 2.7866685962677002
+    "local_loss": 2.792936817259236
   },
   {
     "layer": 3,
     "epoch": 33,
-    "local_loss": 2.7859835500717165
+    "local_loss": 2.792370745040828
   },
   {
     "layer": 3,
     "epoch": 34,
-    "local_loss": 2.78565665435791
+    "local_loss": 2.7915806954510733
   },
   {
     "layer": 3,
     "epoch": 35,
-    "local_loss": 2.7851512155532836
+    "local_loss": 2.791001052815515
   },
   {
     "layer": 3,
     "epoch": 36,
-    "local_loss": 2.7846458139419554
+    "local_loss": 2.7904166459013977
   },
   {
     "layer": 3,
     "epoch": 37,
-    "local_loss": 2.784350022315979
+    "local_loss": 2.7897128659768167
   },
   {
     "layer": 3,
     "epoch": 38,
-    "local_loss": 2.7838793058395384
+    "local_loss": 2.7892801290929574
   },
   {
     "layer": 3,
     "epoch": 39,
-    "local_loss": 2.7834355154037476
+    "local_loss": 2.7886708488791796
   },
   {
     "layer": 3,
     "epoch": 40,
-    "local_loss": 2.783034984588623
+    "local_loss": 2.7880959889407833
   },
   {
     "layer": 3,
     "epoch": 41,
-    "local_loss": 2.782742148399353
+    "local_loss": 2.7878729120344565
   },
   {
     "layer": 3,
     "epoch": 42,
-    "local_loss": 2.7823277769088746
+    "local_loss": 2.7873624445542755
   },
   {
     "layer": 3,
     "epoch": 43,
-    "local_loss": 2.7822029542922975
+    "local_loss": 2.7867670130832
   },
   {
     "layer": 3,
     "epoch": 44,
-    "local_loss": 2.7816543455123903
+    "local_loss": 2.7864841524623496
   },
   {
     "layer": 3,
     "epoch": 45,
-    "local_loss": 2.781360794067383
+    "local_loss": 2.7860398323239175
   },
   {
     "layer": 3,
     "epoch": 46,
-    "local_loss": 2.781134294509888
+    "local_loss": 2.7854703976872655
   },
   {
     "layer": 3,
     "epoch": 47,
-    "local_loss": 2.780655789375305
+    "local_loss": 2.7851305100027584
   },
   {
     "layer": 3,
     "epoch": 48,
-    "local_loss": 2.7802929878234863
+    "local_loss": 2.7848992511438198
   },
   {
     "layer": 3,
     "epoch": 49,
-    "local_loss": 2.7801578636169433
+    "local_loss": 2.7845378065313904
   },
   {
     "layer": 3,
     "epoch": 50,
-    "local_loss": 2.780004514694214
+    "local_loss": 2.7841221590410488
   },
   {
     "layer": 3,
     "epoch": 51,
-    "local_loss": 2.779685173034668
+    "local_loss": 2.7837937747971693
   },
   {
     "layer": 3,
     "epoch": 52,
-    "local_loss": 2.7793256063461302
+    "local_loss": 2.783496511852281
   },
   {
     "layer": 3,
     "epoch": 53,
-    "local_loss": 2.779051868438721
+    "local_loss": 2.7832910635952275
   },
   {
     "layer": 3,
     "epoch": 54,
-    "local_loss": 2.7787481994628904
+    "local_loss": 2.7828220011338654
   },
   {
     "layer": 3,
     "epoch": 55,
-    "local_loss": 2.7785964612960816
+    "local_loss": 2.782599015297296
   },
   {
     "layer": 3,
     "epoch": 56,
-    "local_loss": 2.7781725454330446
+    "local_loss": 2.782395676993505
   },
   {
     "layer": 3,
     "epoch": 57,
-    "local_loss": 2.778030918121338
+    "local_loss": 2.7821572205539424
   },
   {
     "layer": 3,
     "epoch": 58,
-    "local_loss": 2.7780506868362425
+    "local_loss": 2.781746447853776
   },
   {
     "layer": 3,
     "epoch": 59,
-    "local_loss": 2.7777429389953614
+    "local_loss": 2.7814795264870313
   },
   {
     "layer": 3,
     "epoch": 60,
-    "local_loss": 2.777364023208618
+    "local_loss": 2.7813502862218114
   },
   {
     "layer": 3,
     "epoch": 61,
-    "local_loss": 2.7773608264923095
+    "local_loss": 2.7811723553571577
   },
   {
     "layer": 3,
     "epoch": 62,
-    "local_loss": 2.7771598119735716
+    "local_loss": 2.78079682051368
   },
   {
     "layer": 3,
     "epoch": 63,
-    "local_loss": 2.776872820854187
+    "local_loss": 2.780518986124849
   },
   {
     "layer": 3,
     "epoch": 64,
-    "local_loss": 2.7765900316238405
+    "local_loss": 2.7801371991890185
   },
   {
     "layer": 3,
     "epoch": 65,
-    "local_loss": 2.776503531455994
+    "local_loss": 2.7799917751115792
   },
   {
     "layer": 3,
     "epoch": 66,
-    "local_loss": 2.776209701538086
+    "local_loss": 2.779838169081528
   },
   {
     "layer": 3,
     "epoch": 67,
-    "local_loss": 2.7758482513427736
+    "local_loss": 2.779627333383192
   },
   {
     "layer": 3,
     "epoch": 68,
-    "local_loss": 2.7758566913604734
+    "local_loss": 2.779441255356621
   },
   {
     "layer": 3,
     "epoch": 69,
-    "local_loss": 2.7755603065490724
+    "local_loss": 2.7792125321253174
   },
   {
     "layer": 3,
     "epoch": 70,
-    "local_loss": 2.7754469776153563
+    "local_loss": 2.7790562656304356
   },
   {
     "layer": 3,
     "epoch": 71,
-    "local_loss": 2.7753002271652223
+    "local_loss": 2.7789122188551745
   },
   {
     "layer": 3,
     "epoch": 72,
-    "local_loss": 2.7750595111846925
+    "local_loss": 2.778822016818329
   },
   {
     "layer": 3,
     "epoch": 73,
-    "local_loss": 2.774825716972351
+    "local_loss": 2.7785263307104806
   },
   {
     "layer": 3,
     "epoch": 74,
-    "local_loss": 2.7747800397872924
+    "local_loss": 2.7783019665484776
   },
   {
     "layer": 3,
     "epoch": 75,
-    "local_loss": 2.7746547985076906
+    "local_loss": 2.778177569352506
   },
   {
     "layer": 3,
     "epoch": 76,
-    "local_loss": 2.7743143463134765
+    "local_loss": 2.7780345089957437
   },
   {
     "layer": 3,
     "epoch": 77,
-    "local_loss": 2.7742130556106566
+    "local_loss": 2.7780369842512926
   },
   {
     "layer": 3,
     "epoch": 78,
-    "local_loss": 2.774196584701538
+    "local_loss": 2.777681741591687
   },
   {
     "layer": 3,
     "epoch": 79,
-    "local_loss": 2.7737065420150757
+    "local_loss": 2.7774628886849073
   },
   {
     "layer": 3,
     "epoch": 80,
-    "local_loss": 2.7738720779418946
+    "local_loss": 2.777318972886376
   },
   {
     "layer": 4,
     "epoch": 1,
-    "local_loss": 3.8406820745468138
+    "local_loss": 3.8287978663464983
   },
   {
     "layer": 4,
     "epoch": 2,
-    "local_loss": 3.5958545503616333
+    "local_loss": 3.544864046727127
   },
   {
     "layer": 4,
     "epoch": 3,
-    "local_loss": 3.5708075609207155
+    "local_loss": 3.5222957369595638
   },
   {
     "layer": 4,
     "epoch": 4,
-    "local_loss": 3.5591681632995606
+    "local_loss": 3.5105618397053733
   },
   {
     "layer": 4,
     "epoch": 5,
-    "local_loss": 3.5523329601287843
+    "local_loss": 3.5049473625395944
   },
   {
     "layer": 4,
     "epoch": 6,
-    "local_loss": 3.54733726978302
+    "local_loss": 3.5013446715768315
   },
   {
     "layer": 4,
     "epoch": 7,
-    "local_loss": 3.5437068643569947
+    "local_loss": 3.4982800954401236
   },
   {
     "layer": 4,
     "epoch": 8,
-    "local_loss": 3.540800391197205
+    "local_loss": 3.4956929233452794
   },
   {
     "layer": 4,
     "epoch": 9,
-    "local_loss": 3.538169526100159
+    "local_loss": 3.4939596417635808
   },
   {
     "layer": 4,
     "epoch": 10,
-    "local_loss": 3.536328897476196
+    "local_loss": 3.49241820118458
   },
   {
     "layer": 4,
     "epoch": 11,
-    "local_loss": 3.534498386383057
+    "local_loss": 3.4908531438639234
   },
   {
     "layer": 4,
     "epoch": 12,
-    "local_loss": 3.5327681875228882
+    "local_loss": 3.489552346421925
   },
   {
     "layer": 4,
     "epoch": 13,
-    "local_loss": 3.5314536819458007
+    "local_loss": 3.4883516100854832
   },
   {
     "layer": 4,
     "epoch": 14,
-    "local_loss": 3.486435873031616
+    "local_loss": 3.487194742767596
   },
   {
     "layer": 4,
     "epoch": 15,
-    "local_loss": 3.461227632522583
+    "local_loss": 3.4861877435266715
   },
   {
     "layer": 4,
     "epoch": 16,
-    "local_loss": 3.4593517541885377
+    "local_loss": 3.4853367365481005
   },
   {
     "layer": 4,
     "epoch": 17,
-    "local_loss": 3.457990246772766
+    "local_loss": 3.4844251395295105
   },
   {
     "layer": 4,
     "epoch": 18,
-    "local_loss": 3.456680853843689
+    "local_loss": 3.48345167851755
   },
   {
     "layer": 4,
     "epoch": 19,
-    "local_loss": 3.4556679487228394
+    "local_loss": 3.482822112259435
   },
   {
     "layer": 4,
     "epoch": 20,
-    "local_loss": 3.4548066921234133
+    "local_loss": 3.482061958108337
   },
   {
     "layer": 4,
     "epoch": 21,
-    "local_loss": 3.4540474061965942
+    "local_loss": 3.481167201832129
   },
   {
     "layer": 4,
     "epoch": 22,
-    "local_loss": 3.453169358253479
+    "local_loss": 3.4805829044063716
   },
   {
     "layer": 4,
     "epoch": 23,
-    "local_loss": 3.452604751586914
+    "local_loss": 3.4799758303318926
   },
   {
     "layer": 4,
     "epoch": 24,
-    "local_loss": 3.451629508972168
+    "local_loss": 3.479418316624195
   },
   {
     "layer": 4,
     "epoch": 25,
-    "local_loss": 3.4512654733657837
+    "local_loss": 3.4788890038437086
   },
   {
     "layer": 4,
     "epoch": 26,
-    "local_loss": 3.4506219730377197
+    "local_loss": 3.478372935061803
   },
   {
     "layer": 4,
     "epoch": 27,
-    "local_loss": 3.449818278312683
+    "local_loss": 3.477860423116725
   },
   {
     "layer": 4,
     "epoch": 28,
-    "local_loss": 3.449485754966736
+    "local_loss": 3.477368293402021
   },
   {
     "layer": 4,
     "epoch": 29,
-    "local_loss": 3.4488148698806764
+    "local_loss": 3.4769832259084024
   },
   {
     "layer": 4,
     "epoch": 30,
-    "local_loss": 3.4484450731277465
+    "local_loss": 3.47646692996373
   },
   {
     "layer": 4,
     "epoch": 31,
-    "local_loss": 3.447924078941345
+    "local_loss": 3.4759981151302486
   },
   {
     "layer": 4,
     "epoch": 32,
-    "local_loss": 3.4474930171966554
+    "local_loss": 3.4756589058642735
   },
   {
     "layer": 4,
     "epoch": 33,
-    "local_loss": 3.447165919303894
+    "local_loss": 3.4752998863678632
   },
   {
     "layer": 4,
     "epoch": 34,
-    "local_loss": 3.44679221534729
+    "local_loss": 3.4748162773034093
   },
   {
     "layer": 4,
     "epoch": 35,
-    "local_loss": 3.446328012466431
+    "local_loss": 3.4745123417080728
   },
   {
     "layer": 4,
     "epoch": 36,
-    "local_loss": 3.4459189958572387
+    "local_loss": 3.4740827707773625
   },
   {
     "layer": 4,
     "epoch": 37,
-    "local_loss": 3.4456697244644166
+    "local_loss": 3.473815997782695
   },
   {
     "layer": 4,
     "epoch": 38,
-    "local_loss": 3.445239444732666
+    "local_loss": 3.4735060792112553
   },
   {
     "layer": 4,
     "epoch": 39,
-    "local_loss": 3.4448420248031617
+    "local_loss": 3.4731788195253954
   },
   {
     "layer": 4,
     "epoch": 40,
-    "local_loss": 3.4448117580413817
+    "local_loss": 3.4727758716615997
   },
   {
     "layer": 4,
     "epoch": 41,
-    "local_loss": 3.444340588569641
+    "local_loss": 3.472684567578361
   },
   {
     "layer": 4,
     "epoch": 42,
-    "local_loss": 3.4441501302719115
+    "local_loss": 3.472369605379555
   },
   {
     "layer": 4,
     "epoch": 43,
-    "local_loss": 3.4438955039978025
+    "local_loss": 3.472144005124661
   },
   {
     "layer": 4,
     "epoch": 44,
-    "local_loss": 3.443450876235962
+    "local_loss": 3.4718009504637495
   },
   {
     "layer": 4,
     "epoch": 45,
-    "local_loss": 3.4433097524642946
+    "local_loss": 3.4716993166141754
   },
   {
     "layer": 4,
     "epoch": 46,
-    "local_loss": 3.4430813989639284
+    "local_loss": 3.471309355911779
   },
   {
     "layer": 4,
     "epoch": 47,
-    "local_loss": 3.442711120605469
+    "local_loss": 3.4710841557498653
   },
   {
     "layer": 4,
     "epoch": 48,
-    "local_loss": 3.4425676364898683
+    "local_loss": 3.470910580884745
   },
   {
     "layer": 4,
     "epoch": 49,
-    "local_loss": 3.4424246006011963
+    "local_loss": 3.4704829684654532
   },
   {
     "layer": 4,
     "epoch": 50,
-    "local_loss": 3.4421011095046996
+    "local_loss": 3.4703545570373535
   },
   {
     "layer": 4,
     "epoch": 51,
-    "local_loss": 3.4420137414932253
+    "local_loss": 3.470175682730941
   },
   {
     "layer": 4,
     "epoch": 52,
-    "local_loss": 3.4417321491241455
+    "local_loss": 3.469943929639497
   },
   {
     "layer": 4,
     "epoch": 53,
-    "local_loss": 3.4414889249801637
+    "local_loss": 3.4697554039852814
   },
   {
     "layer": 4,
     "epoch": 54,
-    "local_loss": 3.4413807849884033
+    "local_loss": 3.469620046697461
   },
   {
     "layer": 4,
     "epoch": 55,
-    "local_loss": 3.441239157676697
+    "local_loss": 3.4694831749911983
   },
   {
     "layer": 4,
     "epoch": 56,
-    "local_loss": 3.441150047302246
+    "local_loss": 3.469214756601358
   },
   {
     "layer": 4,
     "epoch": 57,
-    "local_loss": 3.4407165994644164
+    "local_loss": 3.4690083157862714
   },
   {
     "layer": 4,
     "epoch": 58,
-    "local_loss": 3.4407946338653566
+    "local_loss": 3.468923728353476
   },
   {
     "layer": 4,
     "epoch": 59,
-    "local_loss": 3.440545973777771
+    "local_loss": 3.4686816055887246
   },
   {
     "layer": 4,
     "epoch": 60,
-    "local_loss": 3.4404495992660524
+    "local_loss": 3.4684090419900264
   },
   {
     "layer": 4,
     "epoch": 61,
-    "local_loss": 3.4401293773651123
+    "local_loss": 3.4683773241329603
   },
   {
     "layer": 4,
     "epoch": 62,
-    "local_loss": 3.4400796356201173
+    "local_loss": 3.4681359831355674
   },
   {
     "layer": 4,
     "epoch": 63,
-    "local_loss": 3.43996897315979
+    "local_loss": 3.468084129652752
   },
   {
     "layer": 4,
     "epoch": 64,
-    "local_loss": 3.439771647453308
+    "local_loss": 3.468023678775509
   },
   {
     "layer": 4,
     "epoch": 65,
-    "local_loss": 3.4397654933929442
+    "local_loss": 3.4677971790788513
   },
   {
     "layer": 4,
     "epoch": 66,
-    "local_loss": 3.439644578933716
+    "local_loss": 3.467629867561897
   },
   {
     "layer": 4,
     "epoch": 67,
-    "local_loss": 3.439377588272095
+    "local_loss": 3.4673777066586866
   },
   {
     "layer": 4,
     "epoch": 68,
-    "local_loss": 3.4393478240966795
+    "local_loss": 3.46730271429463
   },
   {
     "layer": 4,
     "epoch": 69,
-    "local_loss": 3.4393216686248778
+    "local_loss": 3.4671024478044634
   },
   {
     "layer": 4,
     "epoch": 70,
-    "local_loss": 3.4390660734176635
+    "local_loss": 3.466992444746484
   },
   {
     "layer": 4,
     "epoch": 71,
-    "local_loss": 3.439023560523987
+    "local_loss": 3.4669010628958117
   },
   {
     "layer": 4,
     "epoch": 72,
-    "local_loss": 3.4389078130722046
+    "local_loss": 3.466864558248561
   },
   {
     "layer": 4,
     "epoch": 73,
-    "local_loss": 3.438775562286377
+    "local_loss": 3.466709464404716
   },
   {
     "layer": 4,
     "epoch": 74,
-    "local_loss": 3.438528402328491
+    "local_loss": 3.466657263014961
   },
   {
     "layer": 4,
     "epoch": 75,
-    "local_loss": 3.438374895095825
+    "local_loss": 3.4664519498276607
   },
   {
     "layer": 4,
     "epoch": 76,
-    "local_loss": 3.438327692985535
+    "local_loss": 3.466516776146295
   },
   {
     "layer": 4,
     "epoch": 77,
-    "local_loss": 3.4382541284561157
+    "local_loss": 3.4662744170094766
   },
   {
     "layer": 4,
     "epoch": 78,
-    "local_loss": 3.4381507902145385
+    "local_loss": 3.4661035813998766
   },
   {
     "layer": 4,
     "epoch": 79,
-    "local_loss": 3.4380720500946045
+    "local_loss": 3.465935610906249
   },
   {
     "layer": 4,
     "epoch": 80,
-    "local_loss": 3.437984459877014
+    "local_loss": 3.465926218442139
   }
 ]

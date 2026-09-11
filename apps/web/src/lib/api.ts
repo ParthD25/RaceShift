@@ -28,6 +28,7 @@ export type RuntimeResponse = {
   platform: string;
   packages: Record<string, string | null>;
   data_mode: string;
+  lap_validity_version?: number;
   live_connected: boolean;
   live_note: string;
   default_artifact: { id: string; ready: boolean; is_synthetic: boolean; data_source: string };
@@ -58,6 +59,8 @@ export type ArtifactEntry = {
   validation: Metrics | null;
   test: Metrics | null;
   created_utc: string | null;
+  lap_validity_version?: number | null;
+  validity_rules_match?: boolean;
 };
 
 export type BaselineEntry = { id: string; name: string; role: string; training: string; ready: boolean };
@@ -139,8 +142,11 @@ export type ForecastResult = {
   data_file_source?: string;
   data_is_synthetic?: boolean;
   session_warning?: string | null;
+  lap_validity?: LapValidity;
   file: string;
 };
+
+export type LapValidity = { runtime: number; artifact: number | null; match: boolean };
 
 export type BacktestRequest = ForecastRequest & { laps?: number };
 
@@ -190,6 +196,7 @@ export type BacktestResult = {
   is_synthetic: boolean;
   data_file_source?: string;
   data_is_synthetic?: boolean;
+  lap_validity?: LapValidity;
   file: string;
 };
 

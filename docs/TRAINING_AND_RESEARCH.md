@@ -180,9 +180,16 @@ are close and both trail the tree model.
 
 ## Data hygiene decisions that changed the results
 
-- Pit-in, pit-out, safety-car, VSC, red-flag, deleted and inaccurate laps are never
-  training rows or targets, and every lag or rolling statistic is scoped to the current run
+- Pit-in, pit-out, yellow-flag, safety-car, VSC, red-flag, deleted and inaccurate laps are
+  never training rows or targets, and every lag or rolling statistic is scoped to the current run
   of consecutive valid laps (`docs/FEATURE_CONTRACT.md`).
+- Lap-validity rules v3 exclude yellow-flag laps and the first lap after a safety-car
+  period. An independent blind test on the 2026 races (`reports/blind_2026/REPORT.md`) found
+  yellow laps that had passed as "clean" carrying 1.9 s mean error with a +1.5 s bias, and
+  the lap after a safety car entering the rolling-5 baseline 20 s slow. Measured over
+  2018-2026, the two rules remove 4.6% of previously valid laps and cut the naive
+  previous-lap error on the 2025 test rounds from 0.357 s to 0.336 s: the targets are cleaner,
+  so every model's error falls and version 2 and version 3 numbers must not be compared.
 - Lap-validity rules v2 also exclude the **restart lap** after a red flag. Under v1 the
   first timed lap after a stoppage (pit-lane exit, formation lap, standing restart) carried a
   clear track status and an "accurate" marker, passed every rule, and produced 40-56 s
@@ -232,9 +239,9 @@ variants is an effect or noise.
   fails to load timing data for that session (`Failed to load timing data!`), so the
   collector records it as a failure and every other 2018-2026 round is present.
 - Race-control messages are not yet used to flag laps affected by incidents that are not
-  encoded in the track status string. The red-flag restart lap is now handled by the
-  lap-validity rules (v2), but a slow lap caused by debris, a local yellow that never became
-  a full-course status, or a driver pitting for damage under green still passes every rule.
+  encoded in the track status string. Red-flag and safety-car restart laps and yellow-flag
+  laps are handled by the lap-validity rules (v3), but a slow lap caused by debris or a
+  driver pitting for damage under green still passes every rule.
   Across 2018-2026, 41 laps out of 174k valid ones are more than 1.4× their driver's race
   median without any flag; most are 2020 Austrian Grand Prix laps where the status string
   lags the safety-car deployment.

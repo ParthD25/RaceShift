@@ -17,10 +17,15 @@ outliers cannot dominate the fit. Evaluation always uses the raw next lap time.
 ## Which laps are training rows
 
 A lap is a **valid racing lap** when it has a lap time, FastF1 marks it accurate, it is not
-deleted, it is not a pit-in, pit-out, safety-car, virtual-safety-car or red-flag lap
-(FastF1 track status codes 4, 5, 6, 7), and it is not the **restart lap** after a red flag.
+deleted, it is not a pit-in, pit-out, yellow-flag, safety-car, virtual-safety-car or
+red-flag lap (FastF1 track status codes 2, 4, 5, 6, 7), and it is not the **restart lap**
+after a red flag or after a safety-car period (the first timed lap once the flag clears).
 A row enters training only when the lap itself **and** the adjacent next lap are valid
-racing laps. Yellow-flag laps (code 2) stay in and are flagged.
+racing laps. Rules v3 (yellow laps and the safety-car restart lap invalid) were adopted after
+measuring 2018-2026: yellow laps were 3.6% of valid laps and 8.7% of them ran more than 5%
+slower than the driver's race median (1.9% for all laps); the lap after a safety car was 2.2%
+slower at the median. The lap after a VSC (median ratio 1.000) and the second lap after a
+safety car (1.010) stay valid.
 
 The restart lap is the first timed lap of a driver's session after a lap carrying status 5.
 FastF1 records it with a clear status and an "accurate" marker although it covers the
@@ -37,7 +42,7 @@ Version 1 had no restart rule; every number in the README was produced under ver
 The lap-state columns are kept on the table for analysis but are **not** model inputs:
 
 ```text
-lap_valid  is_safety_car  is_vsc  is_yellow  is_red_flag  is_red_flag_restart  is_pit_in  is_pit_out  is_deleted
+lap_valid  is_safety_car  is_vsc  is_yellow  is_red_flag  is_red_flag_restart  is_safety_car_restart  is_pit_in  is_pit_out  is_deleted
 ```
 
 ## Segments: how temporal context is scoped

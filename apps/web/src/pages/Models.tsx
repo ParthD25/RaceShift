@@ -26,6 +26,7 @@ export default function Models() {
                     <div><span>Test MAE</span><strong>{fmtNumber(a.test?.mae_s)} s</strong></div>
                   </>}
               <div><span>Data</span><strong>{a.data_source}</strong></div>
+              {a.lap_validity_version != null && <div><span>Lap rules</span><strong className={a.validity_rules_match === false ? 'bad' : undefined}>v{a.lap_validity_version}{a.validity_rules_match === false ? ' · runtime applies a newer rule set, retrain before trusting its metrics' : ''}</strong></div>}
               {!a.ready && a.role !== 'baseline-report' && <div><span>Missing</span><strong className="bad">{a.missing_files.join(', ')}</strong></div>}
               {a.ready && a.role !== 'baseline-report' && <div><span>Export</span><strong><a href={api.modelExportUrl(a.id)} download>{a.id}.zip</a> · ONNX core, JSON preprocessor, model card</strong></div>}
             </div>

@@ -1,16 +1,16 @@
 # RaceShift experiment: f1_2025h2_legacy_ext
 
-Generated 2026-09-10T02:42:19+00:00 from `f1_laps_all_tiers.parquet` (data source: fastf1_timing+legacy_timing).
+Generated 2026-09-11T15:32:47+00:00 from `f1_laps_all_tiers.parquet` (data source: fastf1_timing+legacy_timing).
 Split: season_round · train ≤ 2024 · validation 2025 · test 2025 · split round 12
-Rows: train 429546 · validation 10248 · test 10994
+Rows: train 420867 · validation 9751 · test 10519
 
 | Model | Val MAE (s) | Test MAE (s) | Test RMSE (s) | Test p90 (s) | Laps within 0.5 s | Laps within 1 s | 80% coverage | Interval width (s) | Train time (s) | Peak RSS (MB) | Traced train peak (MB) | Artifact (MB) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| previous_lap | 0.434 | 0.357 | 0.645 | 0.822 | 80.6% | 92.7% | — | — | 0.0 | 0 | 0 | — |
-| rolling_median_5 | 0.524 | 0.394 | 0.675 | 0.889 | 76.9% | 91.9% | — | — | 0.0 | 0 | 0 | — |
-| ridge | 0.463 | 0.368 | 0.614 | 0.781 | 78.7% | 93.7% | — | — | 4.5 | 7171 | 2306 | — |
-| hist_gradient_boosting | 0.395 | 0.315 | 0.570 | 0.679 | 83.6% | 94.7% | — | — | 175.1 | 10157 | 3369 | — |
-| FFR-M | 0.425 | 0.351 | 0.595 | 0.740 | 80.2% | 94.4% | 0.856 | 1.201 | 7958.8 | 8953 | 4762 | 3.99 |
-| FFR-S | 0.425 | 0.348 | 0.592 | 0.739 | 80.7% | 94.4% | 0.858 | 1.202 | 1775.8 | 7403 | 2570 | 2.21 |
+| previous_lap | 0.388 | 0.336 | 0.551 | 0.768 | 81.8% | 93.5% | — | — | 0.0 | 0 | 0 | — |
+| rolling_median_5 | 0.448 | 0.366 | 0.576 | 0.825 | 78.6% | 93.0% | — | — | 0.0 | 0 | 0 | — |
+| ridge | 0.420 | 0.342 | 0.523 | 0.732 | 81.0% | 94.4% | — | — | 3.5 | 6957 | 2258 | — |
+| hist_gradient_boosting | 0.357 | 0.303 | 0.493 | 0.647 | 84.6% | 95.0% | — | — | 190.2 | 9987 | 3321 | — |
+| FFR-M | 0.382 | 0.328 | 0.508 | 0.706 | 82.1% | 94.8% | 0.854 | 1.122 | 10173.5 | 8771 | 4666 | 3.94 |
+| FFR-S | 0.385 | 0.325 | 0.503 | 0.695 | 82.4% | 94.9% | 0.858 | 1.136 | 2373.4 | 7291 | 2518 | 2.15 |
 
 MAE, RMSE and p90 are absolute errors on the true next lap time in seconds (lower is better); the within-tolerance columns are the share of test laps predicted within 0.5 s and 1 s of the true lap (higher is better). Coverage is the share of test laps inside the 80% interval (baselines have no interval). Peak RSS is the process high-water mark, so it includes data loading; the traced peak is Python-allocated memory during the fit only (tracemalloc), the closer proxy for training-memory requirements.

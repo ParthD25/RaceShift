@@ -132,7 +132,7 @@ class RaceShiftArtifact:
         ].sort_values("lap_number")
         if candidates.empty or int(candidates.iloc[-1]["lap_number"]) != int(latest["lap_number"]):
             raise ValueError(
-                "The latest lap for this driver is not a usable completed lap (pit, deleted or inaccurate). "
+                "The latest lap for this driver is not a usable completed lap (pit, flagged, restart, deleted or inaccurate). "
                 "Import more completed laps or choose another driver."
             )
         row = candidates.iloc[-1:]
@@ -218,8 +218,8 @@ class RaceShiftArtifact:
         """Score the model on the last ``laps`` completed lap pairs of one driver in the latest session.
 
         Every row is a lap N whose next lap N+1 was actually driven, so predicted and actual
-        can be compared. Only pairs where both laps are valid racing laps count (pit, safety-car,
-        red-flag and deleted laps are skipped, exactly as in training). Nothing here looks past
+        can be compared. Only pairs where both laps are valid racing laps count (pit, yellow-flag,
+        safety-car, red-flag, restart and deleted laps are skipped, exactly as in training). Nothing here looks past
         lap N when predicting lap N+1: the feature table is the same leakage-safe table used for
         training and the model never sees the actual next lap.
         """
@@ -251,7 +251,7 @@ class RaceShiftArtifact:
         if rows.empty:
             raise ValueError(
                 "No completed lap pairs for this driver where both laps are valid racing laps "
-                "(pit, safety-car, red-flag and deleted laps are excluded, as in training)."
+                "(pit, yellow-flag, safety-car, red-flag, restart and deleted laps are excluded, as in training)."
             )
         rows = rows.tail(int(laps))
 

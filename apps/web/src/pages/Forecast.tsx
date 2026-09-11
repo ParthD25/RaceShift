@@ -117,7 +117,7 @@ export default function Forecast() {
               <BrainCircuit size={18} />
               <div>
                 <strong>{selectedArtifact.name} · {selectedArtifact.id} <SourceBadge kind={sourceKindFor(selectedArtifact.is_synthetic)} /></strong>
-                <p>{selectedArtifact.is_synthetic ? 'Trained on the synthetic engineering fixture. Use it to verify the workflow, not to judge Formula 1 accuracy.' : `Trained on ${selectedArtifact.data_source}.`}</p>
+                <p>{selectedArtifact.is_synthetic ? 'Trained on the synthetic engineering fixture. Use it to verify the workflow, not to judge Formula 1 accuracy.' : `Trained on ${selectedArtifact.data_source}.`}{selectedArtifact.lap_validity_version != null ? ` Lap-validity rules v${selectedArtifact.lap_validity_version}${selectedArtifact.validity_rules_match === false ? ' (this runtime applies a newer rule set; see the warning after running)' : ''}.` : ''}</p>
               </div>
             </div>
           )}
@@ -145,6 +145,7 @@ export default function Forecast() {
       {(backtest || backtestError) && (
         <Panel title={`How did it do on ${backtest?.driver ?? result?.driver ?? 'this driver'}'s last ${backtest?.summary.rows ?? 10} real laps?`} icon={<Target size={17} />} action={backtest ? <SourceBadge kind={sourceKindFor(backtest.is_synthetic)} text="Laps actually driven" /> : null}>
           {backtestError && <div className="error-box">{backtestError}</div>}
+          {backtest?.lap_validity && !backtest.lap_validity.match && <div className="warn-box">Lap-validity rules differ: model v{backtest.lap_validity.artifact ?? '?'}, runtime v{backtest.lap_validity.runtime}. The laps scored here are selected by the runtime's rules, not the ones the model was trained on.</div>}
           {backtest && (
             <>
               <p className="prose">On {backtest.driver}'s last {backtest.summary.rows} real laps this model was within <strong>{fmtNumber(backtest.summary.mae_s)} s</strong> of the true next lap on average; simply repeating the last lap was within <strong>{fmtNumber(backtest.summary.previous_lap_mae_s)} s</strong>. {backtest.summary.mae_s <= backtest.summary.previous_lap_mae_s ? 'The model beat the stopwatch here.' : 'The stopwatch won on these laps. Over whole seasons the model is ahead of the stopwatch by a few hundredths of a second per lap and wins about half of all laps, which is the honest size of its edge.'}</p>
@@ -166,7 +167,7 @@ export default function Forecast() {
                   </div>
                 ))}
               </div>
-              <p className="prose small">Each row forecasts lap N+1 from what was known at the end of lap N; the model never sees the actual next lap. {backtest.skipped_laps} of {backtest.laps_driven} laps were pit, safety-car, red-flag or deleted laps without a valid adjacent pair and are skipped, exactly as in training.</p>
+              <p className="prose small">Each row forecasts lap N+1 from what was known at the end of lap N; the model never sees the actual next lap. {backtest.skipped_laps} of {backtest.laps_driven} laps were pit, yellow-flag, safety-car, red-flag, restart or deleted laps without a valid adjacent pair and are skipped, exactly as in training.</p>
             </>
           )}
         </Panel>
@@ -175,6 +176,7 @@ export default function Forecast() {
       <Panel title={`Next lap forecast (lap ${result ? result.lap_number_completed + 1 : "N+1"})`} icon={<Target size={17} />} action={result ? <SourceBadge kind={resultMismatch ? 'fixture' : sourceKindFor(result.is_synthetic)} text={resultMismatch ? (result.is_synthetic ? 'Synthetic model · real laps' : 'Real model · synthetic laps') : undefined} /> : null}>
         {error && <div className="error-box">{error}</div>}
         {result?.session_warning && <div className="warn-box">{result.session_warning}</div>}
+        {result?.lap_validity && !result.lap_validity.match && <div className="warn-box">This model was trained under lap-validity rules v{result.lap_validity.artifact ?? '?'} but this runtime applies v{result.lap_validity.runtime}: its inputs are built from a different set of laps than it learned on, so its published metrics do not describe this forecast. Retrain or pick a model whose rules match.</div>}
         {resultMismatch && <div className="warn-box">Model and data come from different sources ({result?.is_synthetic ? 'synthetic model on real laps' : 'real model on the synthetic fixture'}). Treat this number as a workflow check only.</div>}
         {!result && !error && <div className="empty-inline">No forecast has been run yet. Choose a dataset and press <strong>Run forecast</strong>.</div>}
         {result && (

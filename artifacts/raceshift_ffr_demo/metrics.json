@@ -259,23 +259,28 @@
   },
   "resources": {
     "feature_build": {
-      "wall_seconds": 1.177,
-      "peak_rss_mb": 208.9,
+      "wall_seconds": 1.33,
+      "peak_rss_mb": 209.1,
       "peak_traced_mb": 9.2
     },
     "training": {
-      "wall_seconds": 0.081,
-      "peak_rss_mb": 212.2,
+      "wall_seconds": 0.093,
+      "peak_rss_mb": 212.6,
       "peak_traced_mb": 2.4
     },
-    "inference_batch_ms_per_row": 0.0334,
-    "inference_single_row_ms": 0.45,
-    "artifact_bytes": 439824,
+    "inference_batch_ms_per_row": 0.1073,
+    "inference_single_row_ms": 0.544,
+    "artifact_bytes": 441700,
     "device": "cpu-numpy"
   },
   "data_source": "synthetic_fixture",
   "is_synthetic": true,
   "input_file": "synthetic_fixture.csv",
-  "lap_validity_version": 2,
-  "created_utc": "2026-09-08T23:06:07+00:00"
+  "lap_validity_version": 3,
+  "hardware": {
+    "cpu_count": 4,
+    "machine": "x86_64",
+    "python": "3.11.15"
+  },
+  "created_utc": "2026-09-10T21:30:38+00:00"
 }

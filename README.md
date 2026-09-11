@@ -95,61 +95,61 @@ three widths (256→128, 512→384→256→192 and 1024→768→512→384 hidden
 ## Results
 
 <!-- RESULTS:BEGIN -->
-**Season-round split, 2018-2025 FastF1 tier** — train ≤ 2024 · validation 2025 rounds ≤ 12 · test 2025 rounds > 12. Rows: train 127861, validation 10248, test 10994. Data: fastf1_timing.
+**Season-round split, 2018-2025 FastF1 tier** — train ≤ 2024 · validation 2025 rounds ≤ 12 · test 2025 rounds > 12. Rows: train 119182, validation 9751, test 10519. Data: fastf1_timing.
 
 | Model | Test MAE (s) | Test RMSE (s) | p90 (s) | Laps within 0.5 s | 80% coverage | Train time (s) | Peak RSS (MB) | Traced train peak (MB) | Artifact (MB) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| previous_lap | 0.357 | 0.645 | 0.822 | 80.6% | — | — | — | — | — |
-| rolling_median_5 | 0.394 | 0.675 | 0.889 | 76.9% | — | — | — | — | — |
-| ridge | 0.392 | 0.622 | 0.801 | 74.8% | — | 0.6 | 1753 | 365 | — |
-| **hist_gradient_boosting** | 0.316 | 0.569 | 0.684 | 83.8% | — | 56.0 | 2162 | 467 | — |
-| FFR-M | 0.350 | 0.593 | 0.729 | 80.6% | 0.862 | 2234.1 | 2868 | 1421 | 3.37 |
-| FFR-S | 0.350 | 0.590 | 0.729 | 80.5% | 0.858 | 390.3 | 2024 | 636 | 1.88 |
-| FFR-L | 0.348 | 0.595 | 0.731 | 80.5% | 0.861 | 9985.4 | 4154 | 2778 | 8.24 |
-| FFR-M-groups-coarse | 0.350 | 0.598 | 0.740 | 80.4% | 0.854 | 2088.2 | 2811 | 1417 | 3.33 |
-| FFR-M-groups-fine | 0.351 | 0.593 | 0.740 | 80.1% | 0.863 | 2190.8 | 2980 | 1429 | 3.37 |
-| FFR-M minus historical_numeric | 0.351 | 0.595 | 0.739 | 80.2% | 0.860 | 2208.3 | 2816 | 1421 | 3.33 |
-| FFR-M minus temporal_numeric | 0.375 | 0.623 | 0.799 | 77.8% | 0.860 | 1968.1 | 2814 | 1420 | 3.22 |
-| FFR-M minus static_categorical | 0.352 | 0.595 | 0.736 | 80.1% | 0.852 | 2218.5 | 2714 | 1420 | 2.94 |
+| previous_lap | 0.336 | 0.551 | 0.768 | 81.8% | — | — | — | — | — |
+| rolling_median_5 | 0.366 | 0.576 | 0.825 | 78.6% | — | — | — | — | — |
+| ridge | 0.357 | 0.531 | 0.744 | 78.4% | — | 0.4 | 1859 | 340 | — |
+| **hist_gradient_boosting** | 0.303 | 0.493 | 0.656 | 84.7% | — | 42.6 | 2214 | 439 | — |
+| FFR-M | 0.331 | 0.505 | 0.693 | 82.1% | 0.865 | 2572.7 | 2654 | 1325 | 3.31 |
+| FFR-S | 0.328 | 0.501 | 0.694 | 82.2% | 0.859 | 494.6 | 1933 | 593 | 1.82 |
+| FFR-L | 0.327 | 0.505 | 0.691 | 82.4% | 0.862 | 11276.4 | 3928 | 2591 | 8.18 |
+| FFR-M-groups-coarse | 0.332 | 0.510 | 0.704 | 81.5% | 0.852 | 2415.2 | 2670 | 1321 | 3.27 |
+| FFR-M-groups-fine | 0.332 | 0.505 | 0.692 | 81.7% | 0.860 | 2603.6 | 2670 | 1332 | 3.31 |
+| FFR-M minus historical_numeric | 0.330 | 0.504 | 0.698 | 81.9% | 0.869 | 2540.1 | 2665 | 1325 | 3.27 |
+| FFR-M minus temporal_numeric | 0.351 | 0.534 | 0.747 | 79.7% | 0.855 | 2331.8 | 2660 | 1324 | 3.16 |
+| FFR-M minus static_categorical | 0.329 | 0.504 | 0.699 | 82.1% | 0.851 | 2685.5 | 2574 | 1324 | 2.89 |
 
 Full table with validation metrics, interval widths and latency: `reports/f1_2025h2/summary.md`. Error by circuit, constructor, compound, tyre age, conditions, race phase and position: `reports/f1_2025h2/breakdowns.md`.
 
-**Same split, training extended to 2000 with the legacy tier** — train ≤ 2024 · validation 2025 rounds ≤ 12 · test 2025 rounds > 12. Rows: train 429546, validation 10248, test 10994. Data: fastf1_timing+legacy_timing.
+**Same split, training extended to 2000 with the legacy tier** — train ≤ 2024 · validation 2025 rounds ≤ 12 · test 2025 rounds > 12. Rows: train 420867, validation 9751, test 10519. Data: fastf1_timing+legacy_timing.
 
 | Model | Test MAE (s) | Test RMSE (s) | p90 (s) | Laps within 0.5 s | 80% coverage | Train time (s) | Peak RSS (MB) | Traced train peak (MB) | Artifact (MB) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| previous_lap | 0.357 | 0.645 | 0.822 | 80.6% | — | — | — | — | — |
-| rolling_median_5 | 0.394 | 0.675 | 0.889 | 76.9% | — | — | — | — | — |
-| ridge | 0.368 | 0.614 | 0.781 | 78.7% | — | 4.5 | 7171 | 2306 | — |
-| **hist_gradient_boosting** | 0.315 | 0.570 | 0.679 | 83.6% | — | 175.1 | 10157 | 3369 | — |
-| FFR-M | 0.351 | 0.595 | 0.740 | 80.2% | 0.856 | 7958.8 | 8953 | 4762 | 3.99 |
-| FFR-S | 0.348 | 0.592 | 0.739 | 80.7% | 0.858 | 1775.8 | 7403 | 2570 | 2.21 |
+| previous_lap | 0.336 | 0.551 | 0.768 | 81.8% | — | — | — | — | — |
+| rolling_median_5 | 0.366 | 0.576 | 0.825 | 78.6% | — | — | — | — | — |
+| ridge | 0.342 | 0.523 | 0.732 | 81.0% | — | 3.5 | 6957 | 2258 | — |
+| **hist_gradient_boosting** | 0.303 | 0.493 | 0.647 | 84.6% | — | 190.2 | 9987 | 3321 | — |
+| FFR-M | 0.328 | 0.508 | 0.706 | 82.1% | 0.854 | 10173.5 | 8771 | 4666 | 3.94 |
+| FFR-S | 0.325 | 0.503 | 0.695 | 82.4% | 0.858 | 2373.4 | 7291 | 2518 | 2.15 |
 
 Full table with validation metrics, interval widths and latency: `reports/f1_2025h2_legacy_ext/summary.md`. Error by circuit, constructor, compound, tyre age, conditions, race phase and position: `reports/f1_2025h2_legacy_ext/breakdowns.md`.
 
-**Circuit holdout (Monza)** — every season of **Italian Grand Prix** held out; train ≤ 2024, validation 2025. Rows: train 123362, validation 20404, test 6133. Data: fastf1_timing.
+**Circuit holdout (Monza)** — every season of **Italian Grand Prix** held out; train ≤ 2024, validation 2025. Rows: train 114924, validation 19463, test 5857. Data: fastf1_timing.
 
 | Model | Test MAE (s) | Test RMSE (s) | p90 (s) | Laps within 0.5 s | 80% coverage | Train time (s) | Peak RSS (MB) | Traced train peak (MB) | Artifact (MB) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| previous_lap | 0.346 | 0.615 | 0.809 | 81.0% | — | — | — | — | — |
-| rolling_median_5 | 0.356 | 0.572 | 0.806 | 78.7% | — | — | — | — | — |
-| ridge | 0.345 | 0.552 | 0.735 | 80.2% | — | 0.6 | 1935 | 376 | — |
-| **hist_gradient_boosting** | 0.298 | 0.512 | 0.664 | 84.7% | — | 38.6 | 2327 | 480 | — |
-| FFR-M | 0.347 | 0.538 | 0.694 | 80.0% | 0.838 | 2237.8 | 2761 | 1371 | 2.72 |
-| FFR-S | 0.350 | 0.540 | 0.707 | 79.6% | 0.830 | 369.6 | 1996 | 614 | 1.24 |
+| previous_lap | 0.332 | 0.543 | 0.781 | 81.7% | — | — | — | — | — |
+| rolling_median_5 | 0.341 | 0.524 | 0.762 | 79.7% | — | — | — | — | — |
+| ridge | 0.321 | 0.493 | 0.685 | 82.5% | — | 0.6 | 1812 | 352 | — |
+| **hist_gradient_boosting** | 0.289 | 0.465 | 0.638 | 85.2% | — | 34.3 | 2190 | 452 | — |
+| FFR-M | 0.335 | 0.487 | 0.669 | 81.3% | 0.836 | 2473.4 | 2620 | 1278 | 2.69 |
+| FFR-S | 0.333 | 0.485 | 0.671 | 81.3% | 0.826 | 455.6 | 1913 | 572 | 1.20 |
 
 Full table with validation metrics, interval widths and latency: `reports/holdout_monza/summary.md`.
 
-**2026 domain shift, no retraining** — train ≤ 2024 · validation 2025 · test 2026. Rows: train 127861, validation 21242, test 11445. Data: fastf1_timing.
+**2026 domain shift, no retraining** — train ≤ 2024 · validation 2025 · test 2026. Rows: train 119182, validation 20270, test 10778. Data: fastf1_timing.
 
 | Model | Test MAE (s) | Test RMSE (s) | p90 (s) | Laps within 0.5 s | 80% coverage | Train time (s) | Peak RSS (MB) | Traced train peak (MB) | Artifact (MB) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| previous_lap | 0.472 | 0.858 | 1.129 | 72.7% | — | — | — | — | — |
-| rolling_median_5 | 0.501 | 0.882 | 1.168 | 69.3% | — | — | — | — | — |
-| ridge | 0.457 | 0.778 | 1.003 | 71.5% | — | 0.5 | 1974 | 394 | — |
-| **hist_gradient_boosting** | 0.432 | 0.755 | 0.972 | 74.5% | — | 41.0 | 2401 | 499 | — |
-| FFR-M | 0.433 | 0.768 | 0.957 | 74.4% | 0.769 | 2233.3 | 2814 | 1421 | 3.39 |
-| FFR-S | 0.434 | 0.767 | 0.970 | 74.3% | 0.768 | 390.6 | 1995 | 636 | 1.91 |
+| previous_lap | 0.453 | 0.751 | 1.104 | 73.3% | — | — | — | — | — |
+| rolling_median_5 | 0.475 | 0.751 | 1.133 | 69.9% | — | — | — | — | — |
+| ridge | 0.426 | 0.680 | 0.973 | 73.8% | — | 2.3 | 1906 | 368 | — |
+| **hist_gradient_boosting** | 0.409 | 0.667 | 0.938 | 75.6% | — | 36.3 | 2293 | 471 | — |
+| FFR-M | 0.413 | 0.665 | 0.935 | 75.2% | 0.767 | 2572.4 | 2693 | 1325 | 3.31 |
+| FFR-S | 0.412 | 0.662 | 0.935 | 75.5% | 0.767 | 494.8 | 1966 | 593 | 1.83 |
 
 Full table with validation metrics, interval widths and latency: `reports/domain_shift_2026/summary.md`.
 <!-- RESULTS:END -->
@@ -160,63 +160,64 @@ fixture numbers are never reported as Formula 1 results.
 **Protocol notes that matter when reading the tables.**
 
 - Every row is a single run with seed 42. Three extra seeds of FFR-S on the season split give a
-  test MAE of 0.350 ± 0.002 s (`reports/f1_2025h2/seeds.md`), so differences of a few
+  test MAE of 0.328 ± 0.001 s (`reports/f1_2025h2/seeds.md`), so differences of a few
   thousandths of a second between FFR variants (depth, group ladders, ablations that "change
-  nothing") are noise, not effects. Only the temporal-features ablation (+0.025 s) clears
+  nothing") are noise, not effects. Only the temporal-features ablation (+0.020 s) clears
   that bar.
 
-**What the numbers say so far** (2018-2024 training, 128k clean laps; test = 2025 rounds 13-24; lap-validity rules v2):
+**What the numbers say so far** (2018-2024 training, 119k clean laps; test = 2025 rounds 13-24; lap-validity rules v3):
 
 - Gradient-boosted trees are the most accurate model and train in under a minute. Forward-Forward
-  regression does not beat them on this task (0.316 s vs 0.348-0.350 s test MAE).
+  regression does not beat them on this task (0.303 s vs 0.327-0.331 s test MAE).
 - FFR beats the linear and rolling-median baselines and edges the naive previous-lap baseline by
-  0.007-0.009 s. That gap is real but small: repeating the last lap already gets 80.6% of laps
-  within half a second, FFR-M 80.6%, the tree 83.8%.
-- Depth does not pay: FFR-S, FFR-M and FFR-L land at 0.350, 0.350 and 0.348 s for 6.5, 37 and
-  166 minutes of training. The differences are inside seed noise (see the protocol notes).
-- Interval calibration works: the 80% intervals cover 85-86% of test laps.
-- Memory, measured around the fit only for every model: the tree trains in 56 s within 467 MB of
-  traced allocations; FFR-S needs 636 MB and 6.5 minutes, FFR-M 1,421 MB and 37 minutes, FFR-L
-  2,778 MB and 166 minutes. The training-memory advantage argued for Forward-Forward does not
+  0.005-0.009 s. That gap is real but small: repeating the last lap already gets 81.8% of laps
+  within half a second, FFR-S 82.2%, the tree 84.7%.
+- Depth does not pay: FFR-S, FFR-M and FFR-L land at 0.328, 0.331 and 0.327 s for 8, 43 and
+  188 minutes of training. The differences are inside seed noise (see the protocol notes).
+- Interval calibration works in-distribution: the 80% intervals cover 86% of test laps.
+- Memory, measured around the fit only for every model: the tree trains in 43 s within 439 MB of
+  traced allocations; FFR-S needs 593 MB and 8 minutes, FFR-M 1,325 MB and 43 minutes, FFR-L
+  2,591 MB and 188 minutes. The training-memory advantage argued for Forward-Forward does not
   appear in this NumPy implementation at any size: the layers are trained one at a time, but each
   layer's full-batch activations are materialised before the next layer is trained, and that
   dominates. An earlier version of this table charged the baselines for preprocessing as well,
   which made FFR-S look lighter than the tree; that measurement has been corrected.
-- Ablations: removing the temporal pace features costs 0.025 s MAE; removing historical priors
+- Ablations: removing the temporal pace features costs 0.020 s MAE; removing historical priors
   or driver/team/circuit identity changes nothing measurable. Recent pace carries the signal.
 - Group-ladder variants (4/8/16/32, 8/16/32/64, 16/32/64/64) are indistinguishable.
-- **Memorisation check.** Every model's error on its own training laps (FFR about 0.46 s, tree
-  0.41 s) is higher than on validation (0.43 s) and test (0.35 s) because the training seasons
-  contain more disrupted laps; the 2025 test rounds are the cleanest laps in the data. A negative
-  train-to-test gap rules out gross overfitting but does not by itself prove generalisation;
-  the circuit holdout and the 2026 shift below are the real tests. Train, validation and test
-  metrics are recorded for every run, and `reports/f1_2025h2/generalization.md` has the
-  per-season table.
-- **Unseen circuit (every Italian Grand Prix held out).** With the red-flag restart lap excluded,
-  Monza is no harder than the season split: trees 0.298 s, ridge 0.345 s, previous lap 0.346 s,
-  FFR-M 0.347 s, FFR-S 0.350 s, RMSE 0.51-0.62 s for every model. FFR no longer loses more than
-  the tree on an unseen circuit; it simply ties the naive baseline there. Under the version 1
+- **Memorisation check.** Every model's error on its own training laps (FFR about 0.42 s, tree
+  0.38 s) is higher than on validation (0.36-0.40 s) and test (0.30-0.33 s) because the training
+  seasons contain more disrupted laps; the 2025 test rounds are the cleanest laps in the data. A
+  negative train-to-test gap rules out gross overfitting but does not by itself prove
+  generalisation; the circuit holdout and the 2026 shift below are the real tests. Train,
+  validation and test metrics are recorded for every run, and
+  `reports/f1_2025h2/generalization.md` has the per-season table.
+- **Unseen circuit (every Italian Grand Prix held out).** Monza is no harder than the season
+  split: trees 0.289 s, ridge 0.321 s, previous lap 0.332 s, FFR-S 0.333 s, FFR-M 0.335 s, RMSE
+  0.47-0.54 s for every model. FFR ties the naive baseline on an unseen circuit and, with the
+  yellow-flag and restart laps gone, the linear model now beats it there. Under the version 1
   rules the same experiment reported RMSE of 2.5-3.1 s and FFR-M at 0.558 s, all from the
   handful of restart laps.
 - **2026 domain shift (new regulations, model trained through 2024, never retrained).** Every
-  model degrades by about 0.08 s MAE: trees 0.432 s, FFR-M 0.433 s, FFR-S 0.434 s, ridge
-  0.457 s, previous lap 0.472 s. FFR-M has the best p90 (0.96 s) and degrades no worse than the
-  tree, but its 80% intervals, calibrated on 2025, cover only 77% of 2026 laps: the shift is
-  visible in calibration before it is visible in MAE.
+  model degrades by 0.08-0.11 s MAE: trees 0.409 s, FFR-S 0.412 s, FFR-M 0.413 s, ridge 0.426 s,
+  previous lap 0.453 s. FFR degrades less than the tree and its 0.04 s margin over the stopwatch
+  is the widest it shows anywhere, but its 80% intervals, calibrated on 2025, cover only 77% of
+  2026 laps: the shift is visible in calibration before it is visible in MAE.
 - **Independent blind test on the 2026 races through the shipped product (see below).** A
   tester who was given only the repository link fetched the 13 races run so far in 2026 with
-  the repo's own loader and scored the committed FFR-M through the API's inference path:
-  0.435 s MAE, RMSE 0.78 s, 80% interval coverage 80%, previous lap 0.472 s. That matches the
-  experiment-script numbers above only after a bug the test exposed was fixed: the API had
-  dropped untimed laps before applying the lap-validity rules, which let red-flag restart laps
-  through and doubled the RMSE. The report, with every edge case tried, is in
-  `reports/blind_2026/REPORT.md`.
-- **Training extended to 2000 with the legacy tier (429,546 laps, same 2025 test rows).** The
-  extra eighteen seasons of lap-time-only history help the linear model most (ridge 0.392 →
-  0.368 s) and the others barely: trees 0.316 → 0.315 s, FFR-S 0.350 → 0.348 s, FFR-M 0.350 →
-  0.351 s. Training cost grows with the data: the tree needs 5 minutes and 5.7 GB traced,
-  FFR-S 30 minutes and 2.6 GB, FFR-M over two hours. Under the version 1 rules the same
-  extension had looked worth 0.005-0.015 s for every model; most of that was the restart laps.
+  the repo's own loader and scored the committed FFR-M through the API's inference path (under
+  the version 2 rules in force at the time): 0.435 s MAE, RMSE 0.78 s, 80% interval coverage
+  80%, previous lap 0.472 s. That matched the experiment-script numbers only after a bug the
+  test exposed was fixed: the API had dropped untimed laps before applying the lap-validity
+  rules, which let red-flag restart laps through and doubled the RMSE. The report, with every
+  edge case tried, is in `reports/blind_2026/REPORT.md`.
+- **Training extended to 2000 with the legacy tier (420,867 laps, same 2025 test rows).** The
+  extra eighteen seasons of lap-time-only history help the linear model most (ridge 0.357 →
+  0.342 s) and the others by amounts inside seed noise: trees 0.303 → 0.303 s, FFR-S 0.328 →
+  0.325 s, FFR-M 0.331 → 0.328 s. Training cost grows with the data: the tree needs 3 minutes
+  and 3.3 GB traced, FFR-S 40 minutes and 2.5 GB, FFR-M almost three hours and 4.7 GB. Under the
+  version 1 rules the same extension had looked worth 0.005-0.015 s for every model; most of
+  that was the restart laps.
 
 ### Blind test on unseen 2026 races
 
@@ -250,9 +251,12 @@ mismatch above, a cold-cache stampede (feature table now built once under a lock
 across artifacts), two unhandled 500s (a filename with a null byte, a text `season` column),
 the Forecast page now backtests a race even when the driver's final lap cannot be forecast
 from (deleted or pit lap), qualifying and practice sessions carry a warning, and the fetch
-script reports an unrun or unknown event instead of a traceback. Still open, recorded in the
-report: yellow-flag laps count as clean (309 rows, 1.9 s error), the model does not follow a
-lap-on-lap trend, and value ranges are not validated on upload.
+script reports an unrun or unknown event instead of a traceback. The two lap-rule holes it
+found, yellow-flag laps counted as clean (309 rows, 1.9 s error) and the first lap after a
+safety car entering the rolling baseline, became lap-validity rules v3, under which every
+table in this README was re-run; the before/after table above is under the v2 rules the
+tester used. Still open: the model does not follow a lap-on-lap trend, and value ranges are
+not validated on upload.
 
 ## Architecture
 
@@ -288,8 +292,8 @@ either appears in the model source.
 
 - **Target.** Residual of lap N+1 against the rolling five-lap median at lap N; forecast =
   baseline + residual. Training winsorizes the residual to ±6 s; evaluation never does.
-- **Valid laps.** Pit-in, pit-out, safety-car, VSC, red-flag, red-flag restart, deleted and
-  inaccurate laps are never rows or targets, and every lag or rolling statistic is scoped to
+- **Valid laps.** Pit-in, pit-out, yellow-flag, safety-car, VSC, red-flag, red-flag restart,
+  safety-car restart, deleted and inaccurate laps are never rows or targets, and every lag or rolling statistic is scoped to
   the current run of consecutive clean laps, so a pit stop resets the temporal context. The
   rule set is versioned (`lap_validity_version` in every metrics file).
 - **Relative pace features.** Lap-time-scale inputs are relative to the current rolling pace

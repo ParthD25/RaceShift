@@ -20,9 +20,9 @@
     "seed": 42,
     "clip_update_norm": 5.0
   },
-  "target_center": -0.08799999952316284,
-  "target_scale": 3.0329999327659607,
-  "interval_q80": 0.6011826395988464,
+  "target_center": -0.08500000089406967,
+  "target_scale": 3.022679987847798,
+  "interval_q80": 0.5682186484336853,
   "architecture": [
     {
       "layer": 1,
