@@ -117,3 +117,24 @@ def test_placeholder_sessions_are_marked_unselectable():
     assert [(s["session"], s["selectable"]) for s in listed] == [("Q", True), ("(missing session)", False), ("R", True)]
     with pytest.raises(ValueError):
         RaceShiftArtifact.select_session(frame, season=2025, event="X GP", session="(missing session)")
+
+
+def test_default_session_skips_unaddressable_rows_and_seasons_are_whole_numbers():
+    real = _weekend(2025, ["Q", "R"], event="Real GP")
+    fractional = _weekend(2025.5, ["R"], event="Later GP")
+    blank_event = _weekend(2026, ["R"], event="  ")
+    frame = pd.concat([fractional, real, blank_event], ignore_index=True)
+    listed = RaceShiftArtifact.list_sessions(frame)
+    assert [(s["season"], s["event"], s["selectable"]) for s in listed] == [
+        (2025, "Real GP", True), (2025, "Real GP", True), (None, "Later GP", False), (2026, "(missing event)", False),
+    ]
+    _, key = RaceShiftArtifact.latest_session(frame)
+    assert (int(key["season"]), key["event"], key["session"]) == (2025, "Real GP", "R")
+    with pytest.raises(ValueError):
+        RaceShiftArtifact.latest_session(pd.concat([fractional, blank_event]))
+
+
+def test_numeric_season_minus_one_is_not_treated_as_missing():
+    from raceshift.models.artifact import sort_chronologically
+
+    assert sort_chronologically(_weekend(-1, ["S", "Q", "FP2", "FP1", "R"]))["session"].tolist() == ["FP1", "Q", "FP2", "S", "R"]
