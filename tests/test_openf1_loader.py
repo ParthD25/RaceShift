@@ -147,7 +147,9 @@ def test_lap_track_status_needs_a_positive_overlap_and_unions_back_to_back_inter
     assert lap_track_status(starts, ends, intervals).tolist() == ["14", "46", "16"]
 
 
-def test_session_frame_without_weather_rows_keeps_weather_missing():
+def test_session_frame_without_weather_rows_keeps_numeric_weather_missing():
+    # rainfall (bool) and wind_direction_deg (int) have no missing value in the schema, so
+    # a session without weather reads as dry with wind direction 0, as in the FastF1 tier.
     laps = [{"driver_number": 1, "lap_number": lap, "date_start": _at(90 * (lap - 1)), "lap_duration": 90.0,
              "duration_sector_1": 30.0, "duration_sector_2": 30.0, "duration_sector_3": 30.0, "is_pit_out_lap": False} for lap in range(1, 4)]
     payloads = {"laps": laps, "drivers": [{"driver_number": 1, "name_acronym": "VER", "team_name": "Red Bull Racing"}],

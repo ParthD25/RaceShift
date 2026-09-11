@@ -4,8 +4,9 @@
 Shared laps are matched on season, round number, session, driver and lap number when both
 tables carry official round numbers (providers spell event names differently: Ergast's
 "Barcelona-Catalunya Grand Prix" is FastF1's "Barcelona Grand Prix"), and on the event
-name otherwise. Rows with a missing key are dropped and duplicated keys are reduced to one
-row, both counted in the report, so the merge is one lap to one lap. The report gives
+name otherwise. Rows with a missing key and every row of a duplicated key (two drivers
+sharing a three-letter code in one race) are dropped and counted in the report, so the
+merge is one lap to one lap. The report gives
 coverage (laps only one side has), agreement per column, and where the lap times
 disagree. Used to verify that OpenF1 and FastF1 describe the same races identically,
 that the Kaggle Ergast dump equals the Jolpica API rows, and that the legacy tier's lap
@@ -39,50 +40,72 @@ def load(path: str) -> pd.DataFrame:
     frame = frame.copy()
     frame["season"] = pd.to_numeric(frame["season"], errors="coerce")
     frame["lap_number"] = pd.to_numeric(frame["lap_number"], errors="coerce")
-    frame["session"] = frame["session"].astype(str)
+    # Normalise the code without turning a missing session into the string "nan".
+    frame["session"] = frame["session"].where(frame["session"].isna(), frame["session"].astype(str))
     if "round_number" in frame.columns:
         frame["round_number"] = pd.to_numeric(frame["round_number"], errors="coerce")
     return frame
 
 
 def match_keys(left: pd.DataFrame, right: pd.DataFrame) -> list[str]:
-    """Official round numbers when both tables have them for every row, else event names."""
-    if all("round_number" in f.columns and f["round_number"].notna().all() for f in (left, right)):
+    """Official round numbers when both tables carry them (rows without one are then
+    dropped as missing keys and counted), else event names."""
+    if all("round_number" in f.columns and f["round_number"].notna().any() for f in (left, right)):
         return ROUND_KEYS
     return KEYS
 
 
-def _unique_rows(frame: pd.DataFrame, keys: list[str]) -> tuple[pd.DataFrame, int, int]:
-    """Rows with a complete key, one per key; returns (rows, dropped for a missing key,
-    dropped as duplicates)."""
+def _unique_rows(frame: pd.DataFrame, keys: list[str], exclude_first_lap: bool) -> tuple[pd.DataFrame, int, int]:
+    """Rows with a complete key that are unambiguous: every row of a duplicated key (two
+    drivers sharing a three-letter code in one race) is excluded, since keeping either
+    would compare an arbitrary driver's lap. Returns (rows, dropped for a missing key,
+    dropped as duplicates); the opening lap, when excluded, is removed after the missing
+    keys are counted."""
     complete = frame.dropna(subset=keys)
-    unique = complete.drop_duplicates(subset=keys, keep="first")
-    return unique, int(len(frame) - len(complete)), int(len(complete) - len(unique))
+    missing = int(len(frame) - len(complete))
+    if exclude_first_lap:
+        complete = complete[complete["lap_number"] > 1]
+    unique = complete[~complete.duplicated(subset=keys, keep=False)]
+    return unique, missing, int(len(complete) - len(unique))
+
+
+def _event_key(frame: pd.DataFrame, keys: list[str]) -> set[str]:
+    """Event identifiers matching the lap keys: official rounds (with the name for
+    reading) or the event name."""
+    if keys is ROUND_KEYS:
+        return {f"{int(s)} R{int(r)} {e}" for s, r, e in zip(frame["season"], frame["round_number"], frame["event"])}
+    return {f"{int(s)} {e}" for s, e in zip(frame["season"], frame["event"])}
+
+
+def _event_diff(a: set[str], b: set[str], keys: list[str]) -> list[str]:
+    """Events in ``a`` and not in ``b``, compared on the round when the laps are."""
+    if keys is ROUND_KEYS:
+        b_rounds = {" ".join(x.split(" ", 2)[:2]) for x in b}
+        return sorted(x for x in a if " ".join(x.split(" ", 2)[:2]) not in b_rounds)
+    return sorted(a - b)
 
 
 def compare(left: pd.DataFrame, right: pd.DataFrame, names: tuple[str, str], exclude_first_lap: bool = True) -> dict:
     seasons = sorted(set(left["season"].dropna().astype(int)) & set(right["season"].dropna().astype(int)))
     left = left[left["season"].isin(seasons)]
     right = right[right["season"].isin(seasons)]
-    if exclude_first_lap:
-        # Both sides lose the opening lap before anything is counted, so totals, one-sided
-        # laps and shared laps describe the same rows.
-        left = left[left["lap_number"] > 1]
-        right = right[right["lap_number"] > 1]
     keys = match_keys(left, right)
-    left, left_missing, left_dupes = _unique_rows(left, keys)
-    right, right_missing, right_dupes = _unique_rows(right, keys)
+    # Both sides lose the opening lap (and their ambiguous rows) before anything is counted,
+    # so totals, one-sided laps and shared laps describe the same rows.
+    left, left_missing, left_dupes = _unique_rows(left, keys, exclude_first_lap)
+    right, right_missing, right_dupes = _unique_rows(right, keys, exclude_first_lap)
     merged = left.merge(right, on=keys, how="outer", suffixes=("_l", "_r"), indicator=True, validate="one_to_one")
     both = merged[merged["_merge"] == "both"]
+    left_events, right_events = _event_key(left, keys), _event_key(right, keys)
     report: dict = {
         "left": names[0], "right": names[1], "seasons": seasons, "matched_on": keys,
         "laps": {"left": int(len(left)), "right": int(len(right)), "shared": int(len(both)),
                  "left_only": int((merged["_merge"] == "left_only").sum()), "right_only": int((merged["_merge"] == "right_only").sum()),
                  "dropped_missing_key": {"left": left_missing, "right": right_missing},
                  "dropped_duplicate_key": {"left": left_dupes, "right": right_dupes}},
-        "events": {"left": int(left.groupby(["season", "event"]).ngroups), "right": int(right.groupby(["season", "event"]).ngroups),
-                   "left_only": sorted({f"{int(s)} {e}" for s, e in zip(left["season"], left["event"])} - {f"{int(s)} {e}" for s, e in zip(right["season"], right["event"])}),
-                   "right_only": sorted({f"{int(s)} {e}" for s, e in zip(right["season"], right["event"])} - {f"{int(s)} {e}" for s, e in zip(left["season"], left["event"])})},
+        "events": {"left": len(left_events), "right": len(right_events),
+                   "left_only": _event_diff(left_events, right_events, keys),
+                   "right_only": _event_diff(right_events, left_events, keys)},
         "first_lap_excluded": exclude_first_lap,
         "agreement": {},
     }

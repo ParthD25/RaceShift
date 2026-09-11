@@ -384,6 +384,11 @@ def build_full_context_table(
     keeps every valid lap and leaves the target columns NaN where no usable next lap exists;
     the features of a row never depend on the next lap either way.
     """
+    if "data_tier" in raw.columns:
+        check_only = raw["data_tier"].astype(str).str.endswith("_check_only")
+        if check_only.any():
+            tiers = sorted(raw.loc[check_only, "data_tier"].astype(str).unique())
+            raise ValueError(f"{int(check_only.sum())} rows carry a check-only data tier {tiers} (timing-era rows of the Ergast dump exported for provider checks); they duplicate the FastF1 tier and cannot feed a model")
     with warnings.catch_warnings():
         # ~60 derived columns are appended one at a time; pandas warns about block
         # fragmentation on every build, which drowns test output without changing results.

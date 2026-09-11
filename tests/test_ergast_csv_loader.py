@@ -51,3 +51,13 @@ def test_timing_era_seasons_need_an_explicit_opt_in(tmp_path: Path):
 
     with pytest.raises(ValueError, match="include_timing_era"):
         export_seasons(tmp_path, [2017, 2018], tmp_path / "out.parquet")
+
+
+def test_check_only_rows_never_reach_the_feature_builder():
+    import pytest
+    from raceshift.data.ergast_csv_loader import CHECK_ONLY_TIER
+    from raceshift.features.full_context import build_full_context_table
+
+    raw = pd.DataFrame({"season": [2024], "event": ["A"], "session": ["R"], "driver": ["VER"], "lap_number": [2], "lap_time_s": [90.0], "data_tier": [CHECK_ONLY_TIER]})
+    with pytest.raises(ValueError, match="check-only"):
+        build_full_context_table(raw)

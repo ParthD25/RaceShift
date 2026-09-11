@@ -26,7 +26,10 @@ REQUIRED_FILES = ("lap_times.csv", "races.csv", "drivers.csv", "results.csv", "c
 
 # From this season the FastF1 timing tier covers every race; Ergast rows for these seasons
 # are for integrity checks only, never for a training table that also holds FastF1 rows.
+# They are tagged CHECK_ONLY_TIER, which the feature builder refuses, so they cannot reach
+# a model by accident.
 FIRST_TIMING_SEASON = 2018
+CHECK_ONLY_TIER = "legacy_timing_check_only"
 
 
 def _read(csv_dir: Path, name: str) -> pd.DataFrame:
@@ -106,13 +109,17 @@ def export_seasons(csv_dir: str | Path, years: list[int], output: str | Path, in
     Seasons from :data:`FIRST_TIMING_SEASON` on are refused unless ``include_timing_era``
     is set: those races already exist in the FastF1 tier with sectors, tyres and weather,
     and a training table holding both copies would duplicate every lap. The timing-era
-    rows are only for lap-for-lap checks against the timing providers."""
+    rows are only for lap-for-lap checks against the timing providers and are tagged
+    :data:`CHECK_ONLY_TIER`, which ``build_full_context_table`` rejects."""
     timing_era = [y for y in years if y >= FIRST_TIMING_SEASON]
     if timing_era and not include_timing_era:
         raise ValueError(f"Seasons {timing_era} belong to the FastF1 timing tier; pass include_timing_era=True (--include-timing-era) to export them for cross-provider checks only")
     tables = load_tables(csv_dir)
     frames = [season_frame(tables, year) for year in years]
     frames = [f for f in frames if not f.empty]
+    for f in frames:
+        if int(f["season"].iloc[0]) >= FIRST_TIMING_SEASON:
+            f["data_tier"] = CHECK_ONLY_TIER
     if not frames:
         raise ValueError(f"No lap timing found for seasons {years}")
     out = pd.concat(frames, ignore_index=True)

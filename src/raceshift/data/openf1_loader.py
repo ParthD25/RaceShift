@@ -438,6 +438,9 @@ def session_frame(client: OpenF1Client, meeting: dict, session: dict) -> pd.Data
         for src, dst in WEATHER_COLUMNS.items():
             if src in merged.columns:
                 weather_cols[dst] = merged[src]
+    # Without a weather sample the numeric columns stay missing; ``rainfall`` (bool) and
+    # ``wind_direction_deg`` (int) have no missing value in the lap schema, as in the FastF1
+    # tier, and read as dry and 0 degrees.
     for dst in WEATHER_COLUMNS.values():
         weather_cols.setdefault(dst, pd.Series(np.nan, index=laps.index, dtype=float))
 

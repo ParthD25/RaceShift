@@ -37,14 +37,34 @@ def test_different_event_spellings_match_on_the_official_round():
     assert match_keys(left, _table("x", rounds=False)) == KEYS
 
 
-def test_opening_lap_is_excluded_from_every_count_and_duplicates_are_reduced():
+def test_opening_lap_is_excluded_from_every_count_and_ambiguous_rows_are_dropped():
     left, right = _table("A"), _table("A")
-    right = pd.concat([right, right.iloc[[1]]], ignore_index=True)  # duplicated key
+    right = pd.concat([right, right.iloc[[1]]], ignore_index=True)  # duplicated key: both rows go
     right.loc[3, "driver"] = None  # missing key
     report = compare(left, right, ("l", "r"))
     laps = report["laps"]
-    assert laps["left"] == 3 and laps["shared"] == 2 and laps["right_only"] == 0 and laps["left_only"] == 1
+    assert laps["left"] == 3 and laps["right"] == 1 and laps["shared"] == 1 and laps["right_only"] == 0 and laps["left_only"] == 2
     assert laps["dropped_missing_key"] == {"left": 0, "right": 1}
-    assert laps["dropped_duplicate_key"] == {"left": 0, "right": 1}
+    assert laps["dropped_duplicate_key"] == {"left": 0, "right": 2}
     full = compare(left, _table("A"), ("l", "r"), exclude_first_lap=False)
     assert full["laps"]["left"] == 4 and full["laps"]["shared"] == 4
+
+
+def test_missing_lap_numbers_and_sessions_count_as_missing_keys():
+    left, right = _table("A"), _table("A")
+    right.loc[1, "lap_number"] = float("nan")
+    right.loc[2, "session"] = None
+    report = compare(left, right, ("l", "r"))
+    assert report["laps"]["dropped_missing_key"] == {"left": 0, "right": 2}
+    assert report["laps"]["shared"] == 1 and report["laps"]["left_only"] == 2
+
+
+def test_event_coverage_follows_the_round_key():
+    left, right = _table("Barcelona Grand Prix"), _table("Barcelona-Catalunya Grand Prix")
+    report = compare(left, right, ("fastf1", "ergast"))
+    assert report["events"] == {"left": 1, "right": 1, "left_only": [], "right_only": []}
+    right.loc[:, "round_number"] = 6
+    report = compare(left, right, ("fastf1", "ergast"))
+    assert report["events"]["left_only"] == ["2026 R5 Barcelona Grand Prix"] and report["events"]["right_only"] == ["2026 R6 Barcelona-Catalunya Grand Prix"]
+    # One table without any round number falls back to event names.
+    assert compare(left, _table("Barcelona Grand Prix", rounds=False), ("a", "b"))["matched_on"] == KEYS

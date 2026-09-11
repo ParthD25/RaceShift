@@ -128,3 +128,14 @@ def test_holdout_event_rejects_train_through_round():
     frame = pd.DataFrame({"season": [2023, 2024, 2025], "event": ["A", "B", "A"], "round_number": [1, 1, 1]})
     with pytest.raises(ValueError, match="train_through_round"):
         split_from_args(frame, 2023, 2024, 2025, holdout_event="A", train_through_round=1)
+
+
+def test_replay_pool_falls_back_when_the_chain_has_no_original_split():
+    from raceshift.train.finetune import replay_pool
+
+    table = pd.DataFrame({"season": [2023, 2024, 2026, 2026, 2026], "round_number": [1, 1, 1, 3, 9], "session": ["R"] * 5})
+    # A fine-tuned artifact whose chain never reaches a from-scratch split still replays the
+    # seasons before the fine-tuning season, on top of its own fine-tuning rounds.
+    tuned = {"split": {"mode": "fine_tune_rounds", "season": 2026, "train_rounds": [1, 5], "sessions": ["R"]}}
+    assert replay_pool(table, tuned, ["R"], fallback_train_end=2025).index.tolist() == [0, 1, 2, 3]
+    assert replay_pool(table, tuned, ["R"]).index.tolist() == [2, 3]

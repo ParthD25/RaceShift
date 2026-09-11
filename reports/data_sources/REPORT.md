@@ -26,9 +26,9 @@ excluded and counted, so every match is one lap to one lap.
 
 | | |
 | --- | --- |
-| Laps from lap 2 | 355,758 (API) vs 355,748 (dump); 354,147 shared; 456 laps per side with a duplicated key excluded (Panis and Pantano both coded `PAN` in 2004) |
-| Lap time within 2 ms | 99.96%; 69 laps differ by more than 1 s |
-| Position | 99.97% |
+| Laps from lap 2 | 355,302 (API) vs 355,292 (dump); 353,691 shared; 912 laps per side excluded as ambiguous (every 2004 lap of Panis and Pantano, both coded `PAN`) |
+| Lap time within 2 ms | 99.99%; 19 laps differ by more than 1 s |
+| Position | 100% |
 | Pit-in / pit-out flags | 98.1% (the dump records pit stops before 2011, the API collector did not fetch them) |
 
 The unmatched laps are one driver: the API loader wrote Häkkinen as `HÄK`, the dump loader
@@ -58,7 +58,7 @@ FastF1 says "Barcelona Grand Prix", which is why laps are matched on the round n
 | Laps from lap 2 | 41,083 (FastF1) vs 41,103 (TracingInsights); 41,083 shared (every FastF1 lap), 37 events on both sides |
 | Lap and sector times, compound, track status, pit flags, accuracy, deleted, circuit, event date | 100% |
 | Tyre life, stint, position, fresh-tyre flag | 99.7-99.9% |
-| Weather columns | 85-98% (the archive joins the weather sample nearest the lap start; FastF1's table joins a neighbouring sample, so temperatures differ by a tenth of a degree) |
+| Weather columns | 85-98% (the archive joins the weather sample nearest the lap start; FastF1's table joins a neighbouring sample: track temperature differs by 0.1 °C at the median and up to 1.7 °C, air temperature by up to 0.5 °C, wind speed by up to 2.4 m/s) |
 
 The archive holds every 2025 and 2026 race. An earlier pass of this check reported the 2025
 São Paulo Grand Prix missing: the collector listed the season repository with `git

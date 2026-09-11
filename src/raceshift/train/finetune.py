@@ -56,11 +56,13 @@ def replay_pool(table: pd.DataFrame, base_metrics: dict, sessions: list[str] | N
     years = pd.to_numeric(table["season"], errors="coerce")
     mask = pd.Series(False, index=table.index)
     split = base_metrics.get("split") or {}
+    original_split_found = False
     for _ in range(50):  # the chain is finite; guard against a self-referencing split
         if not isinstance(split, dict):
             break
         if "train_end" in split:
             mask |= years <= int(split["train_end"])
+            original_split_found = True
             break
         level_sessions = split.get("sessions") or sessions
         if split.get("mode") == "fine_tune_rounds" and split.get("train_rounds") and split.get("season") is not None:
@@ -68,10 +70,11 @@ def replay_pool(table: pd.DataFrame, base_metrics: dict, sessions: list[str] | N
         elif split.get("mode") == "fine_tune_seasons" and split.get("train_seasons"):
             mask |= table.index.isin(select_rows(table, tuple(split["train_seasons"]), None, level_sessions).index)
         split = split.get("base_split")
-    else:
-        split = None
-    if not mask.any() and fallback_train_end is not None:
-        mask = years <= int(fallback_train_end)
+    if not original_split_found and fallback_train_end is not None:
+        # The chain never reached a from-scratch split (an artifact without recorded
+        # metadata): the seasons before the fine-tuning season stand in for it, on top of
+        # any fine-tuning selections the chain did record.
+        mask |= years <= int(fallback_train_end)
     return table[mask]
 
 
@@ -96,7 +99,7 @@ def build_table(artifact: RaceShiftArtifact, raw: pd.DataFrame, cache: str | Pat
     keyed on a fingerprint of the raw table (columns, dtypes and a hash of every value),
     the history length and the lap-validity version; anything else is rebuilt.
     """
-    key = cache_key(raw, artifact.history_laps)
+    key = cache_key(raw, artifact.history_laps) if cache is not None else ""
     if cache is not None and Path(cache).exists():
         cached = pd.read_parquet(cache)
         if cached.attrs.get("raceshift_cache_key") == key or (Path(cache).with_suffix(".key").exists() and Path(cache).with_suffix(".key").read_text() == key):
