@@ -1,14 +1,21 @@
-import sys, warnings, json; warnings.filterwarnings('ignore')
-sys.path.insert(0, 'RaceShift/src')
+# Blind tester's script, as run against commit 626fa60. Paths were made configurable afterwards
+# (RACESHIFT_ROOT, default ./RaceShift); the logic is unchanged.
+import os, sys, warnings, json
+R = os.environ.get('RACESHIFT_ROOT', 'RaceShift')
+sys.path.insert(0, f'{R}/src')
+try:
+    from sklearn.exceptions import InconsistentVersionWarning
+    warnings.simplefilter('ignore', InconsistentVersionWarning)
+except ImportError:
+    pass
 import numpy as np, pandas as pd
 from raceshift.models.artifact import RaceShiftArtifact
 from raceshift.train.metrics import regression_metrics, interval_metrics
 from raceshift.features.full_context import RAW_TARGET_COLUMN
 pd.set_option('display.width', 250)
-r25 = pd.read_parquet('RaceShift/data/imports/f1_2025_season.parquet')
-r26 = pd.read_parquet('data2026/f1_2026_races.parquet')
-combined = pd.concat([r25, r26], ignore_index=True)
-combined.to_parquet('RaceShift/data/imports/f1_2025_2026.parquet', index=False)
+r25 = pd.read_parquet(f'{R}/data/imports/f1_2025_season.parquet')
+r26 = pd.read_parquet(f'{R}/data/imports/f1_2026_races.parquet')
+combined = pd.concat([r25, r26], ignore_index=True)  # kept in memory; nothing is written into data/imports
 UNSEEN_DRIVERS = {'ANT','BOR','HAD','LIN'}; UNSEEN_TEAMS = {'Audi','Cadillac'}
 def score(art, raw, label):
     tab = art.inference_table(raw)
@@ -28,7 +35,7 @@ def brk(s, by, label, minn=20):
         if len(g)<minn: continue
         rows.append({by:k,'n':len(g),'FFR':g.ae.mean(),'prev':g.ae_prev.mean(),'roll5':g.ae_r5.mean(),'FFR_p90':g.ae.quantile(.9),'cov80':((g[RAW_TARGET_COLUMN]>=g.lo)&(g[RAW_TARGET_COLUMN]<=g.hi)).mean(),'bias':g.err.mean()})
     d = pd.DataFrame(rows).sort_values('n', ascending=False); print(f'-- by {label}'); print(d.round(3).to_string(index=False))
-ffrm = RaceShiftArtifact('RaceShift/artifacts/f1_2025h2_ffr-m')
+ffrm = RaceShiftArtifact(f'{R}/artifacts/f1_2025h2_ffr-m')
 s = score(ffrm, combined, 'FFR-M, 2025+2026 file (priors from 2025)')
 s.to_parquet('eval_2026_ffrm_scored.parquet', index=False)
 brk(s, 'event', 'event')
@@ -51,16 +58,20 @@ s2 = score(ffrm, r26, 'FFR-M, 2026-only file (no priors)')
 mg = s.merge(s2[['event','driver','lap_number','pred']], on=['event','driver','lap_number'], suffixes=('','_noprior'))
 print('  pred diff with vs without 2025 priors: mean abs', float((mg.pred-mg.pred_noprior).abs().mean()), 'max', float((mg.pred-mg.pred_noprior).abs().max()))
 # legacy FFR-S
-leg = RaceShiftArtifact('RaceShift/artifacts/f1_2025h2_legacy_ext_ffr-s')
+leg = RaceShiftArtifact(f'{R}/artifacts/f1_2025h2_legacy_ext_ffr-s')
 s3 = score(leg, combined, 'legacy FFR-S (2000-2024 train), 2025+2026 file')
 brk(s3, 'event', 'event (legacy FFR-S)')
 # demo synthetic on 2026 (what the UI lets you do)
-demo = RaceShiftArtifact('RaceShift/artifacts/raceshift_ffr_demo')
+demo = RaceShiftArtifact(f'{R}/artifacts/raceshift_ffr_demo')
 s4 = score(demo, combined, 'SYNTHETIC demo artifact on 2026 real laps')
 # Sprint + Q sessions
+# Sprint and qualifying sessions are not shipped with the repository; fetch them with
+# scripts/fetch_fastf1.py --session S / Q into ./data2026 to repeat this part, else they are skipped.
 for f in ['data2026/2026_Chinese_Grand_Prix_S.parquet','data2026/2026_Dutch_Grand_Prix_S.parquet','data2026/2026_Italian_Grand_Prix_Q.parquet']:
-    d = pd.read_parquet(f)
+    if not os.path.exists(f):
+        print(f, 'not present, skipped'); continue
     try:
+        d = pd.read_parquet(f)
         ss = score(ffrm, pd.concat([r25, d], ignore_index=True), f'FFR-M on {f.split("/")[-1]}')
         if len(ss): print('   worst 3:', ss.sort_values('ae', ascending=False)[['driver','lap_number','lap_time_s','pred',RAW_TARGET_COLUMN,'err','laps_in_segment']].head(3).round(3).to_dict('records'))
     except Exception as e: print(f, 'ERROR', type(e).__name__, e)

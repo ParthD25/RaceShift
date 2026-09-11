@@ -1,18 +1,30 @@
-import sys, warnings; warnings.filterwarnings('ignore')
-sys.path.insert(0, 'RaceShift/src')
+# Blind tester's leakage probe, as run against commit 626fa60. Paths were made configurable
+# afterwards (RACESHIFT_ROOT, default ./RaceShift) and the invariants A-E now fail the run
+# (exit 1) instead of only printing; the probes themselves are unchanged.
+import os, sys, warnings
+R = os.environ.get('RACESHIFT_ROOT', 'RaceShift')
+sys.path.insert(0, f'{R}/src')
+try:
+    from sklearn.exceptions import InconsistentVersionWarning
+    warnings.simplefilter('ignore', InconsistentVersionWarning)
+except ImportError:
+    pass
 import numpy as np, pandas as pd
 from raceshift.models.artifact import RaceShiftArtifact
-art = RaceShiftArtifact('RaceShift/artifacts/f1_2025h2_ffr-m')
-raw = pd.read_parquet('RaceShift/data/imports/f1_2025_season.parquet')
+art = RaceShiftArtifact(f'{R}/artifacts/f1_2025h2_ffr-m')
+raw = pd.read_parquet(f'{R}/data/imports/f1_2025_season.parquet')
+FAILURES = []
+def check(ok, label):
+    if not ok: FAILURES.append(label)
 r24 = raw[raw.round_number>=23].copy()   # Qatar + Abu Dhabi for speed
 def fc(df, driver='VER'):
     return art.forecast_last_available(df, driver=driver)
 # A. determinism
 a = fc(r24); b = fc(r24)
-print('A determinism identical:', a['predicted_next_lap_s']==b['predicted_next_lap_s'], a['predicted_next_lap_s'])
+print('A determinism identical:', a['predicted_next_lap_s']==b['predicted_next_lap_s'], a['predicted_next_lap_s']); check(a['predicted_next_lap_s']==b['predicted_next_lap_s'], 'A determinism')
 # B. row order shuffle
 sh = r24.sample(frac=1.0, random_state=1)
-c = fc(sh); print('B shuffled rows identical:', abs(c['predicted_next_lap_s']-a['predicted_next_lap_s'])<1e-9, c['predicted_next_lap_s'])
+c = fc(sh); print('B shuffled rows identical:', abs(c['predicted_next_lap_s']-a['predicted_next_lap_s'])<1e-9, c['predicted_next_lap_s']); check(abs(c['predicted_next_lap_s']-a['predicted_next_lap_s'])<1e-9, 'B row order')
 # C. truncate VER at lap 40 in Abu Dhabi and forecast lap 41; then compare to full-file table row for lap 40 (features must not depend on later laps)
 cut = r24[~((r24.round_number==24)&(r24.driver=='VER')&(r24.lap_number>40))]
 f40 = fc(cut)
@@ -23,16 +35,17 @@ x = np.asarray(art.preprocessor.transform(row[feats]), dtype=np.float32)
 p = art.model.predict_with_uncertainty(x)
 full40 = float(row.rolling_median_5.iloc[0] + p['prediction'][0])
 print(f'C truncated-at-40 forecast {f40["predicted_next_lap_s"]:.4f} vs full-table lap-40 row {full40:.4f} diff {abs(f40["predicted_next_lap_s"]-full40):.2e} (lap41 actual {float(r24[(r24.round_number==24)&(r24.driver=="VER")&(r24.lap_number==41)].lap_time_s.iloc[0]):.3f})')
+check(abs(f40['predicted_next_lap_s']-full40) < 1e-6, 'C truncation')
 # D. perturb ONLY lap 41+ of VER (future) hugely -> lap-40 forecast must not change
 pert = r24.copy(); m = (pert.round_number==24)&(pert.driver=='VER')&(pert.lap_number>40); pert.loc[m,'lap_time_s'] += 30
 tab2 = art.inference_table(pert); row2 = tab2[(tab2.round_number==24)&(tab2.driver=='VER')&(tab2.lap_number==40)]
 x2 = np.asarray(art.preprocessor.transform(row2[feats]), dtype=np.float32); p2 = art.model.predict_with_uncertainty(x2)
-print('D future-lap perturbation changes lap-40 forecast by', abs(float(row2.rolling_median_5.iloc[0]+p2['prediction'][0]) - full40))
+print('D future-lap perturbation changes lap-40 forecast by', abs(float(row2.rolling_median_5.iloc[0]+p2['prediction'][0]) - full40)); check(abs(float(row2.rolling_median_5.iloc[0]+p2['prediction'][0]) - full40) < 1e-6, 'D future laps')
 # E. perturb other drivers' laps in the same race -> should not matter (no gap features used)
 pert = r24.copy(); m = (pert.round_number==24)&(pert.driver!='VER'); pert.loc[m,'lap_time_s'] += 5
 tab3 = art.inference_table(pert); row3 = tab3[(tab3.round_number==24)&(tab3.driver=='VER')&(tab3.lap_number==40)]
 x3 = np.asarray(art.preprocessor.transform(row3[feats]), dtype=np.float32); p3 = art.model.predict_with_uncertainty(x3)
-print('E other-driver perturbation changes lap-40 forecast by', abs(float(row3.rolling_median_5.iloc[0]+p3['prediction'][0]) - full40))
+print('E other-driver perturbation changes lap-40 forecast by', abs(float(row3.rolling_median_5.iloc[0]+p3['prediction'][0]) - full40)); check(abs(float(row3.rolling_median_5.iloc[0]+p3['prediction'][0]) - full40) < 1e-6, 'E other drivers')
 # F. perturb the EARLIER event (Qatar) -> priors change -> forecast may legitimately change; measure magnitude
 pert = r24.copy(); m = (pert.round_number==23); pert.loc[m,'lap_time_s'] += 5
 f = fc(pert); print('F earlier-event +5s perturbation changes forecast by', abs(f['predicted_next_lap_s']-a['predicted_next_lap_s']), '(priors: driver_overall before/after', a['historical_context']['driver_overall_pace_s'], f['historical_context']['driver_overall_pace_s'], ')')
@@ -74,3 +87,8 @@ print('O degrading laps', [round(v,2) for v in hist], '-> forecast', round(f['pr
 # P. Constant lap times
 pert = r24.copy(); m=(pert.round_number==24)&(pert.driver=='VER'); pert.loc[m,'lap_time_s']=90.0
 f = fc(pert); print('P all laps exactly 90.000 -> forecast', f['predicted_next_lap_s'], 'interval +-', (f['upper_80_s']-f['lower_80_s'])/2, 'disagreement', f['layer_disagreement_s'])
+
+if FAILURES:
+    print('LEAKAGE CHECK FAILED:', FAILURES)
+    sys.exit(1)
+print('leakage invariants A-E hold')

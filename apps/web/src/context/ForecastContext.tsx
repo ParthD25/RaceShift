@@ -23,27 +23,52 @@ const ForecastContext = createContext<ForecastState>({
   active: null, setActive: () => undefined
 });
 
-const KEY = 'raceshift.forecast.v1';
+// Bump when the shape of ForecastResult/BacktestResult/ActiveSession changes so a payload
+// saved by an older build is discarded instead of dereferenced.
+const KEY = 'raceshift.forecast';
+const VERSION = 2;
 
-function restore(): { result: ForecastResult | null; backtest: BacktestResult | null; active: ActiveSession | null } {
-  // Survive a page refresh (per tab). Storage can be unavailable or stale; fall back to empty.
+type Stored = { result: ForecastResult | null; backtest: BacktestResult | null; active: ActiveSession | null };
+
+function looksLikeForecast(x: unknown): x is ForecastResult {
+  return typeof x === 'object' && x !== null && typeof (x as ForecastResult).predicted_next_lap_s === 'number'
+    && typeof (x as ForecastResult).driver === 'string' && typeof (x as ForecastResult).context === 'object'
+    && typeof (x as ForecastResult).historical_context === 'object';
+}
+function looksLikeBacktest(x: unknown): x is BacktestResult {
+  return typeof x === 'object' && x !== null && Array.isArray((x as BacktestResult).laps)
+    && typeof (x as BacktestResult).summary === 'object' && typeof (x as BacktestResult).driver === 'string';
+}
+function looksLikeActive(x: unknown): x is ActiveSession {
+  return typeof x === 'object' && x !== null && typeof (x as ActiveSession).event === 'string' && typeof (x as ActiveSession).driver === 'string';
+}
+
+function restore(): Stored {
+  // Survive a page refresh (per tab). Storage can be unavailable, stale or from an older
+  // build; anything that does not pass the shape checks is dropped.
   try {
     const raw = sessionStorage.getItem(KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      return { result: parsed.result ?? null, backtest: parsed.backtest ?? null, active: parsed.active ?? null };
+      if (parsed && parsed.v === VERSION) {
+        return {
+          result: looksLikeForecast(parsed.result) ? parsed.result : null,
+          backtest: looksLikeBacktest(parsed.backtest) ? parsed.backtest : null,
+          active: looksLikeActive(parsed.active) ? parsed.active : null
+        };
+      }
     }
   } catch { /* ignore */ }
   return { result: null, backtest: null, active: null };
 }
 
 export function ForecastProvider({ children }: { children: ReactNode }) {
-  const initial = restore();
+  const [initial] = useState<Stored>(restore);
   const [result, setResult] = useState<ForecastResult | null>(initial.result);
   const [backtest, setBacktest] = useState<BacktestResult | null>(initial.backtest);
   const [active, setActive] = useState<ActiveSession | null>(initial.active);
   useEffect(() => {
-    try { sessionStorage.setItem(KEY, JSON.stringify({ result, backtest, active })); } catch { /* ignore */ }
+    try { sessionStorage.setItem(KEY, JSON.stringify({ v: VERSION, result, backtest, active })); } catch { /* ignore */ }
   }, [result, backtest, active]);
   return <ForecastContext.Provider value={{ result, setResult, backtest, setBacktest, active, setActive }}>{children}</ForecastContext.Provider>;
 }

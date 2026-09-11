@@ -31,6 +31,22 @@ def _chronological_order(frame: pd.DataFrame) -> list[str]:
     return [c for c in ["season", "round_number", "event_date", "event", "session", "lap_number"] if c in frame.columns]
 
 
+# Order of sessions within one event weekend. Lexical order would put a Sprint ("S") after the
+# Race ("R") and make it the "latest" session of a file; the race is the last session run.
+SESSION_ORDER = {"FP1": 0, "FP2": 1, "FP3": 2, "SQ": 3, "SS": 3, "S": 4, "Q": 5, "R": 6}
+
+
+def sort_chronologically(frame: pd.DataFrame) -> pd.DataFrame:
+    """Rows in the order the laps were driven: season, round or date, event, session (by the
+    weekend's running order, not alphabetically), lap number."""
+    keys = _chronological_order(frame)
+    if "session" not in keys:
+        return frame.sort_values(keys, kind="stable")
+    ranked = frame.assign(_session_rank=frame["session"].astype(str).str.upper().map(SESSION_ORDER).fillna(7))
+    keys = ["_session_rank" if k == "session" else k for k in keys]
+    return ranked.sort_values(keys, kind="stable").drop(columns="_session_rank")
+
+
 def inference_table_for(raw: pd.DataFrame, history: int = 5) -> pd.DataFrame:
     """Feature table for forecasting and backtesting, built with exactly the lap-validity rules
     used in training. The *whole* raw frame goes in, untimed laps included: the red-flag
@@ -85,7 +101,7 @@ class RaceShiftArtifact:
     @staticmethod
     def latest_session(raw: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, object]]:
         """Return the rows of the chronologically latest season/event/session and its key."""
-        ordered = raw.sort_values(_chronological_order(raw), kind="stable")
+        ordered = sort_chronologically(raw)
         last = ordered.iloc[-1]
         key = {"season": last["season"], "event": last["event"], "session": last["session"]}
         mask = (
@@ -118,19 +134,24 @@ class RaceShiftArtifact:
     def list_sessions(raw: pd.DataFrame) -> list[dict[str, object]]:
         """Every season/event/session in the file in chronological order with lap and driver counts."""
         cols = ["season", "event", "session"]
-        ordered = raw.sort_values(_chronological_order(raw), kind="stable")
+        ordered = sort_chronologically(raw)
         out = []
-        for (season, event, session), group in ordered.groupby(cols, sort=False):
+        # Rows with a null season/event/session cannot be addressed by the selector; they are
+        # listed under an explicit placeholder so nothing disappears silently (the summary also
+        # reports them as a data warning).
+        for (season, event, session), group in ordered.groupby(cols, sort=False, dropna=False):
+            season_number = pd.to_numeric(pd.Series([season]), errors="coerce").iloc[0]
             out.append({
-                "season": int(season),
-                "event": str(event),
-                "session": str(session),
+                "season": int(season_number) if pd.notna(season_number) else None,
+                "event": str(event) if pd.notna(event) else "(missing event)",
+                "session": str(session) if pd.notna(session) else "(missing session)",
                 "laps": int(len(group)),
                 "drivers": int(group["driver"].astype(str).nunique()),
                 "driver_codes": sorted(group["driver"].astype(str).unique().tolist()),
                 "date": str(group["event_date"].iloc[0])[:10] if "event_date" in group and pd.notna(group["event_date"].iloc[0]) else None,
             })
         return out
+
 
     @staticmethod
     def _pick_driver(scope: pd.DataFrame, driver: str | None) -> tuple[str, list[str]]:

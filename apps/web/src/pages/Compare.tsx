@@ -90,7 +90,7 @@ export default function Compare() {
             </select>
           </label>
           <label className="field"><span>Race (session in this file)</span>
-            <select value={chosen ? `${chosen.season}|${chosen.event}|${chosen.session}` : ''} onChange={e => { setSessionKey(e.target.value); const x = sessions.find(y => `${y.season}|${y.event}|${y.session}` === e.target.value); const d = x?.driver_codes ?? []; setLeft(d[0] ?? ''); setRight(d[1] ?? d[0] ?? ''); setResults(null); }} disabled={!sessions.length}>
+            <select value={chosen ? `${chosen.season}|${chosen.event}|${chosen.session}` : ''} onChange={e => { setSessionKey(e.target.value); const x = sessions.find(y => `${y.season}|${y.event}|${y.session}` === e.target.value); const d = x?.driver_codes ?? []; setLeft(d[0] ?? ''); setRight(d[1] ?? d[0] ?? ''); setResults(null); }} disabled={!sessions.length || running}>
               {sessions.map(x => <option key={`${x.season}|${x.event}|${x.session}`} value={`${x.season}|${x.event}|${x.session}`}>{x.season} · {x.event} · {x.session}{x.date ? ` · ${x.date}` : ''}</option>)}
             </select>
           </label>
