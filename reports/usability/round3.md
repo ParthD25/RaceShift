@@ -26,8 +26,8 @@ history. Scores are 1-10. Rounds 1 and 2 were run the same way on earlier commit
 
 - **The public release dropped the test suite but the docs still described it** (reviewer,
   data scientist; the largest deduction in both reports). The docs now describe the checks as
-  development-time checks that the reviewers reproduced from the public code, and state that
-  the public tree ships without the suite. Restoring the suite is a separate decision.
+  development-time checks that the reviewers reproduced from the public code; the suite (56
+  tests) and the browser smoke test were then restored to the public tree and to CI.
 - **The blind 2026 test was called "independent" with no provenance and its scripts were
   missing** (reviewer). It is now described as an automated tester commissioned by the author,
   and the scripts are committed under `reports/blind_2026/scripts/`.

@@ -1,8 +1,8 @@
 # Feature Contract
 
 The prediction target is always lap `N+1`. Every input must be known by the end of lap `N`.
-The contract is enforced in code (`raceshift.features.full_context`) and was verified with a
-perturbation check described below.
+The contract is enforced in code (`raceshift.features.full_context`) and by tests
+(`tests/test_feature_availability.py`, `tests/test_lap_state_and_adjacency.py`).
 
 ## Target
 
@@ -138,7 +138,7 @@ dropped list is recorded in `metrics.json` and `feature_contract.json`.
 
 ## Availability guarantee
 
-The availability check perturbs every lap after a cutoff (later laps of the
+`tests/test_feature_availability.py` perturbs every lap after a cutoff (later laps of the
 same race for every driver, and every later event) and asserts that no contract feature at
 or before the cutoff changes. It also asserts that historical priors do not move when the
 current event's lap times change.
