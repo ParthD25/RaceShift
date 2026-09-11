@@ -126,12 +126,17 @@ def test_lap_validity_version_is_recorded_in_artifacts():
 
     assert LAP_VALIDITY_VERSION >= 3
     root = Path(__file__).resolve().parents[1] / "artifacts"
-    # Every committed artifact must have been produced under the rules the runtime applies.
-    committed = [root / "raceshift_ffr_demo", root / "f1_2025h2_ffr-m", root / "f1_2025h2_ffr-s", root / "f1_2025h2_legacy_ext_ffr-s"]
-    for artifact in committed:
-        metrics = artifact / "metrics.json"
-        assert metrics.exists(), f"missing committed artifact metrics: {metrics}"
-        assert json.loads(metrics.read_text()).get("lap_validity_version") == LAP_VALIDITY_VERSION, artifact.name
+    # Every artifact that ships a metrics.json (models and baseline reports alike) must have
+    # been produced under the rules the runtime applies; the four named ones must exist.
+    required = ["raceshift_ffr_demo", "f1_2025h2_ffr-m", "f1_2025h2_ffr-s", "f1_2025h2_legacy_ext_ffr-s"]
+    for name in required:
+        assert (root / name / "metrics.json").exists(), f"missing committed artifact metrics: {name}"
+    checked = 0
+    for metrics in sorted(root.glob("*/metrics.json")):
+        version = json.loads(metrics.read_text()).get("lap_validity_version")
+        assert version == LAP_VALIDITY_VERSION, f"{metrics.parent.name}: lap_validity_version {version} != {LAP_VALIDITY_VERSION}"
+        checked += 1
+    assert checked >= len(required)
 
 
 def test_missing_lap_number_breaks_adjacency():

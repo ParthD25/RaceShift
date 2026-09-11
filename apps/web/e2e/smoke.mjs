@@ -45,9 +45,10 @@ try {
       lap = (await page.textContent('.forecast-time')) ?? '';
       check(/^\d:\d\d\.\d{3}$/.test(lap), `forecast time renders as ${lap}`);
     }
-    await waitFor('.backtest-table .wide-row', 90000, 'backtest table did not render');
-    rows = await page.locator('.backtest-table .wide-row').count();
-    check(rows >= 1, `backtest rows: ${rows}`);
+    if (await waitFor('.backtest-table .wide-row', 90000, 'backtest table did not render')) {
+      rows = await page.locator('.backtest-table .wide-row').count();
+      check(rows >= 1, `backtest rows: ${rows}`);
+    }
   }
   await shot('forecast');
 
@@ -65,8 +66,9 @@ try {
   await waitFor('select', 15000, 'compare page shows no selects');
   if (await waitEnabled(30000, 'compare Run button never became enabled')) {
     await page.click('button.primary-btn');
-    await waitFor('.compare-grid .panel', 120000, 'compare grid did not render');
-    check((await page.locator('.compare-grid .panel').count()) === 2, 'compare shows two driver panels');
+    if (await waitFor('.compare-grid .panel', 120000, 'compare grid did not render')) {
+      check((await page.locator('.compare-grid .panel').count()) === 2, 'compare shows two driver panels');
+    }
   }
   await shot('compare');
 
