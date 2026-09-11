@@ -30,17 +30,21 @@ const VERSION = 2;
 
 type Stored = { result: ForecastResult | null; backtest: BacktestResult | null; active: ActiveSession | null };
 
+function isRecord(x: unknown): x is Record<string, unknown> {
+  return typeof x === 'object' && x !== null;
+}
 function looksLikeForecast(x: unknown): x is ForecastResult {
-  return typeof x === 'object' && x !== null && typeof (x as ForecastResult).predicted_next_lap_s === 'number'
-    && typeof (x as ForecastResult).driver === 'string' && typeof (x as ForecastResult).context === 'object'
-    && typeof (x as ForecastResult).historical_context === 'object';
+  return isRecord(x) && typeof x.predicted_next_lap_s === 'number' && typeof x.driver === 'string'
+    && isRecord(x.context) && isRecord(x.historical_context);
 }
 function looksLikeBacktest(x: unknown): x is BacktestResult {
-  return typeof x === 'object' && x !== null && Array.isArray((x as BacktestResult).laps)
-    && typeof (x as BacktestResult).summary === 'object' && typeof (x as BacktestResult).driver === 'string';
+  return isRecord(x) && Array.isArray(x.laps) && isRecord(x.summary) && typeof x.driver === 'string';
 }
 function looksLikeActive(x: unknown): x is ActiveSession {
-  return typeof x === 'object' && x !== null && typeof (x as ActiveSession).event === 'string' && typeof (x as ActiveSession).driver === 'string';
+  // Every required field, so a truncated payload cannot put blanks in the top bar or label
+  // unknown provenance as real.
+  return isRecord(x) && typeof x.season === 'number' && typeof x.event === 'string' && typeof x.session === 'string'
+    && typeof x.driver === 'string' && typeof x.artifact === 'string' && typeof x.is_synthetic === 'boolean';
 }
 
 function restore(): Stored {

@@ -28,7 +28,7 @@ from raceshift import __version__
 from raceshift.data.provenance import infer_data_source, is_synthetic_source
 from raceshift.data.schema import REQUIRED_FORECAST_COLUMNS
 from raceshift.features.full_context import LAP_VALIDITY_VERSION
-from raceshift.models.artifact import ARTIFACT_FILES, RaceShiftArtifact, inference_table_for, missing_artifact_files
+from raceshift.models.artifact import ARTIFACT_FILES, RaceShiftArtifact, blank_mask, inference_table_for, missing_artifact_files
 
 ROOT = Path(__file__).resolve().parents[2]
 ARTIFACTS = ROOT / "artifacts"
@@ -309,9 +309,10 @@ def _value_warnings(frame: pd.DataFrame) -> list[str]:
         if drivers.isna().any() or drivers.astype(str).str.strip().isin({"", "nan", "None"}).any():
             warnings_out.append("Some rows have an empty driver code; they will appear as a driver named 'nan'.")
     for column in ("season", "event", "session"):
-        if column in frame.columns and frame[column].isna().any():
+        # Null or blank (whitespace-only) identity values: neither can be a selector key.
+        if column in frame.columns and blank_mask(frame[column]).any():
             warnings_out.append(
-                f"{int(frame[column].isna().sum())} rows have an empty {column}; they are listed under a placeholder "
+                f"{int(blank_mask(frame[column]).sum())} rows have an empty {column}; they are listed under a placeholder "
                 "session and cannot be forecast."
             )
     key_cols = [c for c in ("season", "event", "session", "driver", "lap_number") if c in frame.columns]

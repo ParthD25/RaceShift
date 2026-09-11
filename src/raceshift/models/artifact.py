@@ -27,13 +27,76 @@ def missing_artifact_files(directory: str | Path) -> list[str]:
     return [name for name in ARTIFACT_FILES if not (path / name).is_file()]
 
 
+def is_blank(value: object) -> bool:
+    """True for a missing identity value: null, or a string that is empty once stripped
+    (a whitespace-only event or session name is not a usable selector key)."""
+    return bool(pd.isna(value)) or str(value).strip() in {"", "nan", "None"}
+
+
+def blank_mask(values: pd.Series) -> pd.Series:
+    """Row mask of missing identity values, see :func:`is_blank`."""
+    return values.isna() | values.astype(str).str.strip().isin({"", "nan", "None"})
+
+
 def _chronological_order(frame: pd.DataFrame) -> list[str]:
     return [c for c in ["season", "round_number", "event_date", "event", "session", "lap_number"] if c in frame.columns]
 
 
-# Order of sessions within one event weekend. Lexical order would put a Sprint ("S") after the
+# Session codes as FastF1 writes them, plus the spelled-out forms a hand-made file may use.
+SESSION_ALIASES = {
+    "PRACTICE 1": "FP1", "PRACTICE 2": "FP2", "PRACTICE 3": "FP3", "QUALIFYING": "Q",
+    "SPRINT QUALIFYING": "SQ", "SPRINT SHOOTOUT": "SS", "SPRINT": "S", "RACE": "R",
+}
+SPRINT_CODES = {"S", "SQ", "SS"}
+# Running order of a weekend's sessions. Lexical order would put a Sprint ("S") after the
 # Race ("R") and make it the "latest" session of a file; the race is the last session run.
-SESSION_ORDER = {"FP1": 0, "FP2": 1, "FP3": 2, "SQ": 3, "SS": 3, "S": 4, "Q": 5, "R": 6}
+# Sprint weekends have had three formats: 2021-2022 ran qualifying on Friday before FP2
+# and the sprint (FP1, Q, FP2, S, R); 2023 replaced FP2 with the sprint shootout
+# (FP1, Q, SS, S, R); from 2024 sprint qualifying and the sprint precede qualifying
+# (FP1, SQ, S, Q, R). A conventional weekend is FP1, FP2, FP3, Q, R. Codes not in the
+# table sort just before the race so the race stays the latest session when present.
+_CONVENTIONAL = {"FP1": 0, "FP2": 1, "FP3": 2, "Q": 3, "R": 6}
+_SPRINT_2021 = {"FP1": 0, "Q": 1, "FP2": 2, "S": 4, "R": 6}
+_SPRINT_2023 = {"FP1": 0, "Q": 1, "SS": 2, "S": 4, "R": 6}
+_SPRINT_2024 = {"FP1": 0, "SQ": 1, "S": 2, "Q": 3, "R": 6}
+_UNKNOWN_RANK = 5
+# Kept for callers that only need the modern order (sprint weekends since 2024).
+SESSION_ORDER = dict(_SPRINT_2024, FP2=1, FP3=2, SS=1)
+
+
+def session_code(value: object) -> str:
+    """Normalised session code: 'Sprint' and 'sprint ' become 'S', 'r' becomes 'R'."""
+    code = str(value).strip().upper()
+    return SESSION_ALIASES.get(code, code)
+
+
+def _weekend_order(season: float, sprint_weekend: bool) -> dict[str, int]:
+    if not sprint_weekend:
+        return _CONVENTIONAL
+    if pd.isna(season) or season >= 2024:
+        return _SPRINT_2024
+    if season >= 2023:
+        return _SPRINT_2023
+    return _SPRINT_2021
+
+
+def session_rank(frame: pd.DataFrame) -> pd.Series:
+    """Position of each row's session within its weekend (see the tables above). The weekend
+    format is inferred per season/event: an event with any sprint session uses the sprint
+    order of its season, every other event the conventional order."""
+    codes = frame["session"].map(session_code)
+    season = pd.to_numeric(frame["season"], errors="coerce") if "season" in frame.columns else pd.Series(np.nan, index=frame.index)
+    group_keys = [season.fillna(-1)] + ([frame["event"].astype(str)] if "event" in frame.columns else [])
+    sprint_weekend = codes.isin(SPRINT_CODES).groupby(group_keys).transform("any")
+    ranks = pd.Series(_UNKNOWN_RANK, index=frame.index, dtype=float)
+    combos = pd.DataFrame({"code": codes, "season": season, "sprint": sprint_weekend}).drop_duplicates()
+    for _, row in combos.iterrows():
+        table = _weekend_order(row["season"], bool(row["sprint"]))
+        if row["code"] in table:
+            same_season = season.isna() if pd.isna(row["season"]) else season == row["season"]
+            mask = (codes == row["code"]) & same_season & (sprint_weekend == row["sprint"])
+            ranks[mask] = table[row["code"]]
+    return ranks
 
 
 def sort_chronologically(frame: pd.DataFrame) -> pd.DataFrame:
@@ -42,9 +105,14 @@ def sort_chronologically(frame: pd.DataFrame) -> pd.DataFrame:
     keys = _chronological_order(frame)
     if "session" not in keys:
         return frame.sort_values(keys, kind="stable")
-    ranked = frame.assign(_session_rank=frame["session"].astype(str).str.upper().map(SESSION_ORDER).fillna(7))
-    keys = ["_session_rank" if k == "session" else k for k in keys]
-    return ranked.sort_values(keys, kind="stable").drop(columns="_session_rank")
+    # The rank lives in a scratch column whose name cannot collide with user data; it is
+    # dropped again so the caller gets its own columns back untouched.
+    scratch = "_raceshift_session_rank"
+    while scratch in frame.columns:
+        scratch += "_"
+    ranked = frame.assign(**{scratch: session_rank(frame)})
+    keys = [scratch if k == "session" else k for k in keys]
+    return ranked.sort_values(keys, kind="stable").drop(columns=scratch)
 
 
 def inference_table_for(raw: pd.DataFrame, history: int = 5) -> pd.DataFrame:
@@ -143,8 +211,8 @@ class RaceShiftArtifact:
             season_number = pd.to_numeric(pd.Series([season]), errors="coerce").iloc[0]
             out.append({
                 "season": int(season_number) if pd.notna(season_number) else None,
-                "event": str(event) if pd.notna(event) else "(missing event)",
-                "session": str(session) if pd.notna(session) else "(missing session)",
+                "event": str(event) if not is_blank(event) else "(missing event)",
+                "session": str(session) if not is_blank(session) else "(missing session)",
                 "laps": int(len(group)),
                 "drivers": int(group["driver"].astype(str).nunique()),
                 "driver_codes": sorted(group["driver"].astype(str).unique().tolist()),

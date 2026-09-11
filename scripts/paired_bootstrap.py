@@ -10,7 +10,7 @@ are not independent) and reports 95% intervals of the mean paired |error| differ
 
     python scripts/paired_bootstrap.py --ffr artifacts/f1_2025h2_ffr-m --baselines artifacts/f1_2025h2_baselines
 
-Both directories must hold a test_predictions.csv with season/event/driver/lap_number,
+Both directories must hold a test_predictions.csv with season/event/session/driver/lap_number,
 actual_next_lap_s and predicted_next_lap_s (baselines: one column per model).
 """
 from __future__ import annotations
