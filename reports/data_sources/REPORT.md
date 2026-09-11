@@ -167,7 +167,7 @@ event × driver cluster bootstraps of the paired |error| difference.
 | ridge, retrained with 2026 R1-5 | 0.391 | | |
 | gradient-boosted trees, retrained with 2026 R1-5 | **0.371** | | |
 | FFR-M untouched (trained to 2024), zero-shot | 0.377 | | +0.005 |
-| FFR-M retrained from scratch with 2026 R1-5 | RETRAIN_ROW | | |
+| FFR-M retrained from scratch with 2026 R1-5 (70 min) | 0.3768 | +0.0001 (−0.0007, +0.0009) | +0.006 (−0.000, +0.011) |
 | fine-tune: readout refit only, 20k replay rows (15 s) | 0.3765 | −0.0002 (−0.0014, +0.0009) | +0.005 (−0.001, +0.011) |
 | fine-tune: 5 local epochs, lr 1e-4, 20k replay (28 s) | 0.3765 | −0.0002 (−0.0015, +0.0010) | +0.005 (−0.001, +0.011) |
 | fine-tune: 20 epochs, lr 2e-4, 60k replay in layers (22 min) | 0.3771 | +0.0004 (−0.0003, +0.0011) | +0.006 (+0.000, +0.011) |
@@ -181,7 +181,10 @@ What the numbers say:
 
 - Five races of a new regulation season do not move the model. The best fine-tuning
   variants tie the untouched model (differences of 0.0002 s with intervals straddling
-  zero); the untouched model already beats the stopwatch by 0.049 s on these rounds.
+  zero), and so does FFR-M retrained from scratch on 2018-2024 plus those five races
+  (0.3768 s, +0.0001 s against the untouched model, interval (−0.0007, +0.0009)): 70
+  minutes of training buy exactly what a 15-second readout refit buys, which is nothing.
+  The untouched model already beats the stopwatch by 0.049 s on these rounds.
 - More local epochs at the base learning rate make things worse, and refitting the readout
   on the new rows alone without replay costs 0.018 s: the 3.6k new laps are too few to
   re-solve a 125-coefficient readout, and the layers drift towards the new distribution

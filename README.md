@@ -299,9 +299,10 @@ lap times on 99.4% of 2018-2026 laps, the rest being Ergast lap-alignment errors
 Fine-tuning is forward-forward only (`scripts/finetune_ffr.py`: local layer updates from the
 saved weights, then a closed-form readout refit, base preprocessor and contract unchanged).
 On the first five races of 2026 it changes nothing: the best variants tie the untouched
-model (0.3765 s vs 0.3767 s on rounds 8-13, interval straddling zero) while the retrained
-gradient-boosted trees lead every FFR variant by 0.005 s; more local epochs or a readout refit
-without replay of old rows make the model worse. On sprints, a session type the race-trained
+model (0.3765 s vs 0.3767 s on rounds 8-13, interval straddling zero), as does FFR-M retrained
+from scratch with those races included (0.3768 s after 70 minutes of training), while the
+retrained gradient-boosted trees lead every FFR variant by 0.005 s; more local epochs or a
+readout refit without replay of old rows make the model worse. On sprints, a session type the race-trained
 model had never seen, the untouched model is no better than the stopwatch (0.496 s vs 0.491 s
 on the 2026 sprints) and a 15-second readout refit on 2023-2024 sprints brings it to 0.474 s,
 0.022 s better than untouched with an interval that excludes zero and 0.017 s better than the
