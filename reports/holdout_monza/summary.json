@@ -1,0 +1,418 @@
+{
+  "name": "holdout_monza",
+  "created_utc": "2026-09-11T00:44:56+00:00",
+  "input_file": "f1_laps_fastf1.parquet",
+  "data_source": "fastf1_timing",
+  "is_synthetic": false,
+  "split": {
+    "mode": "circuit_holdout",
+    "train_end": 2024,
+    "validation": 2025,
+    "test": 2025,
+    "split_round": null,
+    "holdout_event": "Italian Grand Prix"
+  },
+  "rows": {
+    "train": 114924,
+    "validation": 19463,
+    "test": 5857
+  },
+  "results": [
+    {
+      "model": "previous_lap",
+      "family": "baseline",
+      "validation": {
+        "mae_s": 0.36657046704002466,
+        "rmse_s": 0.5948052518452309,
+        "median_ae_s": 0.21800000000000352,
+        "p90_ae_s": 0.8569999999999993,
+        "signed_bias_s": 0.012210810255356306,
+        "within_0_5s_share": 0.7880080152083441,
+        "within_1s_share": 0.922571032214972,
+        "mape_pct": 0.4195275272094296,
+        "r2": 0.9967775683558241,
+        "rows": 19463
+      },
+      "test": {
+        "mae_s": 0.33212771043196165,
+        "rmse_s": 0.5430264365327285,
+        "median_ae_s": 0.20100000000000762,
+        "p90_ae_s": 0.7810000000000059,
+        "signed_bias_s": 0.0270073416424791,
+        "within_0_5s_share": 0.8171418815093051,
+        "within_1s_share": 0.9359740481475158,
+        "mape_pct": 0.38562904527123026,
+        "r2": 0.8861352258402495,
+        "rows": 5857
+      },
+      "resources": {
+        "training": {
+          "wall_seconds": 0.0,
+          "peak_rss_mb": 0.0,
+          "peak_traced_mb": 0.0
+        },
+        "inference_batch_ms_per_row": 0.0
+      },
+      "artifact": "holdout_monza_baselines"
+    },
+    {
+      "model": "rolling_median_5",
+      "family": "baseline",
+      "validation": {
+        "mae_s": 0.411574962749833,
+        "rmse_s": 0.6399740000695664,
+        "median_ae_s": 0.2575000000000074,
+        "p90_ae_s": 0.9558000000000042,
+        "signed_bias_s": -0.0007077274829162993,
+        "within_0_5s_share": 0.744643682885475,
+        "within_1s_share": 0.9081333812875713,
+        "mape_pct": 0.46946648429967325,
+        "r2": 0.9962695709399602,
+        "rows": 19463
+      },
+      "test": {
+        "mae_s": 0.34065280860508795,
+        "rmse_s": 0.5244322536042708,
+        "median_ae_s": 0.22149999999999181,
+        "p90_ae_s": 0.7619999999999919,
+        "signed_bias_s": 0.029752176882363,
+        "within_0_5s_share": 0.7968243127881168,
+        "within_1s_share": 0.9402424449376814,
+        "mape_pct": 0.3955798365893442,
+        "r2": 0.8937995809602954,
+        "rows": 5857
+      },
+      "resources": {
+        "training": {
+          "wall_seconds": 0.0,
+          "peak_rss_mb": 0.0,
+          "peak_traced_mb": 0.0
+        },
+        "inference_batch_ms_per_row": 0.0
+      },
+      "artifact": "holdout_monza_baselines"
+    },
+    {
+      "model": "ridge",
+      "family": "baseline",
+      "validation": {
+        "mae_s": 0.40477746422986205,
+        "rmse_s": 0.5883023377980181,
+        "median_ae_s": 0.2879755392336847,
+        "p90_ae_s": 0.8609264887438284,
+        "signed_bias_s": 0.060592393543155466,
+        "within_0_5s_share": 0.7214715100447002,
+        "within_1s_share": 0.92642449776499,
+        "mape_pct": 0.45872885552724807,
+        "r2": 0.9968476438838327,
+        "rows": 19463
+      },
+      "test": {
+        "mae_s": 0.32145043559312625,
+        "rmse_s": 0.49297677316248595,
+        "median_ae_s": 0.21816781472742264,
+        "p90_ae_s": 0.6852997310270014,
+        "signed_bias_s": 0.03432876863944162,
+        "within_0_5s_share": 0.8246542598599966,
+        "within_1s_share": 0.9530476353081783,
+        "mape_pct": 0.3736441178964922,
+        "r2": 0.9061573294534433,
+        "rows": 5857
+      },
+      "resources": {
+        "training": {
+          "wall_seconds": 0.597,
+          "peak_rss_mb": 1811.9,
+          "peak_traced_mb": 351.7
+        },
+        "inference_batch_ms_per_row": 0.001
+      },
+      "artifact": "holdout_monza_baselines"
+    },
+    {
+      "model": "hist_gradient_boosting",
+      "family": "baseline",
+      "validation": {
+        "mae_s": 0.33405423573009013,
+        "rmse_s": 0.5345993109935756,
+        "median_ae_s": 0.21246962119781188,
+        "p90_ae_s": 0.7406122435878243,
+        "signed_bias_s": -0.03247048532802858,
+        "within_0_5s_share": 0.8155988285464728,
+        "within_1s_share": 0.940656630529723,
+        "mape_pct": 0.38108651641533753,
+        "r2": 0.9973968996289603,
+        "rows": 19463
+      },
+      "test": {
+        "mae_s": 0.28894765352482316,
+        "rmse_s": 0.4649875620502539,
+        "median_ae_s": 0.18726080820695756,
+        "p90_ae_s": 0.637782236668653,
+        "signed_bias_s": -0.054947915468155736,
+        "within_0_5s_share": 0.8523134710602698,
+        "within_1s_share": 0.9593648625576233,
+        "mape_pct": 0.3352886497178284,
+        "r2": 0.9165108354968615,
+        "rows": 5857
+      },
+      "resources": {
+        "training": {
+          "wall_seconds": 34.251,
+          "peak_rss_mb": 2189.7,
+          "peak_traced_mb": 451.9
+        },
+        "inference_batch_ms_per_row": 0.0088
+      },
+      "artifact": "holdout_monza_baselines"
+    },
+    {
+      "model": "FFR-M",
+      "family": "forward-forward",
+      "architecture": [
+        {
+          "layer": 1,
+          "input_nodes": 324,
+          "hidden_nodes": 512,
+          "ordinal_groups": 8
+        },
+        {
+          "layer": 2,
+          "input_nodes": 512,
+          "hidden_nodes": 384,
+          "ordinal_groups": 16
+        },
+        {
+          "layer": 3,
+          "input_nodes": 384,
+          "hidden_nodes": 256,
+          "ordinal_groups": 32
+        },
+        {
+          "layer": 4,
+          "input_nodes": 256,
+          "hidden_nodes": 192,
+          "ordinal_groups": 64
+        }
+      ],
+      "validation": {
+        "mae_s": 0.36688596167752,
+        "rmse_s": 0.554213771932082,
+        "median_ae_s": 0.2519158627986968,
+        "p90_ae_s": 0.7853541657447805,
+        "signed_bias_s": 0.03226432107056933,
+        "within_0_5s_share": 0.7793248728356369,
+        "within_1s_share": 0.9372142013050403,
+        "mape_pct": 0.4175208690550711,
+        "r2": 0.9972023798209377,
+        "rows": 19463,
+        "interval80_coverage": 0.7999794481837332,
+        "interval80_width_s": 1.0650634767232792
+      },
+      "test": {
+        "mae_s": 0.3350934540789875,
+        "rmse_s": 0.48703460874697846,
+        "median_ae_s": 0.2507842606082562,
+        "p90_ae_s": 0.6693877354145119,
+        "signed_bias_s": 0.11076477557470547,
+        "within_0_5s_share": 0.8127027488475329,
+        "within_1s_share": 0.95953559842923,
+        "mape_pct": 0.3900108389011746,
+        "r2": 0.9084059865130267,
+        "rows": 5857,
+        "interval80_coverage": 0.8360935632576404,
+        "interval80_width_s": 1.0650634764658218
+      },
+      "resources": {
+        "feature_build": {
+          "wall_seconds": 329.754,
+          "peak_rss_mb": 1775.2,
+          "peak_traced_mb": 1085.6
+        },
+        "training": {
+          "wall_seconds": 2473.383,
+          "peak_rss_mb": 2620.2,
+          "peak_traced_mb": 1277.7
+        },
+        "inference_batch_ms_per_row": 3.2029,
+        "inference_single_row_ms": 4.869,
+        "artifact_bytes": 2685961,
+        "device": "cpu-numpy"
+      },
+      "features": {
+        "count_raw": 76,
+        "numeric": 64,
+        "categorical": 12,
+        "input_nodes_after_encoding": 324,
+        "dropped_groups": [],
+        "dropped_sparse": [
+          "gap_ahead_s",
+          "gap_behind_s",
+          "mean_speed_kph",
+          "max_speed_kph",
+          "mean_throttle_pct",
+          "brake_fraction",
+          "mean_rpm",
+          "max_rpm",
+          "gear_changes",
+          "drs_fraction",
+          "hist_driver_weather_pace_rel",
+          "hist_team_weather_pace_rel",
+          "gap_ahead_s_lag1",
+          "gap_ahead_s_lag2",
+          "gap_ahead_s_lag3",
+          "gap_ahead_s_lag4",
+          "mean_speed_kph_lag1",
+          "mean_speed_kph_lag2",
+          "mean_speed_kph_lag3",
+          "mean_speed_kph_lag4",
+          "mean_throttle_pct_lag1",
+          "mean_throttle_pct_lag2",
+          "mean_throttle_pct_lag3",
+          "mean_throttle_pct_lag4",
+          "brake_fraction_lag1",
+          "brake_fraction_lag2",
+          "brake_fraction_lag3",
+          "brake_fraction_lag4"
+        ],
+        "min_feature_coverage": 0.05,
+        "target_clip_s": 6.0,
+        "contract_version": "full_context_v2_adjacency_safe_relative",
+        "history_laps": 5
+      },
+      "test_by_event": {
+        "Italian Grand Prix": {
+          "mae_s": 0.3350934540789875,
+          "rmse_s": 0.48703460874697846,
+          "median_ae_s": 0.2507842606082562,
+          "p90_ae_s": 0.6693877354145119,
+          "signed_bias_s": 0.11076477557470547,
+          "within_0_5s_share": 0.8127027488475329,
+          "within_1s_share": 0.95953559842923,
+          "mape_pct": 0.3900108389011746,
+          "r2": 0.9084059865130267,
+          "rows": 5857
+        }
+      },
+      "artifact": "holdout_monza_ffr-m"
+    },
+    {
+      "model": "FFR-S",
+      "family": "forward-forward",
+      "architecture": [
+        {
+          "layer": 1,
+          "input_nodes": 324,
+          "hidden_nodes": 256,
+          "ordinal_groups": 8
+        },
+        {
+          "layer": 2,
+          "input_nodes": 256,
+          "hidden_nodes": 128,
+          "ordinal_groups": 16
+        }
+      ],
+      "validation": {
+        "mae_s": 0.3623254605501497,
+        "rmse_s": 0.5479659025137957,
+        "median_ae_s": 0.25077107191084735,
+        "p90_ae_s": 0.7797819114685012,
+        "signed_bias_s": 0.03741955220202581,
+        "within_0_5s_share": 0.7841545496583261,
+        "within_1s_share": 0.939577660175718,
+        "mape_pct": 0.4132287863596423,
+        "r2": 0.9972651016142002,
+        "rows": 19463,
+        "interval80_coverage": 0.7999794481837332,
+        "interval80_width_s": 1.0485243798787538
+      },
+      "test": {
+        "mae_s": 0.3330386028570671,
+        "rmse_s": 0.48526847827447134,
+        "median_ae_s": 0.2470378594398568,
+        "p90_ae_s": 0.6711517169952288,
+        "signed_bias_s": 0.10113936705757823,
+        "within_0_5s_share": 0.8127027488475329,
+        "within_1s_share": 0.95953559842923,
+        "mape_pct": 0.38756474894908577,
+        "r2": 0.9090690756165175,
+        "rows": 5857,
+        "interval80_coverage": 0.8261908827044562,
+        "interval80_width_s": 1.0485243797709312
+      },
+      "resources": {
+        "feature_build": {
+          "wall_seconds": 328.576,
+          "peak_rss_mb": 1777.7,
+          "peak_traced_mb": 1085.6
+        },
+        "training": {
+          "wall_seconds": 455.614,
+          "peak_rss_mb": 1913.2,
+          "peak_traced_mb": 571.7
+        },
+        "inference_batch_ms_per_row": 0.6305,
+        "inference_single_row_ms": 1.041,
+        "artifact_bytes": 1203749,
+        "device": "cpu-numpy"
+      },
+      "features": {
+        "count_raw": 76,
+        "numeric": 64,
+        "categorical": 12,
+        "input_nodes_after_encoding": 324,
+        "dropped_groups": [],
+        "dropped_sparse": [
+          "gap_ahead_s",
+          "gap_behind_s",
+          "mean_speed_kph",
+          "max_speed_kph",
+          "mean_throttle_pct",
+          "brake_fraction",
+          "mean_rpm",
+          "max_rpm",
+          "gear_changes",
+          "drs_fraction",
+          "hist_driver_weather_pace_rel",
+          "hist_team_weather_pace_rel",
+          "gap_ahead_s_lag1",
+          "gap_ahead_s_lag2",
+          "gap_ahead_s_lag3",
+          "gap_ahead_s_lag4",
+          "mean_speed_kph_lag1",
+          "mean_speed_kph_lag2",
+          "mean_speed_kph_lag3",
+          "mean_speed_kph_lag4",
+          "mean_throttle_pct_lag1",
+          "mean_throttle_pct_lag2",
+          "mean_throttle_pct_lag3",
+          "mean_throttle_pct_lag4",
+          "brake_fraction_lag1",
+          "brake_fraction_lag2",
+          "brake_fraction_lag3",
+          "brake_fraction_lag4"
+        ],
+        "min_feature_coverage": 0.05,
+        "target_clip_s": 6.0,
+        "contract_version": "full_context_v2_adjacency_safe_relative",
+        "history_laps": 5
+      },
+      "test_by_event": {
+        "Italian Grand Prix": {
+          "mae_s": 0.3330386028570671,
+          "rmse_s": 0.48526847827447134,
+          "median_ae_s": 0.2470378594398568,
+          "p90_ae_s": 0.6711517169952288,
+          "signed_bias_s": 0.10113936705757823,
+          "within_0_5s_share": 0.8127027488475329,
+          "within_1s_share": 0.95953559842923,
+          "mape_pct": 0.38756474894908577,
+          "r2": 0.9090690756165175,
+          "rows": 5857
+        }
+      },
+      "artifact": "holdout_monza_ffr-s"
+    }
+  ]
+}
