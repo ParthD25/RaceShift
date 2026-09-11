@@ -92,7 +92,7 @@ export type ImportSummary = {
   seasons?: number[];
   events?: string[];
   drivers?: string[];
-  latest_session?: { season: number; event: string; session: string };
+  latest_session?: { season: number; event: string; session: string } | null;
   latest_session_drivers?: string[];
   sessions?: SessionInfo[];
   has_chronology?: boolean;

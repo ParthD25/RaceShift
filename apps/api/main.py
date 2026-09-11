@@ -28,7 +28,7 @@ from raceshift import __version__
 from raceshift.data.provenance import infer_data_source, is_synthetic_source
 from raceshift.data.schema import REQUIRED_FORECAST_COLUMNS
 from raceshift.features.full_context import LAP_VALIDITY_VERSION
-from raceshift.models.artifact import ARTIFACT_FILES, RaceShiftArtifact, blank_mask, inference_table_for, missing_artifact_files
+from raceshift.models.artifact import ARTIFACT_FILES, RaceShiftArtifact, blank_mask, inference_table_for, integer_season, missing_artifact_files
 
 ROOT = Path(__file__).resolve().parents[2]
 ARTIFACTS = ROOT / "artifacts"
@@ -255,15 +255,22 @@ def _table_summary(frame: pd.DataFrame, name: str) -> dict[str, Any]:
         "data_source": infer_data_source(frame),
     }
     if not missing:
-        latest_scope, key = RaceShiftArtifact.latest_session(frame)
         summary.update({
-            "seasons": sorted(int(s) for s in pd.to_numeric(frame["season"], errors="coerce").dropna().unique()),
+            "seasons": sorted({integer_season(s) for s in frame["season"].unique()} - {None}),
             "events": sorted(frame["event"].astype(str).unique().tolist()),
             "drivers": sorted(frame["driver"].astype(str).unique().tolist()),
             "sessions": RaceShiftArtifact.list_sessions(frame),
-            "latest_session": {"season": int(key["season"]), "event": str(key["event"]), "session": str(key["session"])},
-            "latest_session_drivers": sorted(latest_scope["driver"].astype(str).unique().tolist()),
         })
+        try:
+            latest_scope, key = RaceShiftArtifact.latest_session(frame)
+        except ValueError:
+            # Every row has a blank or fractional identity: nothing the selector can address.
+            summary.update({"latest_session": None, "latest_session_drivers": []})
+        else:
+            summary.update({
+                "latest_session": {"season": int(key["season"]), "event": str(key["event"]), "session": str(key["session"])},
+                "latest_session_drivers": sorted(latest_scope["driver"].astype(str).unique().tolist()),
+            })
     summary["has_chronology"] = bool({"event_date", "round_number"} & set(frame.columns))
     summary["data_warnings"] = _value_warnings(frame)
     if not summary["has_chronology"]:
