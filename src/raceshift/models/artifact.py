@@ -38,6 +38,23 @@ def blank_mask(values: pd.Series) -> pd.Series:
     return values.isna() | values.astype(str).str.strip().isin({"", "nan", "None"})
 
 
+def integer_season(value: object) -> int | None:
+    """The season as an int when the value is a whole number, else None (a fractional or
+    non-numeric season is not a usable selector key and is never silently truncated)."""
+    number = pd.to_numeric(pd.Series([value]), errors="coerce").iloc[0]
+    if pd.isna(number) or not float(number).is_integer():
+        return None
+    return int(number)
+
+
+def addressable_mask(frame: pd.DataFrame) -> pd.Series:
+    """Rows whose season/event/session identity the selector can address: a whole-number
+    season and non-blank event and session names."""
+    season = pd.to_numeric(frame["season"], errors="coerce")
+    whole = season.notna() & (season == np.floor(season))
+    return whole & ~blank_mask(frame["event"]) & ~blank_mask(frame["session"])
+
+
 def _chronological_order(frame: pd.DataFrame) -> list[str]:
     return [c for c in ["season", "round_number", "event_date", "event", "session", "lap_number"] if c in frame.columns]
 
@@ -60,6 +77,7 @@ _SPRINT_2021 = {"FP1": 0, "Q": 1, "FP2": 2, "S": 4, "R": 6}
 _SPRINT_2023 = {"FP1": 0, "Q": 1, "SS": 2, "S": 4, "R": 6}
 _SPRINT_2024 = {"FP1": 0, "SQ": 1, "S": 2, "Q": 3, "R": 6}
 _UNKNOWN_RANK = 5
+_MISSING_SEASON = "(missing season)"
 # Kept for callers that only need the modern order (sprint weekends since 2024).
 SESSION_ORDER = dict(_SPRINT_2024, FP2=1, FP3=2, SS=1)
 
@@ -86,14 +104,16 @@ def session_rank(frame: pd.DataFrame) -> pd.Series:
     order of its season, every other event the conventional order."""
     codes = frame["session"].map(session_code)
     season = pd.to_numeric(frame["season"], errors="coerce") if "season" in frame.columns else pd.Series(np.nan, index=frame.index)
-    group_keys = [season.fillna(-1)] + ([frame["event"].astype(str)] if "event" in frame.columns else [])
+    # A missing season is keyed by a sentinel no numeric value can equal, so a file that
+    # really contains season -1 (or any other number) is never mistaken for "unknown".
+    season_key = season.astype(object).where(season.notna(), _MISSING_SEASON)
+    group_keys = [season_key] + ([frame["event"].astype(str)] if "event" in frame.columns else [])
     sprint_weekend = codes.isin(SPRINT_CODES).groupby(group_keys).transform("any")
     # One rank per distinct (code, season, weekend format), then a single vectorised lookup,
     # so a multi-season import costs one pass however many combinations it holds.
-    season_key = season.fillna(-1)
     combos = pd.DataFrame({"code": codes, "season": season_key, "sprint": sprint_weekend}).drop_duplicates()
     combos["rank"] = [
-        float(_weekend_order(np.nan if s == -1 else s, bool(sp)).get(c, _UNKNOWN_RANK))
+        float(_weekend_order(np.nan if s == _MISSING_SEASON else float(s), bool(sp)).get(c, _UNKNOWN_RANK))
         for c, s, sp in zip(combos["code"], combos["season"], combos["sprint"])
     ]
     lookup = combos.set_index(["code", "season", "sprint"])["rank"]
@@ -170,8 +190,14 @@ class RaceShiftArtifact:
 
     @staticmethod
     def latest_session(raw: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, object]]:
-        """Return the rows of the chronologically latest season/event/session and its key."""
-        ordered = sort_chronologically(raw)
+        """Return the rows of the chronologically latest season/event/session and its key.
+        Rows with a blank or fractional identity (listed as placeholders by ``list_sessions``)
+        are never the default: the API serialises the key as an integer season and the
+        selector could not address such a session anyway."""
+        usable = raw[addressable_mask(raw)]
+        if usable.empty:
+            raise ValueError("No session with a whole-number season and non-blank event and session names in this file")
+        ordered = sort_chronologically(usable)
         last = ordered.iloc[-1]
         key = {"season": last["season"], "event": last["event"], "session": last["session"]}
         mask = (
@@ -210,10 +236,10 @@ class RaceShiftArtifact:
         # listed under an explicit placeholder so nothing disappears silently (the summary also
         # reports them as a data warning).
         for (season, event, session), group in ordered.groupby(cols, sort=False, dropna=False):
-            season_number = pd.to_numeric(pd.Series([season]), errors="coerce").iloc[0]
-            selectable = pd.notna(season_number) and not is_blank(event) and not is_blank(session)
+            season_number = integer_season(season)
+            selectable = season_number is not None and not is_blank(event) and not is_blank(session)
             out.append({
-                "season": int(season_number) if pd.notna(season_number) else None,
+                "season": season_number,
                 "event": str(event) if not is_blank(event) else "(missing event)",
                 "session": str(session) if not is_blank(session) else "(missing session)",
                 # False for the placeholder rows: the selector cannot address them, so the UI
