@@ -97,14 +97,20 @@ only the scored season differs. Mean absolute error of the next-lap forecast, se
 
 | Rows scored | FastF1 | OpenF1 | TracingInsights |
 | --- | --- | --- | --- |
-| FFR-M on the 2025 test rounds (13-24) | 0.331 (10,519 laps) | 0.327 (10,444) | 0.325 (9,538; scored before the São Paulo laps were recovered, rescore pending) |
+| FFR-M on the 2025 test rounds (13-24) | 0.331 (10,519 laps) | 0.327 (10,444) | 0.322 (10,519) |
 | FFR-S on the 2025 test rounds | 0.328 | 0.329 | |
-| previous-lap stopwatch, same rows | 0.336 | 0.340 | 0.340 |
-| FFR-M (trained to 2024) on all 2026 races | 0.413 (10,778) | 0.429 (10,675) | 0.416 (10,788) |
+| previous-lap stopwatch, same rows | 0.336 | 0.340 | 0.336 |
+| FFR-M (trained to 2024) on all 2026 races | 0.413 (10,778) | 0.429 (10,675) | 0.415 (10,788) |
 | previous-lap stopwatch, 2026 | 0.453 | 0.465 | 0.453 |
 
 Per event in 2026 the two providers agree to within 0.03 s except the Australian Grand
 Prix (0.457 s on FastF1 rows, 0.547 s on OpenF1's broken feed), which is most of the gap.
+The TracingInsights rows are FastF1's own laps (identical timing, status, pit and tyre
+columns on every scored lap) and still score 0.009 s better on the 2025 rounds: the only
+columns that differ are the weather sample joined to each lap (track temperature by up to
+1.7 °C, wind speed by up to 2.4 m/s, air temperature by up to 0.5 °C) and a few dozen
+tyre-life and compound rows. That is the size of the model's sensitivity to the weather
+join, and a reminder that a third decimal in these tables is provider noise.
 
 The first pass of this check did not look like this. Scored on the first OpenF1 tables the
 same model had an error of 0.586 s on the 2025 test rounds with a root-mean-square error

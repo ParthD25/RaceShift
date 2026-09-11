@@ -287,7 +287,7 @@ not validated on upload.
 The same laps are now available from three sources, and the model is scored on each
 (`reports/data_sources/REPORT.md`). Scored on a table whose 2025-2026 rows come from a
 different provider (history to 2024 unchanged), FFR-M's error on the 2025 test rounds is
-0.331 s on FastF1 rows, 0.327 s on OpenF1 rows and 0.325 s on TracingInsights rows, with the
+0.331 s on FastF1 rows, 0.327 s on OpenF1 rows and 0.322 s on TracingInsights rows, with the
 stopwatch within 0.004 s across providers; on 2026 the OpenF1 figure is 0.429 s against 0.413 s,
 almost entirely the Australian Grand Prix, where OpenF1's own lap feed is broken. The first pass
 of that check found two leaks in the OpenF1 adapter (a race started behind the safety car, and a
