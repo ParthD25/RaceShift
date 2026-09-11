@@ -49,9 +49,30 @@ class RaceShiftArtifact:
         if missing:
             raise FileNotFoundError(f"Artifact {self.directory.name} is incomplete, missing: {missing}")
         self.model = ForwardForwardRegressor.load(self.directory)
-        self.preprocessor = joblib.load(self.directory / "preprocessor.joblib")
         self.contract = json.loads((self.directory / "feature_contract.json").read_text())
         self.metrics = json.loads((self.directory / "metrics.json").read_text())
+        self.preprocessor = self._load_preprocessor()
+
+    def _load_preprocessor(self):
+        """Prefer the pickle-free JSON preprocessor spec written by the exporter (exact NumPy
+        re-implementation, verified against sklearn at export time); fall back to the joblib
+        pickle, silencing sklearn's version-mismatch warning, which is harmless for a fitted
+        OneHotEncoder/StandardScaler and would otherwise print a dozen lines per load."""
+        specs = sorted((self.directory / "export").glob("*_preprocessor.json")) if (self.directory / "export").is_dir() else []
+        if specs:
+            from raceshift.models.export import JsonPreprocessor
+
+            return JsonPreprocessor(json.loads(specs[0].read_text()))
+        import warnings
+
+        with warnings.catch_warnings():
+            try:
+                from sklearn.exceptions import InconsistentVersionWarning
+
+                warnings.simplefilter("ignore", InconsistentVersionWarning)
+            except ImportError:  # pragma: no cover
+                pass
+            return joblib.load(self.directory / "preprocessor.joblib")
 
     @property
     def is_synthetic(self) -> bool:
@@ -71,6 +92,45 @@ class RaceShiftArtifact:
             (raw["season"] == key["season"]) & (raw["event"] == key["event"]) & (raw["session"] == key["session"])
         )
         return raw[mask], key
+
+    @staticmethod
+    def select_session(
+        raw: pd.DataFrame, season: int | None = None, event: str | None = None, session: str | None = None
+    ) -> tuple[pd.DataFrame, dict[str, object]]:
+        """Rows of one session in the file: the chronologically latest one by default, or the
+        one named by ``event`` (plus ``season``/``session`` when the file has several)."""
+        if event is None and season is None and session is None:
+            return RaceShiftArtifact.latest_session(raw)
+        mask = pd.Series(True, index=raw.index)
+        if event is not None:
+            mask &= raw["event"].astype(str) == str(event)
+        if season is not None:
+            mask &= pd.to_numeric(raw["season"], errors="coerce") == int(season)
+        if session is not None:
+            mask &= raw["session"].astype(str) == str(session)
+        scope = raw[mask]
+        if scope.empty:
+            wanted = " ".join(str(v) for v in (season, event, session) if v is not None)
+            raise ValueError(f"No laps for session {wanted!r} in this file")
+        return RaceShiftArtifact.latest_session(scope)
+
+    @staticmethod
+    def list_sessions(raw: pd.DataFrame) -> list[dict[str, object]]:
+        """Every season/event/session in the file in chronological order with lap and driver counts."""
+        cols = ["season", "event", "session"]
+        ordered = raw.sort_values(_chronological_order(raw), kind="stable")
+        out = []
+        for (season, event, session), group in ordered.groupby(cols, sort=False):
+            out.append({
+                "season": int(season),
+                "event": str(event),
+                "session": str(session),
+                "laps": int(len(group)),
+                "drivers": int(group["driver"].astype(str).nunique()),
+                "driver_codes": sorted(group["driver"].astype(str).unique().tolist()),
+                "date": str(group["event_date"].iloc[0])[:10] if "event_date" in group and pd.notna(group["event_date"].iloc[0]) else None,
+            })
+        return out
 
     @staticmethod
     def _pick_driver(scope: pd.DataFrame, driver: str | None) -> tuple[str, list[str]]:
@@ -97,7 +157,15 @@ class RaceShiftArtifact:
         usable next lap exists. The API caches this per file so repeated calls are cheap."""
         return inference_table_for(raw, history=self.history_laps)
 
-    def forecast_last_available(self, raw: pd.DataFrame, driver: str | None = None, table: pd.DataFrame | None = None) -> dict:
+    def forecast_last_available(
+        self,
+        raw: pd.DataFrame,
+        driver: str | None = None,
+        table: pd.DataFrame | None = None,
+        season: int | None = None,
+        event: str | None = None,
+        session: str | None = None,
+    ) -> dict:
         """Forecast the next lap for the latest completed lap in the supplied history.
 
         Scope is the chronologically latest session in the file. When `driver` is not given,
@@ -112,7 +180,7 @@ class RaceShiftArtifact:
         if data.empty:
             raise ValueError("No rows with a lap time available for forecast")
 
-        scope, key = self.latest_session(data)
+        scope, key = self.select_session(data, season=season, event=event, session=session)
         scope = scope.copy()
         scope["driver"] = scope["driver"].astype(str)
         driver, available_drivers = self._pick_driver(scope, driver)
@@ -146,6 +214,10 @@ class RaceShiftArtifact:
             raise ValueError("Model produced a non-finite forecast for this row")
 
         completed = int(len(history))
+        # The forecast is for the lap after the last recorded one. When that lap is the last
+        # lap anybody completed in the session, the race is over and the forecast is hypothetical.
+        session_last_lap = int(pd.to_numeric(scope["lap_number"], errors="coerce").max())
+        race_finished = int(latest["lap_number"]) >= session_last_lap
 
         def _num(col: str):
             if col not in row.columns:
@@ -203,6 +275,8 @@ class RaceShiftArtifact:
             "completed_laps_in_session": completed,
             "history_laps_used": history_laps,
             "short_history": completed < history_laps,
+            "race_finished": bool(race_finished),
+            "session_last_lap": session_last_lap,
             "predicted_next_lap_s": predicted,
             "lower_80_s": baseline + float(pred["lower_80"][0]),
             "upper_80_s": baseline + float(pred["upper_80"][0]),
@@ -214,7 +288,16 @@ class RaceShiftArtifact:
             "is_synthetic": self.is_synthetic,
         }
 
-    def backtest_session(self, raw: pd.DataFrame, driver: str | None = None, laps: int = 10, table: pd.DataFrame | None = None) -> dict:
+    def backtest_session(
+        self,
+        raw: pd.DataFrame,
+        driver: str | None = None,
+        laps: int = 10,
+        table: pd.DataFrame | None = None,
+        season: int | None = None,
+        event: str | None = None,
+        session: str | None = None,
+    ) -> dict:
         """Score the model on the last ``laps`` completed lap pairs of one driver in the latest session.
 
         Every row is a lap N whose next lap N+1 was actually driven, so predicted and actual
@@ -233,7 +316,7 @@ class RaceShiftArtifact:
         if data.empty:
             raise ValueError("No rows with a lap time available for a backtest")
 
-        scope, key = self.latest_session(data)
+        scope, key = self.select_session(data, season=season, event=event, session=session)
         scope = scope.copy()
         scope["driver"] = scope["driver"].astype(str)
         driver, available_drivers = self._pick_driver(scope, driver)

@@ -63,7 +63,7 @@ backend resolves filenames strictly inside this directory and rejects path trave
 python scripts/fetch_fastf1.py --year 2025 --event "Abu Dhabi" --session R --output data/imports/abu_dhabi_2025.parquet
 ```
 
-Required columns: `season, event, session, driver, lap_number, lap_time_s`. The full schema is in
+Required columns: `season, event, session, driver, lap_number, lap_time_s`, plus `event_date` or `round_number` so events can be ordered chronologically (historical priors must come from strictly earlier events; the import summary flags a table without either). Uploads missing a required column are rejected; out-of-range values (a negative lap time, 999 °C) are accepted but reported as warnings. The full schema is in
 `docs/FEATURE_CONTRACT.md`.
 
 Then run a forecast from the Forecast page, or from the shell:

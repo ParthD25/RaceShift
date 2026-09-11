@@ -12,7 +12,7 @@ const TITLES: Record<SourceKind, string> = {
   fixture: 'Illustrative placeholder content. Not produced by a model or by real Formula 1 data.',
   local: 'Read from a file in data/imports through the local API.',
   synthetic: 'Model trained on the synthetic engineering fixture. Its metrics are not Formula 1 results.',
-  real: 'Artifact trained on user-supplied motorsport data.',
+  real: 'Real Formula 1 timing data (FastF1), or a model trained on it.',
   offline: 'The local FastAPI backend did not respond.'
 };
 

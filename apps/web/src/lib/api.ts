@@ -68,7 +68,8 @@ export type ModelsResponse = { default_artifact: string; artifacts: ArtifactEntr
 
 export type DatasetSource = { name: string; url: string; status?: 'used' | 'planned'; role: string; coverage_note: string; local_policy: string };
 export type ImportFile = { name: string; bytes: number; modified_utc: string };
-export type DatasetsResponse = { sources: DatasetSource[]; imports: ImportFile[]; processed_files: string[]; import_dir: string };
+export type DatasetsResponse = { sources: DatasetSource[]; imports: ImportFile[]; processed_files: string[]; import_dir: string; shipped_imports?: string[] };
+export type SessionInfo = { season: number; event: string; session: string; laps: number; drivers: number; driver_codes: string[]; date: string | null };
 
 export type ImportSummary = {
   file: string;
@@ -82,11 +83,14 @@ export type ImportSummary = {
   drivers?: string[];
   latest_session?: { season: number; event: string; session: string };
   latest_session_drivers?: string[];
+  sessions?: SessionInfo[];
+  has_chronology?: boolean;
+  data_warnings?: string[];
   bytes?: number;
   stored_as?: string;
 };
 
-export type ForecastRequest = { file: string; driver?: string | null; artifact?: string | null };
+export type ForecastRequest = { file: string; driver?: string | null; artifact?: string | null; season?: number | null; event?: string | null; session?: string | null };
 
 export type ForecastContext = {
   compound: string | null;
@@ -130,6 +134,8 @@ export type ForecastResult = {
   completed_laps_in_session: number;
   history_laps_used: number;
   short_history: boolean;
+  race_finished?: boolean;
+  session_last_lap?: number;
   predicted_next_lap_s: number;
   lower_80_s: number;
   upper_80_s: number;
@@ -278,6 +284,7 @@ export const api = {
     fetch('/api/forecast/backtest', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(parse<BacktestResult>),
   reports: () => getJson<ReportsResponse>('/api/reports'),
   driverReports: () => getJson<DriversReportResponse>('/api/reports/drivers'),
+  deleteImport: (file: string) => fetch(`/api/imports/${encodeURIComponent(file)}`, { method: 'DELETE' }).then(parse<{ deleted: string; imports: ImportFile[] }>),
   importFile: (file: File, overwrite: boolean) => {
     const form = new FormData();
     form.append('file', file, file.name);

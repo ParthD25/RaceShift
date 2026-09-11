@@ -22,7 +22,9 @@ artifacts/**
 !artifacts/raceshift_ffr_demo/**
 # One real FFR-M artifact is committed so the UI can show a real-data model out of the box.
 !artifacts/f1_2025h2_ffr-m/
+!artifacts/f1_2025h2_ffr-s/
 !artifacts/f1_2025h2_ffr-m/**
+!artifacts/f1_2025h2_ffr-s/**
 !artifacts/f1_2025h2_legacy_ext_ffr-s/
 !artifacts/f1_2025h2_legacy_ext_ffr-s/**
 # Baseline runs: only the small metrics files are committed so the UI shows the tree/ridge

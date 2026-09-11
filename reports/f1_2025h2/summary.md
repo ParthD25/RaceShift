@@ -1,6 +1,6 @@
 # RaceShift experiment: f1_2025h2
 
-Generated 2026-09-11T09:17:37+00:00 from `f1_laps_fastf1.parquet` (data source: fastf1_timing).
+Generated 2026-09-11T16:31:42+00:00 from `f1_laps_fastf1.parquet` (data source: fastf1_timing).
 Split: season_round · train ≤ 2024 · validation 2025 · test 2025 · split round 12
 Rows: train 119182 · validation 9751 · test 10519
 
@@ -15,6 +15,7 @@ Rows: train 119182 · validation 9751 · test 10519
 | FFR-L | 0.390 | 0.327 | 0.505 | 0.691 | 82.4% | 94.8% | 0.862 | 1.141 | 11276.4 | 3928 | 2591 | 8.18 |
 | FFR-M-groups-coarse | 0.385 | 0.332 | 0.510 | 0.704 | 81.5% | 94.7% | 0.852 | 1.120 | 2415.2 | 2670 | 1321 | 3.27 |
 | FFR-M-groups-fine | 0.396 | 0.332 | 0.505 | 0.692 | 81.7% | 94.9% | 0.860 | 1.162 | 2603.6 | 2670 | 1332 | 3.31 |
+| FFR-M-random-layers | 0.434 | 0.353 | 0.550 | 0.768 | 79.5% | 93.6% | 0.865 | 1.283 | 13.6 | 2685 | 1318 | 3.29 |
 | FFR-M minus historical_numeric | 0.402 | 0.330 | 0.504 | 0.698 | 81.9% | 95.1% | 0.869 | 1.185 | 2540.1 | 2665 | 1325 | 3.27 |
 | FFR-M minus temporal_numeric | 0.416 | 0.351 | 0.534 | 0.747 | 79.7% | 94.3% | 0.855 | 1.224 | 2331.8 | 2660 | 1324 | 3.16 |
 | FFR-M minus static_categorical | 0.380 | 0.329 | 0.504 | 0.699 | 82.1% | 95.0% | 0.851 | 1.109 | 2685.5 | 2574 | 1324 | 2.89 |

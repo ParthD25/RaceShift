@@ -3,17 +3,18 @@ import { BrainCircuit, Play, Target, TrendingDown } from 'lucide-react';
 import { Panel } from '../components/Panel';
 import { SourceBadge, sourceKindFor } from '../components/SourceBadge';
 import { useForecast } from '../context/ForecastContext';
-import { api, errorMessage, fmtDelta, fmtLap, fmtNumber, type ArtifactEntry, type ImportFile, type ImportSummary } from '../lib/api';
+import { api, errorMessage, fmtDelta, fmtLap, fmtNumber, type ArtifactEntry, type ImportFile, type ImportSummary, type SessionInfo } from '../lib/api';
 import { useApi } from '../lib/useApi';
 
 export default function Forecast() {
   const datasets = useApi(() => api.datasets());
   const models = useApi(() => api.models());
-  const { result, setResult, backtest, setBacktest } = useForecast();
+  const { result, setResult, backtest, setBacktest, setActive } = useForecast();
   const [backtestError, setBacktestError] = useState<string | null>(null);
 
   const [file, setFile] = useState('');
   const [driver, setDriver] = useState('');
+  const [sessionKey, setSessionKey] = useState('');
   const [artifact, setArtifact] = useState('');
   const [summary, setSummary] = useState<ImportSummary | null>(null);
   const [summaryError, setSummaryError] = useState<string | null>(null);
@@ -37,19 +38,22 @@ export default function Forecast() {
     setSummary(null);
     setSummaryError(null);
     api.importSummary(file)
-      .then(s => { if (!cancelled) { setSummary(s); setDriver(''); } })
+      .then(s => { if (!cancelled) { setSummary(s); setDriver(''); setSessionKey(''); } })
       .catch(err => { if (!cancelled) setSummaryError(errorMessage(err)); });
     return () => { cancelled = true; };
   }, [file]);
 
-  const drivers = summary?.latest_session_drivers ?? [];
+  const sessions: SessionInfo[] = summary?.sessions ?? [];
+  const chosenSession: SessionInfo | null = sessions.find(x => sessionKeyOf(x) === sessionKey) ?? sessions[sessions.length - 1] ?? null;
+  const drivers = chosenSession?.driver_codes ?? summary?.latest_session_drivers ?? [];
+  const chronologyMissing = Boolean(summary && summary.has_chronology === false);
   const selectedArtifact = artifacts.find(a => a.id === artifact);
   // A real-data model scoring the synthetic fixture (or the synthetic demo scoring real laps)
   // produces numbers, not evidence. Say so before and after the run.
   const domainMismatch = Boolean(summary && selectedArtifact && summary.is_synthetic !== selectedArtifact.is_synthetic);
   const resultMismatch = Boolean(result && result.is_synthetic !== (result.data_is_synthetic ?? summary?.is_synthetic ?? result.is_synthetic));
   const noPriors = Boolean(result && Object.entries(result.historical_context).every(([k, v]) => k === 'note' || v == null));
-  const canRun = Boolean(file && artifact) && !running && (summary?.missing_required_columns.length ?? 0) === 0;
+  const canRun = Boolean(file && artifact) && !running && (summary?.missing_required_columns.length ?? 0) === 0 && !chronologyMissing;
 
   async function run() {
     setRunning(true);
@@ -61,10 +65,15 @@ export default function Forecast() {
     // driver whose final lap was deleted or a pit lap cannot be forecast from, but their
     // race can still be backtested, so both run and each reports its own outcome. The API
     // builds the feature table once and serves both calls from it.
-    const request = { file, driver: driver || null, artifact: artifact || null };
+    const request = {
+      file, driver: driver || null, artifact: artifact || null,
+      season: chosenSession?.season ?? null, event: chosenSession?.event ?? null, session: chosenSession?.session ?? null
+    };
     const [forecast, scored] = await Promise.allSettled([api.forecastLatest(request), api.backtest({ ...request, laps: 10 })]);
     if (forecast.status === 'fulfilled') setResult(forecast.value); else { setResult(null); setError(errorMessage(forecast.reason)); }
     if (scored.status === 'fulfilled') setBacktest(scored.value); else { setBacktest(null); setBacktestError(errorMessage(scored.reason)); }
+    const head = forecast.status === 'fulfilled' ? forecast.value : scored.status === 'fulfilled' ? scored.value : null;
+    if (head) setActive({ season: head.season, event: head.event, session: head.session, driver: head.driver, artifact: head.artifact, is_synthetic: head.is_synthetic, data_is_synthetic: head.data_is_synthetic });
     setBacktesting(false);
     setRunning(false);
   }
@@ -75,7 +84,7 @@ export default function Forecast() {
   return (
     <div className="page-stack">
       <div className="page-heading">
-        <div><h1>Forecast</h1><p>Predict lap N+1 from information available at the end of lap N, using the local API and a saved artifact.</p></div>
+        <div><h1>Forecast</h1><p>Pick a race and a driver. RaceShift first scores the model on that driver's last real laps against the "repeat the last lap" stopwatch, then forecasts the lap after the last one recorded, using only what was known at the end of that lap.</p></div>
         <button className="primary-btn" onClick={run} disabled={!canRun}><Play size={15} />{backtesting ? 'Backtesting the last 10 laps…' : running ? 'Building features… (about 10 s the first time per file)' : 'Run forecast'}</button>
       </div>
 
@@ -89,7 +98,13 @@ export default function Forecast() {
                 {imports.map(i => <option key={i.name} value={i.name}>{i.name}</option>)}
               </select>
             </label>
-            <label className="field"><span>Driver (latest session)</span>
+            <label className="field"><span>Race (session in this file)</span>
+              <select value={chosenSession ? sessionKeyOf(chosenSession) : ''} onChange={e => { setSessionKey(e.target.value); setDriver(''); }} disabled={!sessions.length}>
+                {!sessions.length && <option value="">{summary ? 'No sessions found' : 'Loading…'}</option>}
+                {sessions.map(x => <option key={sessionKeyOf(x)} value={sessionKeyOf(x)}>{x.season} · {x.event} · {sessionLabel(x.session)}{x.date ? ` · ${x.date}` : ''} · {x.laps} laps</option>)}
+              </select>
+            </label>
+            <label className="field"><span>Driver</span>
               <select value={driver} onChange={e => setDriver(e.target.value)} disabled={!drivers.length}>
                 <option value="">Auto: best-placed driver with the most laps (the winner)</option>
                 {drivers.map(d => <option key={d} value={d}>{d}</option>)}
@@ -112,6 +127,9 @@ export default function Forecast() {
               {summary.missing_required_columns.length > 0 && <div><span>Missing columns</span><strong className="bad">{summary.missing_required_columns.join(', ')}</strong></div>}
             </div>
           )}
+          {summary?.data_warnings && summary.data_warnings.length > 0 && (
+            <div className={chronologyMissing ? 'error-box' : 'warn-box'}>{summary.data_warnings.map(w => <div key={w}>{w}</div>)}</div>
+          )}
           {selectedArtifact && (
             <div className="callout">
               <BrainCircuit size={18} />
@@ -130,15 +148,15 @@ export default function Forecast() {
           )}
         </Panel>
 
-        <Panel title="Forecast contract" icon={<BrainCircuit size={17} />}>
+        <Panel title="What the model does" icon={<BrainCircuit size={17} />}>
           <div className="detail-list">
-            <div><span>Target</span><strong>Lap N+1 residual vs rolling-5 median</strong></div>
-            <div><span>Context</span><strong>Current lap + 4 lagged laps</strong></div>
-            <div><span>Primary model</span><strong>RaceShift FFR (no global backprop)</strong></div>
-            <div><span>Calibration</span><strong>80% validation-residual interval</strong></div>
-            <div><span>Validation</span><strong>Season-forward split</strong></div>
+            <div><span>Predicts</span><strong>The next lap's time, as an offset from the median of the driver's last five clean laps</strong></div>
+            <div><span>Looks at</span><strong>This lap and the four before it, tyre and stint, position, weather, and medians from earlier races</strong></div>
+            <div><span>Model</span><strong>RaceShift FFR: a small network trained one layer at a time, no backpropagation</strong></div>
+            <div><span>Uncertainty</span><strong>An 80% interval, one fixed width per model, calibrated on 2025 validation rounds</strong></div>
+            <div><span>Tested on</span><strong>Later races only (2025 rounds 13-24, unseen 2026 races); never on laps it trained on</strong></div>
           </div>
-          <div className="callout"><TrendingDown size={18} /><div><strong>No target leakage</strong><p>Inputs are restricted to information available at the end of lap N. Historical priors use earlier events only.</p></div></div>
+          <div className="callout"><TrendingDown size={18} /><div><strong>Nothing from the future</strong><p>Only what was known at the end of the lap is used. Medians from earlier races never include the race being forecast.</p></div></div>
         </Panel>
       </div>
 
@@ -148,7 +166,7 @@ export default function Forecast() {
           {backtest?.lap_validity && !backtest.lap_validity.match && <div className="warn-box">Lap-validity rules differ: model v{backtest.lap_validity.artifact ?? '?'}, runtime v{backtest.lap_validity.runtime}. The laps scored here are selected by the runtime's rules, not the ones the model was trained on.</div>}
           {backtest && (
             <>
-              <p className="prose">On {backtest.driver}'s last {backtest.summary.rows} real laps this model was within <strong>{fmtNumber(backtest.summary.mae_s)} s</strong> of the true next lap on average; simply repeating the last lap was within <strong>{fmtNumber(backtest.summary.previous_lap_mae_s)} s</strong>. {backtest.summary.mae_s <= backtest.summary.previous_lap_mae_s ? 'The model beat the stopwatch here.' : 'The stopwatch won on these laps. Over whole seasons the model is ahead of the stopwatch by a few hundredths of a second per lap and wins about half of all laps, which is the honest size of its edge.'}</p>
+              <p className="prose">On {backtest.driver}'s last {backtest.summary.rows} real laps this model was within <strong>{fmtNumber(backtest.summary.mae_s)} s</strong> of the true next lap on average; simply repeating the last lap was within <strong>{fmtNumber(backtest.summary.previous_lap_mae_s)} s</strong>. {verdict(backtest.summary.mae_s, backtest.summary.previous_lap_mae_s, backtest.is_synthetic)}</p>
               <div className="forecast-meta">
                 <div><strong>{fmtNumber(backtest.summary.mae_s)} s</strong><span>Mean abs. error, this model</span></div>
                 <div><strong>{fmtNumber(backtest.summary.previous_lap_mae_s)} s</strong><span>Mean abs. error, repeat the last lap</span></div>
@@ -173,14 +191,15 @@ export default function Forecast() {
         </Panel>
       )}
 
-      <Panel title={`Next lap forecast (lap ${result ? result.lap_number_completed + 1 : "N+1"})`} icon={<Target size={17} />} action={result ? <SourceBadge kind={resultMismatch ? 'fixture' : sourceKindFor(result.is_synthetic)} text={resultMismatch ? (result.is_synthetic ? 'Synthetic model · real laps' : 'Real model · synthetic laps') : undefined} /> : null}>
+      <Panel title={result?.race_finished ? `Hypothetical next lap (the session ended after lap ${result.session_last_lap ?? result.lap_number_completed})` : `Next lap forecast (lap ${result ? result.lap_number_completed + 1 : "N+1"})`} icon={<Target size={17} />} action={result ? <SourceBadge kind={resultMismatch ? 'fixture' : sourceKindFor(result.is_synthetic)} text={resultMismatch ? (result.is_synthetic ? 'Synthetic model · real laps' : 'Real model · synthetic laps') : undefined} /> : null}>
         {error && <div className="error-box">{error}</div>}
         {result?.session_warning && <div className="warn-box">{result.session_warning}</div>}
         {result?.lap_validity && !result.lap_validity.match && <div className="warn-box">This model was trained under lap-validity rules v{result.lap_validity.artifact ?? '?'} but this runtime applies v{result.lap_validity.runtime}: its inputs are built from a different set of laps than it learned on, so its published metrics do not describe this forecast. Retrain or pick a model whose rules match.</div>}
         {resultMismatch && <div className="warn-box">Model and data come from different sources ({result?.is_synthetic ? 'synthetic model on real laps' : 'real model on the synthetic fixture'}). Treat this number as a workflow check only.</div>}
         {!result && !error && <div className="empty-inline">No forecast has been run yet. Choose a dataset and press <strong>Run forecast</strong>.</div>}
+        {result?.race_finished && <div className="muted-box">Lap {result.lap_number_completed + 1} never happened: this session ended after lap {result.session_last_lap ?? result.lap_number_completed}. The number below is what the model would have forecast from the final lap; the panel above is the evidence, scored on laps that were really driven. Pick an earlier race in the selector to forecast mid-race laps that did happen.</div>}
         {result && (
-          <div className="result-layout">
+          <div className={`result-layout${result.race_finished ? ' hypothetical' : ''}`}>
             <div>
               <div className="forecast-main">
                 <div>
@@ -195,9 +214,9 @@ export default function Forecast() {
                 <span className="interval-marker" style={intervalPct ? { left: `${intervalPct.marker}%` } : undefined} title="Predicted next lap" />
                 {intervalPct && <span className="interval-last" style={{ left: `${intervalPct.last}%` }} title="Last completed lap" />}
               </div>
-              <div className="chart-legend small"><span className="marker-legend">Predicted next lap</span><span className="last-legend">Last completed lap</span><span className="range-legend">80% interval: sized so 8 of 10 validation laps fall inside{selectedArtifact?.test?.interval80_coverage != null ? `; on the held-out test laps it contained ${(selectedArtifact.test.interval80_coverage * 100).toFixed(0)}%` : ''}. The width is fixed per model unless the layers disagree.</span></div>
+              <div className="chart-legend small"><span className="marker-legend">Predicted next lap</span><span className="last-legend">Last completed lap</span><span className="range-legend">80% interval: one fixed width per model (±{fmtNumber((result.upper_80_s - result.lower_80_s) / 2)} s here), sized so 8 of 10 validation laps fall inside{selectedArtifact?.test?.interval80_coverage != null ? `; on the held-out test laps it contained ${(selectedArtifact.test.interval80_coverage * 100).toFixed(0)}%` : ''}. A layer-disagreement term can widen it but has never exceeded the floor on a test lap.</span></div>
               {result.short_history && <div className="warn-box">Only {result.completed_laps_in_session} completed laps available; the model expects {result.history_laps_used}. Missing lags were imputed with training medians.</div>}
-              <div className="prose small">This is the forecast for lap {result.lap_number_completed + 1}, the lap after the last one recorded in the file. If the session had already ended, that lap never happened and the number is hypothetical. Use <strong>Backtest</strong> below to see how the model did on laps that were actually driven.</div>
+              {!result.race_finished && <div className="prose small">This is the forecast for lap {result.lap_number_completed + 1}, the lap after the last one recorded for this driver. The panel above shows how the model did on the laps that were actually driven before it.</div>}
             </div>
             <div className="detail-list compact">
               <div><span>Session</span><strong>{result.season} · {result.event} · {result.session}</strong></div>
@@ -205,7 +224,7 @@ export default function Forecast() {
               <div><span>Laps completed</span><strong>{result.lap_number_completed} (forecast for lap {result.lap_number_completed + 1})</strong></div>
               <div title="Median of the last five clean laps. The model predicts how far the next lap will be from this number."><span>Rolling-5 baseline ⓘ</span><strong>{fmtLap(result.rolling5_baseline_s)}</strong></div>
               <div title="What the model adds to the rolling-5 baseline. Forecast = baseline + residual. It differs from the change versus the last lap because the last lap is usually not equal to the five-lap median."><span>Model residual ⓘ</span><strong>{fmtDelta(result.predicted_next_lap_s - result.rolling5_baseline_s)}</strong></div>
-              <div title="Spread between the per-layer predictions of the Forward-Forward network. Each layer is trained on its own, so when they disagree the interval is widened."><span>Layer disagreement ⓘ</span><strong>{fmtNumber(result.layer_disagreement_s)}s</strong></div>
+              <div title="Spread between the per-layer predictions of the network. Each layer is trained on its own. It can widen the interval, but on every test lap so far it stayed below the interval's fixed floor, so in practice the width does not change."><span>Layer disagreement ⓘ</span><strong>{fmtNumber(result.layer_disagreement_s)}s</strong></div>
               <div><span>Artifact</span><strong>{result.artifact}</strong></div>
               <div><span>Data file</span><strong>{result.file}</strong></div>
             </div>
@@ -224,7 +243,7 @@ export default function Forecast() {
               <div><span>Humidity</span><strong>{fmtNumber(result.context.humidity_pct, 0)} %</strong></div>
               <div><span>Wind</span><strong>{fmtNumber(result.context.wind_speed_ms, 1)} m/s{result.context.wind_direction_deg != null ? ` from ${result.context.wind_direction_deg.toFixed(0)}°` : ''}</strong></div>
               <div><span>Rain</span><strong>{result.context.rainfall ?? '—'}</strong></div>
-              <div><span>Gap ahead / behind</span><strong>{fmtNumber(result.context.gap_ahead_s, 1)} s / {fmtNumber(result.context.gap_behind_s, 1)} s</strong></div>
+              {(result.context.gap_ahead_s != null || result.context.gap_behind_s != null) && <div><span>Gap ahead / behind</span><strong>{fmtNumber(result.context.gap_ahead_s, 1)} s / {fmtNumber(result.context.gap_behind_s, 1)} s</strong></div>}
               <div><span>Team</span><strong>{result.context.team ?? '—'}</strong></div>
             </div>
           </Panel>
@@ -256,4 +275,24 @@ function intervalGeometry(lower: number, upper: number, prediction: number, last
   const pad = 0.12;
   const scale = (v: number) => pad * 100 + ((v - lo) / span) * (1 - 2 * pad) * 100;
   return { left: scale(lower), right: 100 - scale(upper), marker: scale(prediction), last: scale(last) };
+}
+
+function sessionKeyOf(x: SessionInfo): string {
+  return `${x.season}|${x.event}|${x.session}`;
+}
+
+function sessionLabel(code: string): string {
+  const names: Record<string, string> = { R: 'Race', S: 'Sprint', Q: 'Qualifying', SQ: 'Sprint qualifying', FP1: 'Practice 1', FP2: 'Practice 2', FP3: 'Practice 3' };
+  return names[code] ?? code;
+}
+
+// One honest sentence about the backtest. "Beat the stopwatch" is only worth saying when
+// both numbers are in the range where either is a usable forecast.
+function verdict(modelMae: number, stopwatchMae: number, synthetic: boolean): string {
+  if (modelMae > 1.0 && stopwatchMae > 1.0) {
+    return 'Both the model and the stopwatch were off by more than a second per lap here: this driver\'s race was too disrupted for either to track, and neither number is a usable forecast.';
+  }
+  if (modelMae <= stopwatchMae) return 'The model beat the stopwatch here.';
+  if (synthetic) return 'The stopwatch won on these laps. This is the synthetic demo model; it has no real-season record and its numbers are a workflow check only.';
+  return 'The stopwatch won on these laps. Over whole seasons the model is ahead of the stopwatch by a few hundredths of a second per lap and wins about half of all laps, which is the honest size of its edge.';
 }

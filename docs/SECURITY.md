@@ -15,7 +15,9 @@ If optional authenticated live data is added later:
 
 ## Local file access
 
-The forecast API only accepts filenames inside `data/imports/`. It resolves the path and rejects traversal outside that directory.
+The forecast API only accepts filenames inside `data/imports/`. It resolves the path and rejects traversal outside that directory, control characters and null bytes in names. `DELETE /api/imports/{file}` removes user uploads only; the three files that ship with the repository are refused.
+
+The API binds to 127.0.0.1 and, like any FastAPI app, serves its own OpenAPI description at `/docs` and `/openapi.json`. That is intended for local use; do not expose the port beyond the machine.
 
 ## Browser boundary
 

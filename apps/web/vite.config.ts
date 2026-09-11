@@ -9,6 +9,9 @@ const webPort = Number(process.env.WEB_PORT ?? 5173);
 
 export default defineConfig({
   plugins: [react()],
+  // Pre-bundle the heavy dependencies up front so the first page load after `npm install`
+  // does not wait tens of seconds for Vite's on-demand dependency optimisation.
+  optimizeDeps: { include: ['react', 'react-dom', 'react-router-dom', 'recharts', 'lucide-react'] },
   server: {
     host: '127.0.0.1',
     port: webPort,

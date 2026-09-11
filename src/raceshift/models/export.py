@@ -229,6 +229,17 @@ def apply_preprocessor_spec(spec: dict, frame) -> np.ndarray:
     return out.astype(np.float32)
 
 
+class JsonPreprocessor:
+    """Runtime wrapper around a JSON preprocessor spec: the same `.transform(frame)` interface as
+    the fitted sklearn ColumnTransformer, implemented in NumPy and verified at export time."""
+
+    def __init__(self, spec: dict):
+        self.spec = spec
+
+    def transform(self, frame) -> np.ndarray:
+        return apply_preprocessor_spec(self.spec, frame)
+
+
 def _fmt(v, d=3):
     return "—" if v is None else (f"{v:.{d}f}" if isinstance(v, (int, float)) else str(v))
 
@@ -247,7 +258,7 @@ def model_card(artifact: Path, metrics: dict, config: dict, contract: dict, expo
         "", "## What it predicts", "",
         "The next lap time of a Formula 1 driver from information known at the end of the current lap. The network predicts the",
         "residual against the driver's rolling five-lap median (`rolling_median_5`); `next_lap = rolling_median_5 + residual`. It",
-        "also returns an 80% interval (validation-residual quantile widened by cross-layer disagreement).",
+        "also returns an 80% interval: a single validation-residual quantile width per model. A cross-layer disagreement term can widen it but never exceeded its floor on any test lap.",
         "", "## Architecture", "",
         f"- Hidden layers: {arch} nodes, ordinal groups {groups}; each layer trained with a local ordinal-goodness objective and an explicit local Adam update. No global backpropagation.",
         f"- Readout: closed-form ridge over all layers' goodness vectors and local predictions (alpha {config['config'].get('ridge_alpha')}).",
