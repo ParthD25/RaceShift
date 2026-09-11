@@ -103,10 +103,16 @@ three widths (256→128, 512→384→256→192 and 1024→768→512→384 hidden
 | rolling_median_5 | 0.366 | 0.576 | 0.825 | 78.6% | — | — | — | — | — |
 | ridge | 0.357 | 0.531 | 0.744 | 78.4% | — | 0.4 | 1859 | 340 | — |
 | **hist_gradient_boosting** | 0.303 | 0.493 | 0.656 | 84.7% | — | 42.6 | 2214 | 439 | — |
-| FFR-S | 0.328 | 0.501 | 0.694 | 82.2% | 0.859 | 494.6 | 1933 | 593 | 1.82 |
 | FFR-M | 0.331 | 0.505 | 0.693 | 82.1% | 0.865 | 2572.7 | 2654 | 1325 | 3.31 |
+| FFR-S | 0.328 | 0.501 | 0.694 | 82.2% | 0.859 | 494.6 | 1933 | 593 | 1.82 |
+| FFR-L | 0.327 | 0.505 | 0.691 | 82.4% | 0.862 | 11276.4 | 3928 | 2591 | 8.18 |
+| FFR-M-groups-coarse | 0.332 | 0.510 | 0.704 | 81.5% | 0.852 | 2415.2 | 2670 | 1321 | 3.27 |
+| FFR-M-groups-fine | 0.332 | 0.505 | 0.692 | 81.7% | 0.860 | 2603.6 | 2670 | 1332 | 3.31 |
+| FFR-M minus historical_numeric | 0.330 | 0.504 | 0.698 | 81.9% | 0.869 | 2540.1 | 2665 | 1325 | 3.27 |
+| FFR-M minus temporal_numeric | 0.351 | 0.534 | 0.747 | 79.7% | 0.855 | 2331.8 | 2660 | 1324 | 3.16 |
+| FFR-M minus static_categorical | 0.329 | 0.504 | 0.699 | 82.1% | 0.851 | 2685.5 | 2574 | 1324 | 2.89 |
 
-Full table with validation metrics, interval widths and latency: `reports/f1_2025h2/summary.md`.
+Full table with validation metrics, interval widths and latency: `reports/f1_2025h2/summary.md`. Error by circuit, constructor, compound, tyre age, conditions, race phase and position: `reports/f1_2025h2/breakdowns.md`.
 
 **Circuit holdout (Monza)** — every season of **Italian Grand Prix** held out; train ≤ 2024, validation 2025. Rows: train 114924, validation 19463, test 5857. Data: fastf1_timing.
 
