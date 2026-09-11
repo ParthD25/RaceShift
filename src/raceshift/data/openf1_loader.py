@@ -72,7 +72,7 @@ WEATHER_COLUMNS = {
 
 # A clear-track lap this much slower than the driver's median clean lap is not an accurate
 # racing lap (an in-lap the pit feed missed, or a damaged car).
-SLOW_LAP_RATIO = 1.25
+SLOW_LAP_RATIO = 1.20
 # FastF1 status codes, in the order FastF1 concatenates them.
 STATUS_ORDER = ["1", "2", "4", "5", "6", "7"]
 _DELETED_TIME = re.compile(r"CAR (\d+) \((\w{3})\) TIME (\d+):(\d+\.\d+) DELETED")
@@ -158,7 +158,9 @@ def meeting_sessions(client: OpenF1Client, meeting_key: int, codes: set[str] | N
 
 
 def _ts(values) -> pd.Series:
-    return pd.to_datetime(pd.Series(values), utc=True, errors="coerce")
+    """OpenF1 timestamps are ISO 8601 with or without fractional seconds, sometimes mixed
+    within one payload; parse them individually so none is silently dropped."""
+    return pd.to_datetime(pd.Series(values), utc=True, errors="coerce", format="ISO8601")
 
 
 def track_status_intervals(race_control: list[dict], session_end: pd.Timestamp) -> list[tuple[pd.Timestamp, pd.Timestamp, str]]:
