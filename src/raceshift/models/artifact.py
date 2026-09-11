@@ -51,7 +51,7 @@ def addressable_mask(frame: pd.DataFrame) -> pd.Series:
     """Rows whose season/event/session identity the selector can address: a whole-number
     season and non-blank event and session names."""
     season = pd.to_numeric(frame["season"], errors="coerce")
-    whole = season.notna() & (season == np.floor(season))
+    whole = season.notna() & np.isfinite(season) & (season == np.floor(season))
     return whole & ~blank_mask(frame["event"]) & ~blank_mask(frame["session"])
 
 
