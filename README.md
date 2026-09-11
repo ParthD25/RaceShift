@@ -198,12 +198,13 @@ fixture numbers are never reported as Formula 1 results.
   test exposed was fixed: the API had dropped untimed laps before applying the lap-validity
   rules, which let red-flag restart laps through and doubled the RMSE. The report, with every
   edge case tried, is in `reports/blind_2026/REPORT.md`.
-- **Training extended to 2000 with the legacy tier (429,546 laps, same 2025 test rows).** The
-  extra eighteen seasons of lap-time-only history help the linear model most (ridge 0.392 →
-  0.368 s) and the others barely: trees 0.316 → 0.315 s, FFR-S 0.350 → 0.348 s, FFR-M 0.350 →
-  0.351 s. Training cost grows with the data: the tree needs 5 minutes and 5.7 GB traced,
-  FFR-S 30 minutes and 2.6 GB, FFR-M over two hours. Under the version 1 rules the same
-  extension had looked worth 0.005-0.015 s for every model; most of that was the restart laps.
+- **Training extended to 2000 with the legacy tier (420,867 laps, same 2025 test rows).** The
+  extra eighteen seasons of lap-time-only history help the linear model most (ridge 0.357 →
+  0.342 s) and the others by amounts inside seed noise: trees 0.303 → 0.303 s, FFR-S 0.328 →
+  0.325 s, FFR-M 0.331 → 0.328 s. Training cost grows with the data: the tree needs 3 minutes
+  and 3.3 GB traced, FFR-S 40 minutes and 2.5 GB, FFR-M almost three hours and 4.7 GB. Under the
+  version 1 rules the same extension had looked worth 0.005-0.015 s for every model; most of
+  that was the restart laps.
 
 ### Blind test on unseen 2026 races
 
