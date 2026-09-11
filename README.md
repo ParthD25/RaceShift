@@ -354,7 +354,8 @@ Details: `docs/FEATURE_CONTRACT.md`, `docs/TRAINING_AND_RESEARCH.md`, `RACESHIFT
 | Tier | Seasons | Source | What a lap carries |
 | --- | --- | --- | --- |
 | `fastf1_timing` | 2018 → today | FastF1 live-timing archive | lap and sector times, tyre compound/age/stint, position, track status, pit markers, weather |
-| `legacy_timing` | 2000 → 2017 | Jolpica (Ergast schema) | lap time, position, constructor, pit stops from 2011; no sectors, tyres, track status or weather |
+| `openf1_timing` | 2023 → today | OpenF1 API (second provider; races and sprints) | the same columns as the FastF1 tier, rebuilt from OpenF1's laps, stints, pit, position, weather and race-control feeds |
+| `legacy_timing` | 1996 → 2017 | Jolpica API or the Ergast dump on Kaggle | lap time, position, constructor, pit stops; no sectors, tyres, track status or weather |
 
 `data/imports/f1_2025_season.parquet` is derived from the FastF1 archive of the public F1
 live-timing feed and is included only so the demo runs on real laps; it is not a redistribution
@@ -371,7 +372,14 @@ scripts/full_pipeline.sh fastf1 build-fastf1 experiments        # 2018→today, 
 scripts/full_pipeline.sh legacy build-all legacy-experiments    # 2000→2017 extension on the same test split
 ```
 
-Both collectors are resumable and stay under the public API budgets (FastF1 and Jolpica each
+OpenF1 is the second timing provider: `scripts/fetch_openf1.py` rebuilds every race and
+sprint since 2023 in the FastF1 column set, and `scripts/cross_provider_check.py` verifies lap
+for lap that the two providers describe the same races (see `reports/data_sources/REPORT.md`
+for the agreement figures and the two mismatches the check caught). The Kaggle Ergast dump
+(`scripts/build_ergast_kaggle.py`) is an offline mirror of the legacy tier that also reaches
+1996 and the current season. `dataset_manifest.json` lists every source with its status.
+
+All collectors are resumable and stay under the public API budgets (FastF1 and Jolpica each
 allow about 500 requests per hour), so a full collection takes several hours unattended. The
 Colab notebook `notebooks/RaceShift_FFR_Colab.ipynb` runs the same pipeline with data in
 Drive. Copy any finished artifact folder into `artifacts/` and the UI lists it.
@@ -417,12 +425,12 @@ Localhost only, no credentials, path-restricted file access. See `apps/api/READM
 ```text
 apps/web/                  React/Vite UI (Overview, Forecast + backtest, Compare Drivers, Experiments, Datasets, Models, Settings); apps/web/e2e is the browser smoke test
 apps/api/                  local FastAPI backend
-src/raceshift/data/        schema, provenance, splits, FastF1 / Jolpica-Ergast / OpenF1 adapters
+src/raceshift/data/        schema, provenance, splits, FastF1 / OpenF1 / Jolpica-Ergast (API and Kaggle CSV) adapters
 src/raceshift/features/    lap-state flags, segments, leakage-safe features, selection
 src/raceshift/models/      Forward-Forward regressor and artifact runtime
 src/raceshift/train/       metrics and resource measurement
 src/raceshift/foundation/  walk-forward examples for frozen time-series foundation models
-scripts/                   collectors (FastF1, Jolpica), training, baselines, experiment runner, full_pipeline.sh
+scripts/                   collectors (FastF1, OpenF1, Jolpica, Kaggle Ergast), training, fine-tuning, baselines, experiment runner, full_pipeline.sh
 configs/                   FFR-S/M/L, group-ladder ablations, baseline settings
 reports/                   measured experiment tables (committed)
 notebooks/                 Colab workflow
