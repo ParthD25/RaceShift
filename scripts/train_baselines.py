@@ -59,6 +59,7 @@ def main() -> None:
     p.add_argument("--val-year", type=int)
     p.add_argument("--test-year", type=int)
     p.add_argument("--split-round", type=int)
+    p.add_argument("--train-through-round", type=int, help="With --split-round: the holdout season's rounds <= this also train; validation = rounds in (this, split-round]")
     p.add_argument("--holdout-event")
     p.add_argument("--drop-feature-group", action="append", default=[], choices=ABLATION_GROUPS)
     p.add_argument("--data-source", help="Provenance label. Inferred when omitted.")
@@ -76,7 +77,7 @@ def main() -> None:
     raw = load_table(Path(args.input))
     data_source = args.data_source or infer_data_source(raw)
     table = build_full_context_table(raw, history=history)
-    train, val, test = split_from_args(table, train_end, val_year, test_year, args.split_round, args.holdout_event)
+    train, val, test = split_from_args(table, train_end, val_year, test_year, args.split_round, args.holdout_event, args.train_through_round)
     trainval = pd.concat([train, val], ignore_index=True)
 
     numeric, categorical = select_features(table.columns, history=history, drop_groups=args.drop_feature_group)
@@ -147,6 +148,7 @@ def main() -> None:
             "validation": val_year,
             "test": test_year,
             "split_round": args.split_round,
+            "train_through_round": args.train_through_round,
             "holdout_event": args.holdout_event,
         },
         "rows": {"train": int(len(train)), "validation": int(len(val)), "test": int(len(test))},

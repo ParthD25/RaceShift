@@ -244,6 +244,72 @@ class ForwardForwardRegressor:
             self.interval_q80 = float(np.nanquantile(residual, 0.80)) if len(residual) else 1.0
         return self
 
+    def continue_fit(
+        self,
+        x: np.ndarray,
+        y: np.ndarray,
+        epochs_per_layer: int | None = None,
+        readout: tuple[np.ndarray, np.ndarray] | None = None,
+        validation: tuple[np.ndarray, np.ndarray] | None = None,
+        learning_rate: float | None = None,
+    ) -> "ForwardForwardRegressor":
+        """Fine-tune a fitted model on new rows with the same local, layer-wise updates.
+
+        This is forward-forward fine-tuning: every layer is trained further on its own
+        local objective, one layer at a time, from the saved weights; nothing is
+        backpropagated across layers. The target scaling learnt at the original fit is
+        kept so the new residuals live on the same scale as the old ones. After the local
+        updates the ridge readout is re-solved in closed form on ``readout`` (defaults to
+        the new rows; pass a mix of old and new rows to limit forgetting) and the interval
+        width is recalibrated on ``validation`` when given.
+        """
+        if self.readout_coef is None:
+            raise RuntimeError("continue_fit needs a fitted model; call fit first")
+        x = np.asarray(x, dtype=np.float32)
+        y = np.asarray(y, dtype=np.float32).reshape(-1)
+        if x.ndim != 2 or len(x) != len(y):
+            raise ValueError("x must be 2D and aligned with y")
+        if x.shape[1] != self.input_dim:
+            raise ValueError(f"expected {self.input_dim} input columns, got {x.shape[1]}")
+        epochs = self.config.epochs_per_layer if epochs_per_layer is None else int(epochs_per_layer)
+        if learning_rate is not None:
+            for layer in self.layers:
+                layer._adam_w.lr = float(learning_rate)
+                layer._adam_b.lr = float(learning_rate)
+        y_scaled = self._scale_target(y)
+        rng = np.random.default_rng(self.config.seed + 29)
+        current = x
+        phase = 1 + sum(1 for h in self.training_history if h.get("phase") == "finetune" and h["layer"] == 1 and h["epoch"] == 1)
+        for layer_idx, layer in enumerate(self.layers):
+            for epoch in range(epochs):
+                order = rng.permutation(len(current))
+                losses = []
+                for start in range(0, len(order), self.config.batch_size):
+                    idx = order[start : start + self.config.batch_size]
+                    losses.append(layer.local_train_step(current[idx], y_scaled[idx]))
+                self.training_history.append({
+                    "layer": layer_idx + 1,
+                    "epoch": epoch + 1,
+                    "local_loss": float(np.mean(losses) if losses else np.nan),
+                    "phase": "finetune",
+                    "finetune_round": phase,
+                })
+            current = _FFLocalLayer._normalize_rows(layer.forward(current))
+
+        rx, ry = (x, y) if readout is None else (np.asarray(readout[0], dtype=np.float32), np.asarray(readout[1], dtype=np.float32).reshape(-1))
+        _, features = self._represent(rx)
+        design = np.concatenate([np.ones((len(features), 1), dtype=np.float32), features], axis=1).astype(np.float64)
+        reg = self.config.ridge_alpha * np.eye(design.shape[1], dtype=np.float64)
+        reg[0, 0] = 0.0
+        self.readout_coef = np.linalg.solve(design.T @ design + reg, design.T @ ry.astype(np.float64)).astype(np.float32)
+
+        if validation is not None:
+            vx, vy = validation
+            residual = np.abs(np.asarray(vy, dtype=np.float32).reshape(-1) - self.predict(np.asarray(vx, dtype=np.float32)))
+            if len(residual):
+                self.interval_q80 = float(np.nanquantile(residual, 0.80))
+        return self
+
     def predict(self, x: np.ndarray) -> np.ndarray:
         if self.readout_coef is None:
             raise RuntimeError("Model must be fitted before prediction")

@@ -123,6 +123,7 @@ def main() -> None:
     p.add_argument("--val-year", type=int, default=2024)
     p.add_argument("--test-year", type=int, default=2025)
     p.add_argument("--split-round", type=int, help="When val-year == test-year, validation = rounds <= this, test = rounds > this")
+    p.add_argument("--train-through-round", type=int, help="With --split-round: the holdout season's rounds <= this also train (retrain on the first races of a new season); validation = rounds in (this, split-round]")
     p.add_argument("--holdout-event", help="Circuit holdout: every season of this event becomes the test set")
     p.add_argument("--drop-feature-group", action="append", default=[], choices=ABLATION_GROUPS, help="Ablate a feature group (repeatable)")
     p.add_argument("--name", help="Run name recorded in metrics.json (defaults to the config name)")
@@ -140,7 +141,7 @@ def main() -> None:
     features_report = ResourceReport()
     with measure(features_report):
         table = build_full_context_table(raw, history=history)
-    train, val, test = split_from_args(table, args.train_end, args.val_year, args.test_year, args.split_round, args.holdout_event)
+    train, val, test = split_from_args(table, args.train_end, args.val_year, args.test_year, args.split_round, args.holdout_event, args.train_through_round)
     numeric, categorical = select_features(table.columns, history=history, drop_groups=args.drop_feature_group)
     numeric, sparse_dropped = drop_sparse_features(train, numeric, min_coverage=args.min_feature_coverage)
     features = numeric + categorical
@@ -201,6 +202,7 @@ def main() -> None:
             "validation": args.val_year,
             "test": args.test_year,
             "split_round": args.split_round,
+            "train_through_round": args.train_through_round,
             "holdout_event": args.holdout_event,
             "train_rows": describe_split(train),
             "validation_rows": describe_split(val),

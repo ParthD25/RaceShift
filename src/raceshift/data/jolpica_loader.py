@@ -45,8 +45,8 @@ CONSTRUCTOR_TO_TEAM = {
     "force_india": "Force India",
     "racing_point": "Racing Point",
     "aston_martin": "Aston Martin",
-    "sauber": "Sauber",
-    "alfa": "Alfa Romeo",
+    "audi": "Audi",
+    "cadillac": "Cadillac",
 }
 
 # Ergast circuitId -> the FastF1 ``Location`` string used as RaceShift's ``circuit``.
@@ -84,6 +84,21 @@ CIRCUIT_TO_LOCATION = {
     "mugello": "Mugello",
     "sepang": "Kuala Lumpur",
 }
+
+
+def team_name(constructor_ref: str | None, year: int, fallback: str | None = None) -> str | None:
+    """The FastF1 team name for an Ergast constructor in a given season, so historical priors
+    link across tiers even where a team was renamed (RB became Racing Bulls in 2025, Sauber
+    raced as Alfa Romeo 2019-2023 and Kick Sauber 2024-2025)."""
+    if constructor_ref == "rb":
+        return "RB" if year <= 2024 else "Racing Bulls"
+    if constructor_ref == "sauber":
+        return "Kick Sauber" if year >= 2024 else "Sauber"
+    if constructor_ref == "alfa":
+        return "Alfa Romeo Racing" if year <= 2021 else "Alfa Romeo"
+    if constructor_ref in CONSTRUCTOR_TO_TEAM:
+        return CONSTRUCTOR_TO_TEAM[constructor_ref]
+    return fallback
 
 
 class JolpicaClient:
@@ -163,13 +178,36 @@ def _lap_time_seconds(text: str) -> float:
         return float("nan")
 
 
+def _ascii_code(text: str) -> str:
+    ascii_text = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode()
+    return "".join(ch for ch in ascii_text.upper() if ch.isalpha())[:3] or "UNK"
+
+
 def _driver_code(driver: dict) -> str:
+    """Three-letter ASCII driver code: the official abbreviation when Ergast has one, else the
+    first letters of the family name (accents stripped, so Hakkinen is HAK everywhere)."""
     code = driver.get("code")
     if code:
-        return str(code).upper()
-    family = str(driver.get("familyName", driver.get("driverId", "UNK")))
-    ascii_family = unicodedata.normalize("NFKD", family).encode("ascii", "ignore").decode()
-    return "".join(ch for ch in ascii_family.upper() if ch.isalpha())[:3] or "UNK"
+        return _ascii_code(str(code))
+    return _ascii_code(str(driver.get("familyName", driver.get("driverId", "UNK"))))
+
+
+def finish_legacy_frame(frame: pd.DataFrame, year: int) -> pd.DataFrame:
+    """Columns the legacy tier cannot observe plus its lap-validity heuristic (see the
+    module docstring). Shared by the Jolpica API loader and the Kaggle/Ergast CSV loader so
+    both produce identical rows for the same race."""
+    frame = frame.copy()
+    frame["tyre_manufacturer"] = "Bridgestone" if year <= 2010 else "Pirelli"
+    frame["track_status"] = None
+    frame["deleted"] = False
+    median = frame.groupby("driver")["lap_time_s"].transform("median")
+    frame["is_accurate"] = (
+        (frame["lap_number"] > 1)
+        & ~frame["pit_in"]
+        & ~frame["pit_out"]
+        & (frame["lap_time_s"] <= LEGACY_SLOW_LAP_RATIO * median)
+    )
+    return frame
 
 
 def season_schedule(client: JolpicaClient, year: int) -> list[dict]:
@@ -195,7 +233,7 @@ def export_race(client: JolpicaClient, year: int, round_number: int, output_dir:
     driver_meta = {
         r["Driver"]["driverId"]: (
             _driver_code(r["Driver"]),
-            CONSTRUCTOR_TO_TEAM.get(r["Constructor"]["constructorId"], r["Constructor"]["name"]),
+            team_name(r["Constructor"]["constructorId"], year, r["Constructor"]["name"]),
         )
         for r in results
     }
@@ -232,16 +270,7 @@ def export_race(client: JolpicaClient, year: int, round_number: int, output_dir:
     frame = pd.DataFrame(rows)
     if frame.empty:
         return None
-    frame["tyre_manufacturer"] = "Bridgestone" if year <= 2010 else "Pirelli"
-    frame["track_status"] = None
-    frame["deleted"] = False
-    median = frame.groupby("driver")["lap_time_s"].transform("median")
-    frame["is_accurate"] = (
-        (frame["lap_number"] > 1)
-        & ~frame["pit_in"]
-        & ~frame["pit_out"]
-        & (frame["lap_time_s"] <= LEGACY_SLOW_LAP_RATIO * median)
-    )
+    frame = finish_legacy_frame(frame, year)
     output = Path(output_dir)
     output.mkdir(parents=True, exist_ok=True)
     path = output / f"{year}_{race['raceName'].replace(' ', '_')}_R.parquet"

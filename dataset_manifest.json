@@ -1,7 +1,9 @@
 {
   "status_legend": {
     "used": "Collected by a script in this repository and part of the published results",
-    "planned": "Documented candidate source; nothing in the repository reads it yet"
+    "planned": "Documented candidate source; nothing in the repository reads it yet",
+    "evaluated": "Inspected for this project and documented; not read by any script because it adds nothing the used sources lack",
+    "not_accessible": "Referenced by the author but not readable from the development environment; nothing could be verified"
   },
   "sources": [
     {
@@ -23,10 +25,34 @@
     {
       "name": "OpenF1",
       "url": "https://openf1.org/docs/",
-      "status": "planned",
-      "role": "Historical F1 API and future application data source",
-      "coverage_note": "Historical data from 2023 onward is available without authentication",
-      "local_policy": "Store fetched historical JSON outside git"
+      "status": "used",
+      "role": "Second timing provider 2023-2026: every race and sprint with laps, sectors, stints, pit stops, positions, weather and race control (scripts/fetch_openf1.py, src/raceshift/data/openf1_loader.py). Used for the cross-provider check against FastF1, for sprint sessions (the FastF1 tables hold races only) and for the OpenF1-sourced fine-tuning experiments",
+      "coverage_note": "Historical data from 2023 onward without authentication; rows are tagged data_tier = openf1_timing and carry the same columns as the FastF1 tier. Lap times agree with FastF1 to the millisecond from lap 2 on; the opening lap is timed differently by the two providers",
+      "local_policy": "Polite client (spaced requests, back-off on 429); every response cached as JSON under data/cache/openf1; per-session parquet under data/raw/openf1; do not commit raw data"
+    },
+    {
+      "name": "Ergast database dump on Kaggle (jtrotman/formula-1-race-data)",
+      "url": "https://www.kaggle.com/datasets/jtrotman/formula-1-race-data",
+      "status": "used",
+      "role": "Offline mirror of the legacy tier: lap_times.csv (1996-2026), pit_stops.csv, races, drivers, results, constructors and circuits, converted by scripts/build_ergast_kaggle.py with the same rules as the Jolpica API loader (src/raceshift/data/ergast_csv_loader.py). Adds 1996-1999 and the current season without API calls; used for the lap-for-lap integrity checks in reports/data_sources",
+      "coverage_note": "Same data as Jolpica/Ergast: no sectors, tyres, track status or weather. Matches the API rows for 2000-2017 and FastF1 lap times for 2018-2026 on 99.4% of shared laps; the remainder are known Ergast lap-alignment errors in a few races",
+      "local_policy": "Download with kagglehub or from the dataset page into data/raw/ergast_kaggle; do not commit the CSVs"
+    },
+    {
+      "name": "formula1-datasets (toUpperCase78)",
+      "url": "https://github.com/toUpperCase78/formula1-datasets",
+      "status": "evaluated",
+      "role": "Season CSVs 2019-2026 of race results, qualifying results, sprint results, calendars, drivers and teams",
+      "coverage_note": "Race-level results only (finishing position, grid, points, fastest lap): no per-lap timing, so nothing RaceShift's next-lap model can train on; every field it holds is already implied by the lap tables' last-lap positions",
+      "local_policy": "Not read by any script"
+    },
+    {
+      "name": "Kaggle notebook: feature-engineering-lgbm-regressor-f1-hackathon (jamesd2525)",
+      "url": "https://www.kaggle.com/code/jamesd2525/feature-engineering-lgbm-regressor-f1-hackathon",
+      "status": "not_accessible",
+      "role": "Suggested as a reference for feature engineering",
+      "coverage_note": "The Kaggle API token available to the development environment is not permitted to read notebooks (kernels.get denied), so its features and data could not be inspected or compared",
+      "local_policy": "Nothing to store"
     },
     {
       "name": "TracingInsights 2026",
