@@ -72,3 +72,40 @@ def test_missing_artifact_files_reports_gaps(tmp_path: Path):
     assert "metrics.json" not in missing_artifact_files(tmp_path)
     with pytest.raises(FileNotFoundError):
         RaceShiftArtifact(tmp_path)
+
+
+def _weekend(season: int, codes: list[str], event: str = "X GP") -> pd.DataFrame:
+    return pd.DataFrame({"season": season, "event": event, "session": codes, "lap_number": 1, "driver": "AAA"})
+
+
+@pytest.mark.parametrize(
+    "season, shuffled, expected",
+    [
+        (2022, ["R", "S", "FP2", "Q", "FP1"], ["FP1", "Q", "FP2", "S", "R"]),
+        (2023, ["R", "S", "SS", "Q", "FP1"], ["FP1", "Q", "SS", "S", "R"]),
+        (2025, ["R", "Q", "S", "SQ", "FP1"], ["FP1", "SQ", "S", "Q", "R"]),
+        (2022, ["Q", "R", "FP3", "FP2", "FP1"], ["FP1", "FP2", "FP3", "Q", "R"]),
+    ],
+)
+def test_sessions_sort_by_the_weekend_format_of_their_season(season, shuffled, expected):
+    from raceshift.models.artifact import sort_chronologically
+
+    assert sort_chronologically(_weekend(season, shuffled))["session"].tolist() == expected
+
+
+def test_session_sort_keeps_user_columns_and_treats_race_as_latest():
+    from raceshift.models.artifact import sort_chronologically
+
+    frame = _weekend(2025, ["Race", "sprint", "Sprint Qualifying", "q", "Warmup"])
+    frame["_raceshift_session_rank"] = 9  # a user column that happens to share the scratch name
+    out = sort_chronologically(frame)
+    assert out["session"].tolist() == ["Sprint Qualifying", "sprint", "q", "Warmup", "Race"]
+    assert out["_raceshift_session_rank"].tolist() == [9] * 5
+    _, key = RaceShiftArtifact.latest_session(frame)
+    assert key["session"] == "Race"
+
+
+def test_blank_session_names_are_listed_as_missing():
+    frame = _weekend(2025, ["R", "  ", "Q"])
+    listed = RaceShiftArtifact.list_sessions(frame)
+    assert [s["session"] for s in listed] == ["Q", "(missing session)", "R"]
