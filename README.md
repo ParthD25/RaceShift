@@ -65,7 +65,7 @@ and a synthetic fixture with a small demo model trained on it, both badged *Synt
 wherever they appear. Drivers are identified by their FIA three-letter codes.
 
 ```bash
-npm run test:py     # Python tests (62): leakage, feature availability, lap rules, gradients, splits, artifact, API
+npm run test:py     # Python tests (63): leakage, feature availability, lap rules, gradients, splits, artifact, API
 npm run build       # TypeScript check + Vite build
 npm run test:e2e    # Chromium walk through the running UI (needs `npx playwright install chromium` once)
 API_PORT=8010 WEB_PORT=5180 npm run dev                # if 8000 or 5173 is taken

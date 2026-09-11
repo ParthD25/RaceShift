@@ -109,3 +109,11 @@ def test_blank_session_names_are_listed_as_missing():
     frame = _weekend(2025, ["R", "  ", "Q"])
     listed = RaceShiftArtifact.list_sessions(frame)
     assert [s["session"] for s in listed] == ["Q", "(missing session)", "R"]
+
+
+def test_placeholder_sessions_are_marked_unselectable():
+    frame = _weekend(2025, ["R", "  ", "Q"])
+    listed = RaceShiftArtifact.list_sessions(frame)
+    assert [(s["session"], s["selectable"]) for s in listed] == [("Q", True), ("(missing session)", False), ("R", True)]
+    with pytest.raises(ValueError):
+        RaceShiftArtifact.select_session(frame, season=2025, event="X GP", session="(missing session)")
