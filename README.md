@@ -114,6 +114,19 @@ three widths (256→128, 512→384→256→192 and 1024→768→512→384 hidden
 
 Full table with validation metrics, interval widths and latency: `reports/f1_2025h2/summary.md`. Error by circuit, constructor, compound, tyre age, conditions, race phase and position: `reports/f1_2025h2/breakdowns.md`.
 
+**Same split, training extended to 2000 with the legacy tier** — train ≤ 2024 · validation 2025 rounds ≤ 12 · test 2025 rounds > 12. Rows: train 420867, validation 9751, test 10519. Data: fastf1_timing+legacy_timing.
+
+| Model | Test MAE (s) | Test RMSE (s) | p90 (s) | Laps within 0.5 s | 80% coverage | Train time (s) | Peak RSS (MB) | Traced train peak (MB) | Artifact (MB) |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| previous_lap | 0.336 | 0.551 | 0.768 | 81.8% | — | — | — | — | — |
+| rolling_median_5 | 0.366 | 0.576 | 0.825 | 78.6% | — | — | — | — | — |
+| ridge | 0.342 | 0.523 | 0.732 | 81.0% | — | 3.5 | 6957 | 2258 | — |
+| **hist_gradient_boosting** | 0.303 | 0.493 | 0.647 | 84.6% | — | 190.2 | 9987 | 3321 | — |
+| FFR-M | 0.328 | 0.508 | 0.706 | 82.1% | 0.854 | 10173.5 | 8771 | 4666 | 3.94 |
+| FFR-S | 0.325 | 0.503 | 0.695 | 82.4% | 0.858 | 2373.4 | 7291 | 2518 | 2.15 |
+
+Full table with validation metrics, interval widths and latency: `reports/f1_2025h2_legacy_ext/summary.md`. Error by circuit, constructor, compound, tyre age, conditions, race phase and position: `reports/f1_2025h2_legacy_ext/breakdowns.md`.
+
 **Circuit holdout (Monza)** — every season of **Italian Grand Prix** held out; train ≤ 2024, validation 2025. Rows: train 114924, validation 19463, test 5857. Data: fastf1_timing.
 
 | Model | Test MAE (s) | Test RMSE (s) | p90 (s) | Laps within 0.5 s | 80% coverage | Train time (s) | Peak RSS (MB) | Traced train peak (MB) | Artifact (MB) |
