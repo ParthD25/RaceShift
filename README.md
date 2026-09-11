@@ -95,61 +95,42 @@ three widths (256→128, 512→384→256→192 and 1024→768→512→384 hidden
 ## Results
 
 <!-- RESULTS:BEGIN -->
-**Season-round split, 2018-2025 FastF1 tier** — train ≤ 2024 · validation 2025 rounds ≤ 12 · test 2025 rounds > 12. Rows: train 127861, validation 10248, test 10994. Data: fastf1_timing.
+**Season-round split, 2018-2025 FastF1 tier** — train ≤ 2024 · validation 2025 rounds ≤ 12 · test 2025 rounds > 12. Rows: train 119182, validation 9751, test 10519. Data: fastf1_timing.
 
 | Model | Test MAE (s) | Test RMSE (s) | p90 (s) | Laps within 0.5 s | 80% coverage | Train time (s) | Peak RSS (MB) | Traced train peak (MB) | Artifact (MB) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| previous_lap | 0.357 | 0.645 | 0.822 | 80.6% | — | — | — | — | — |
-| rolling_median_5 | 0.394 | 0.675 | 0.889 | 76.9% | — | — | — | — | — |
-| ridge | 0.392 | 0.622 | 0.801 | 74.8% | — | 0.6 | 1753 | 365 | — |
-| **hist_gradient_boosting** | 0.316 | 0.569 | 0.684 | 83.8% | — | 56.0 | 2162 | 467 | — |
-| FFR-M | 0.350 | 0.593 | 0.729 | 80.6% | 0.862 | 2234.1 | 2868 | 1421 | 3.37 |
-| FFR-S | 0.350 | 0.590 | 0.729 | 80.5% | 0.858 | 390.3 | 2024 | 636 | 1.88 |
-| FFR-L | 0.348 | 0.595 | 0.731 | 80.5% | 0.861 | 9985.4 | 4154 | 2778 | 8.24 |
-| FFR-M-groups-coarse | 0.350 | 0.598 | 0.740 | 80.4% | 0.854 | 2088.2 | 2811 | 1417 | 3.33 |
-| FFR-M-groups-fine | 0.351 | 0.593 | 0.740 | 80.1% | 0.863 | 2190.8 | 2980 | 1429 | 3.37 |
-| FFR-M minus historical_numeric | 0.351 | 0.595 | 0.739 | 80.2% | 0.860 | 2208.3 | 2816 | 1421 | 3.33 |
-| FFR-M minus temporal_numeric | 0.375 | 0.623 | 0.799 | 77.8% | 0.860 | 1968.1 | 2814 | 1420 | 3.22 |
-| FFR-M minus static_categorical | 0.352 | 0.595 | 0.736 | 80.1% | 0.852 | 2218.5 | 2714 | 1420 | 2.94 |
+| previous_lap | 0.336 | 0.551 | 0.768 | 81.8% | — | — | — | — | — |
+| rolling_median_5 | 0.366 | 0.576 | 0.825 | 78.6% | — | — | — | — | — |
+| ridge | 0.357 | 0.531 | 0.744 | 78.4% | — | 0.4 | 1859 | 340 | — |
+| **hist_gradient_boosting** | 0.303 | 0.493 | 0.656 | 84.7% | — | 42.6 | 2214 | 439 | — |
+| FFR-S | 0.328 | 0.501 | 0.694 | 82.2% | 0.859 | 494.6 | 1933 | 593 | 1.82 |
+| FFR-M | 0.331 | 0.505 | 0.693 | 82.1% | 0.865 | 2572.7 | 2654 | 1325 | 3.31 |
 
-Full table with validation metrics, interval widths and latency: `reports/f1_2025h2/summary.md`. Error by circuit, constructor, compound, tyre age, conditions, race phase and position: `reports/f1_2025h2/breakdowns.md`.
+Full table with validation metrics, interval widths and latency: `reports/f1_2025h2/summary.md`.
 
-**Same split, training extended to 2000 with the legacy tier** — train ≤ 2024 · validation 2025 rounds ≤ 12 · test 2025 rounds > 12. Rows: train 429546, validation 10248, test 10994. Data: fastf1_timing+legacy_timing.
+**Circuit holdout (Monza)** — every season of **Italian Grand Prix** held out; train ≤ 2024, validation 2025. Rows: train 114924, validation 19463, test 5857. Data: fastf1_timing.
 
 | Model | Test MAE (s) | Test RMSE (s) | p90 (s) | Laps within 0.5 s | 80% coverage | Train time (s) | Peak RSS (MB) | Traced train peak (MB) | Artifact (MB) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| previous_lap | 0.357 | 0.645 | 0.822 | 80.6% | — | — | — | — | — |
-| rolling_median_5 | 0.394 | 0.675 | 0.889 | 76.9% | — | — | — | — | — |
-| ridge | 0.368 | 0.614 | 0.781 | 78.7% | — | 4.5 | 7171 | 2306 | — |
-| **hist_gradient_boosting** | 0.315 | 0.570 | 0.679 | 83.6% | — | 175.1 | 10157 | 3369 | — |
-| FFR-M | 0.351 | 0.595 | 0.740 | 80.2% | 0.856 | 7958.8 | 8953 | 4762 | 3.99 |
-| FFR-S | 0.348 | 0.592 | 0.739 | 80.7% | 0.858 | 1775.8 | 7403 | 2570 | 2.21 |
-
-Full table with validation metrics, interval widths and latency: `reports/f1_2025h2_legacy_ext/summary.md`. Error by circuit, constructor, compound, tyre age, conditions, race phase and position: `reports/f1_2025h2_legacy_ext/breakdowns.md`.
-
-**Circuit holdout (Monza)** — every season of **Italian Grand Prix** held out; train ≤ 2024, validation 2025. Rows: train 123362, validation 20404, test 6133. Data: fastf1_timing.
-
-| Model | Test MAE (s) | Test RMSE (s) | p90 (s) | Laps within 0.5 s | 80% coverage | Train time (s) | Peak RSS (MB) | Traced train peak (MB) | Artifact (MB) |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| previous_lap | 0.346 | 0.615 | 0.809 | 81.0% | — | — | — | — | — |
-| rolling_median_5 | 0.356 | 0.572 | 0.806 | 78.7% | — | — | — | — | — |
-| ridge | 0.345 | 0.552 | 0.735 | 80.2% | — | 0.6 | 1935 | 376 | — |
-| **hist_gradient_boosting** | 0.298 | 0.512 | 0.664 | 84.7% | — | 38.6 | 2327 | 480 | — |
-| FFR-M | 0.347 | 0.538 | 0.694 | 80.0% | 0.838 | 2237.8 | 2761 | 1371 | 2.72 |
-| FFR-S | 0.350 | 0.540 | 0.707 | 79.6% | 0.830 | 369.6 | 1996 | 614 | 1.24 |
+| previous_lap | 0.332 | 0.543 | 0.781 | 81.7% | — | — | — | — | — |
+| rolling_median_5 | 0.341 | 0.524 | 0.762 | 79.7% | — | — | — | — | — |
+| ridge | 0.321 | 0.493 | 0.685 | 82.5% | — | 0.6 | 1812 | 352 | — |
+| **hist_gradient_boosting** | 0.289 | 0.465 | 0.638 | 85.2% | — | 34.3 | 2190 | 452 | — |
+| FFR-M | 0.335 | 0.487 | 0.669 | 81.3% | 0.836 | 2473.4 | 2620 | 1278 | 2.69 |
+| FFR-S | 0.333 | 0.485 | 0.671 | 81.3% | 0.826 | 455.6 | 1913 | 572 | 1.20 |
 
 Full table with validation metrics, interval widths and latency: `reports/holdout_monza/summary.md`.
 
-**2026 domain shift, no retraining** — train ≤ 2024 · validation 2025 · test 2026. Rows: train 127861, validation 21242, test 11445. Data: fastf1_timing.
+**2026 domain shift, no retraining** — train ≤ 2024 · validation 2025 · test 2026. Rows: train 119182, validation 20270, test 10778. Data: fastf1_timing.
 
 | Model | Test MAE (s) | Test RMSE (s) | p90 (s) | Laps within 0.5 s | 80% coverage | Train time (s) | Peak RSS (MB) | Traced train peak (MB) | Artifact (MB) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| previous_lap | 0.472 | 0.858 | 1.129 | 72.7% | — | — | — | — | — |
-| rolling_median_5 | 0.501 | 0.882 | 1.168 | 69.3% | — | — | — | — | — |
-| ridge | 0.457 | 0.778 | 1.003 | 71.5% | — | 0.5 | 1974 | 394 | — |
-| **hist_gradient_boosting** | 0.432 | 0.755 | 0.972 | 74.5% | — | 41.0 | 2401 | 499 | — |
-| FFR-M | 0.433 | 0.768 | 0.957 | 74.4% | 0.769 | 2233.3 | 2814 | 1421 | 3.39 |
-| FFR-S | 0.434 | 0.767 | 0.970 | 74.3% | 0.768 | 390.6 | 1995 | 636 | 1.91 |
+| previous_lap | 0.453 | 0.751 | 1.104 | 73.3% | — | — | — | — | — |
+| rolling_median_5 | 0.475 | 0.751 | 1.133 | 69.9% | — | — | — | — | — |
+| ridge | 0.426 | 0.680 | 0.973 | 73.8% | — | 2.3 | 1906 | 368 | — |
+| **hist_gradient_boosting** | 0.409 | 0.667 | 0.938 | 75.6% | — | 36.3 | 2293 | 471 | — |
+| FFR-M | 0.413 | 0.665 | 0.935 | 75.2% | 0.767 | 2572.4 | 2693 | 1325 | 3.31 |
+| FFR-S | 0.412 | 0.662 | 0.935 | 75.5% | 0.767 | 494.8 | 1966 | 593 | 1.83 |
 
 Full table with validation metrics, interval widths and latency: `reports/domain_shift_2026/summary.md`.
 <!-- RESULTS:END -->
