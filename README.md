@@ -147,57 +147,57 @@ fixture numbers are never reported as Formula 1 results.
 **Protocol notes that matter when reading the tables.**
 
 - Every row is a single run with seed 42. Three extra seeds of FFR-S on the season split give a
-  test MAE of 0.350 ± 0.002 s (`reports/f1_2025h2/seeds.md`), so differences of a few
+  test MAE of 0.328 ± 0.001 s (`reports/f1_2025h2/seeds.md`), so differences of a few
   thousandths of a second between FFR variants (depth, group ladders, ablations that "change
-  nothing") are noise, not effects. Only the temporal-features ablation (+0.025 s) clears
+  nothing") are noise, not effects. Only the temporal-features ablation (+0.020 s) clears
   that bar.
 
-**What the numbers say so far** (2018-2024 training, 128k clean laps; test = 2025 rounds 13-24; lap-validity rules v3):
+**What the numbers say so far** (2018-2024 training, 119k clean laps; test = 2025 rounds 13-24; lap-validity rules v3):
 
 - Gradient-boosted trees are the most accurate model and train in under a minute. Forward-Forward
-  regression does not beat them on this task (0.316 s vs 0.348-0.350 s test MAE).
+  regression does not beat them on this task (0.303 s vs 0.327-0.331 s test MAE).
 - FFR beats the linear and rolling-median baselines and edges the naive previous-lap baseline by
-  0.007-0.009 s. That gap is real but small: repeating the last lap already gets 80.6% of laps
-  within half a second, FFR-M 80.6%, the tree 83.8%.
-- Depth does not pay: FFR-S, FFR-M and FFR-L land at 0.350, 0.350 and 0.348 s for 6.5, 37 and
-  166 minutes of training. The differences are inside seed noise (see the protocol notes).
-- Interval calibration works: the 80% intervals cover 85-86% of test laps.
-- Memory, measured around the fit only for every model: the tree trains in 56 s within 467 MB of
-  traced allocations; FFR-S needs 636 MB and 6.5 minutes, FFR-M 1,421 MB and 37 minutes, FFR-L
-  2,778 MB and 166 minutes. The training-memory advantage argued for Forward-Forward does not
+  0.005-0.009 s. That gap is real but small: repeating the last lap already gets 81.8% of laps
+  within half a second, FFR-S 82.2%, the tree 84.7%.
+- Depth does not pay: FFR-S, FFR-M and FFR-L land at 0.328, 0.331 and 0.327 s for 8, 43 and
+  188 minutes of training. The differences are inside seed noise (see the protocol notes).
+- Interval calibration works in-distribution: the 80% intervals cover 86% of test laps.
+- Memory, measured around the fit only for every model: the tree trains in 43 s within 439 MB of
+  traced allocations; FFR-S needs 593 MB and 8 minutes, FFR-M 1,325 MB and 43 minutes, FFR-L
+  2,591 MB and 188 minutes. The training-memory advantage argued for Forward-Forward does not
   appear in this NumPy implementation at any size: the layers are trained one at a time, but each
   layer's full-batch activations are materialised before the next layer is trained, and that
   dominates. An earlier version of this table charged the baselines for preprocessing as well,
   which made FFR-S look lighter than the tree; that measurement has been corrected.
-- Ablations: removing the temporal pace features costs 0.025 s MAE; removing historical priors
+- Ablations: removing the temporal pace features costs 0.020 s MAE; removing historical priors
   or driver/team/circuit identity changes nothing measurable. Recent pace carries the signal.
 - Group-ladder variants (4/8/16/32, 8/16/32/64, 16/32/64/64) are indistinguishable.
-- **Memorisation check.** Every model's error on its own training laps (FFR about 0.46 s, tree
-  0.41 s) is higher than on validation (0.43 s) and test (0.35 s) because the training seasons
-  contain more disrupted laps; the 2025 test rounds are the cleanest laps in the data. A negative
-  train-to-test gap rules out gross overfitting but does not by itself prove generalisation;
-  the circuit holdout and the 2026 shift below are the real tests. Train, validation and test
-  metrics are recorded for every run, and `reports/f1_2025h2/generalization.md` has the
-  per-season table.
-- **Unseen circuit (every Italian Grand Prix held out).** With the red-flag restart lap excluded,
-  Monza is no harder than the season split: trees 0.298 s, ridge 0.345 s, previous lap 0.346 s,
-  FFR-M 0.347 s, FFR-S 0.350 s, RMSE 0.51-0.62 s for every model. FFR no longer loses more than
-  the tree on an unseen circuit; it simply ties the naive baseline there. Under the version 1
+- **Memorisation check.** Every model's error on its own training laps (FFR about 0.42 s, tree
+  0.38 s) is higher than on validation (0.36-0.40 s) and test (0.30-0.33 s) because the training
+  seasons contain more disrupted laps; the 2025 test rounds are the cleanest laps in the data. A
+  negative train-to-test gap rules out gross overfitting but does not by itself prove
+  generalisation; the circuit holdout and the 2026 shift below are the real tests. Train,
+  validation and test metrics are recorded for every run, and
+  `reports/f1_2025h2/generalization.md` has the per-season table.
+- **Unseen circuit (every Italian Grand Prix held out).** Monza is no harder than the season
+  split: trees 0.289 s, ridge 0.321 s, previous lap 0.332 s, FFR-S 0.333 s, FFR-M 0.335 s, RMSE
+  0.47-0.54 s for every model. FFR ties the naive baseline on an unseen circuit and, with the
+  yellow-flag and restart laps gone, the linear model now beats it there. Under the version 1
   rules the same experiment reported RMSE of 2.5-3.1 s and FFR-M at 0.558 s, all from the
   handful of restart laps.
 - **2026 domain shift (new regulations, model trained through 2024, never retrained).** Every
-  model degrades by about 0.08 s MAE: trees 0.432 s, FFR-M 0.433 s, FFR-S 0.434 s, ridge
-  0.457 s, previous lap 0.472 s. FFR-M has the best p90 (0.96 s) and degrades no worse than the
-  tree, but its 80% intervals, calibrated on 2025, cover only 77% of 2026 laps: the shift is
-  visible in calibration before it is visible in MAE.
+  model degrades by 0.08-0.11 s MAE: trees 0.409 s, FFR-S 0.412 s, FFR-M 0.413 s, ridge 0.426 s,
+  previous lap 0.453 s. FFR degrades less than the tree and its 0.04 s margin over the stopwatch
+  is the widest it shows anywhere, but its 80% intervals, calibrated on 2025, cover only 77% of
+  2026 laps: the shift is visible in calibration before it is visible in MAE.
 - **Independent blind test on the 2026 races through the shipped product (see below).** A
   tester who was given only the repository link fetched the 13 races run so far in 2026 with
-  the repo's own loader and scored the committed FFR-M through the API's inference path:
-  0.435 s MAE, RMSE 0.78 s, 80% interval coverage 80%, previous lap 0.472 s. That matches the
-  experiment-script numbers above only after a bug the test exposed was fixed: the API had
-  dropped untimed laps before applying the lap-validity rules, which let red-flag restart laps
-  through and doubled the RMSE. The report, with every edge case tried, is in
-  `reports/blind_2026/REPORT.md`.
+  the repo's own loader and scored the committed FFR-M through the API's inference path (under
+  the version 2 rules in force at the time): 0.435 s MAE, RMSE 0.78 s, 80% interval coverage
+  80%, previous lap 0.472 s. That matched the experiment-script numbers only after a bug the
+  test exposed was fixed: the API had dropped untimed laps before applying the lap-validity
+  rules, which let red-flag restart laps through and doubled the RMSE. The report, with every
+  edge case tried, is in `reports/blind_2026/REPORT.md`.
 - **Training extended to 2000 with the legacy tier (429,546 laps, same 2025 test rows).** The
   extra eighteen seasons of lap-time-only history help the linear model most (ridge 0.392 →
   0.368 s) and the others barely: trees 0.316 → 0.315 s, FFR-S 0.350 → 0.348 s, FFR-M 0.350 →
