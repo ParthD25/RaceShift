@@ -18,7 +18,7 @@
     "test:e2e": "node apps/web/e2e/smoke.mjs"
   },
   "devDependencies": {
-    "concurrently": "^9.2.0",
+    "concurrently": "^9.2.5",
     "cross-env": "^10.1.0"
   }
 }
